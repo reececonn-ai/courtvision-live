@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CourtVision Commissioner</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand">COURTVISION<small>COMMISSIONER CONTROL</small></div>
+    <div id="connStatus" class="status-pill">OFFLINE</div>
+  </header>
+  <main class="main">
+    <div class="control-grid">
+      <section class="panel">
+        <div class="eyebrow">LIVE ROOM</div>
+        <h2>Commissioner</h2>
+        <div class="field"><label>Room</label><input id="roomInput" value="nba2026" autocomplete="off"></div>
+        <div class="field"><label>Commissioner PIN</label><input id="pinInput" type="password" autocomplete="current-password" placeholder="Cloudflare secret"></div>
+        <div class="button-row">
+          <button id="connectBtn" class="btn secondary" type="button">CONNECT</button>
+          <a id="watchLink" class="btn secondary" target="_blank" rel="noopener">OPEN WATCH</a>
+        </div>
+        <hr style="border:0;border-top:1px solid #263c59;margin:16px 0">
+
+        <div class="field">
+          <label>Broadcast screen</label>
+          <select id="screenInput">
+            <option value="lobby">Lobby</option>
+            <option value="wheel">Wheel</option>
+            <option value="team">Team Reveal</option>
+            <option value="bidding">Bidding</option>
+            <option value="barrel">Barrel</option>
+            <option value="recap">Recap</option>
+          </select>
+        </div>
+
+        <div class="field"><label>Current team</label><input id="teamInput" placeholder="e.g. Cleveland Cavaliers"></div>
+        <div class="field"><label>Last season wins</label><input id="lastWinsInput" inputmode="decimal" placeholder="52"></div>
+        <div class="field"><label>This season win line</label><input id="lineInput" inputmode="decimal" placeholder="47.5"></div>
+        <div class="field"><label>Current bid</label><input id="bidInput" inputmode="decimal" placeholder="7"></div>
+        <div class="field"><label>Broadcast message</label><input id="messageInput" placeholder="What spectators should know"></div>
+
+        <div class="field">
+          <label>Players JSON</label>
+          <textarea id="playersInput">[
+  {"name":"Player 1","remaining":50,"teams":[]},
+  {"name":"Player 2","remaining":50,"teams":[]},
+  {"name":"Player 3","remaining":50,"teams":[]},
+  {"name":"Player 4","remaining":50,"teams":[]},
+  {"name":"Player 5","remaining":50,"teams":[]},
+  {"name":"Player 6","remaining":50,"teams":[]}
+]</textarea>
+        </div>
+
+        <div class="button-row">
+          <button id="publishBtn" class="btn primary" type="button">PUBLISH LIVE</button>
+          <button id="spinDemoBtn" class="btn secondary" type="button">DEMO SPIN</button>
+        </div>
+        <div id="error" class="error" role="alert"></div>
+        <p class="help">This is the live-sync test console. The full CourtVision wheel and bid workflow will replace these temporary fields while keeping the same backend.</p>
+      </section>
+
+      <section class="panel">
+        <div class="eyebrow">SPECTATOR PREVIEW</div>
+        <h2>What viewers see</h2>
+        <div id="preview" class="preview-card">
+          <div>
+            <div class="preview-label">Waiting for room</div>
+            <div class="preview-team">COURTVISION</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+<script type="module" src="/control.js"></script>
+</body>
+</html>
