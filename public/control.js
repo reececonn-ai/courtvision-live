@@ -31,6 +31,9 @@ const refs = {
   lastWins: $("lastWinsInput"),
   line: $("lineInput"),
   bid: $("bidInput"),
+  bidder: $("bidderInput"),
+  assignBtn: $("assignBtn"),
+  passBtn: $("passBtn"),
   message: $("messageInput"),
   playerRows: $("playerRows"),
   publishBtn: $("publishBtn"),
@@ -98,6 +101,8 @@ function render(state) {
 
   renderBroadcastStage(refs.stage, state, {
     room,
+    canControl: true,
+    onSpin: spinWheel,
     onTeamClick: openTeam,
     onOpenBoard: openBoard
   });
@@ -120,6 +125,13 @@ function syncControlsFromState(state) {
     const budgetInput = refs.playerRows.querySelector(`[data-player-budget="${i}"]`);
     if (nameInput) nameInput.value = p.name || `Player ${i + 1}`;
     if (budgetInput) budgetInput.value = Number.isFinite(Number(p.remaining)) ? p.remaining : 50;
+  }
+  const prior = refs.bidder?.value || "0";
+  if (refs.bidder) {
+    refs.bidder.innerHTML = players.map((p, i) =>
+      `<option value="${i}">${p.name || `Player ${i + 1}`} · ${Number(p.remaining ?? 0)}</option>`
+    ).join("");
+    refs.bidder.value = players[Number(prior)] ? prior : "0";
   }
   syncingControls = false;
 }
@@ -194,35 +206,120 @@ async function returnEveryone() {
   }
 }
 
-async function demoSpin() {
+async function spinWheel() {
+  const available = Array.isArray(currentState?.available) ? currentState.available : [];
+  if (!available.length) {
+    await sendPatch({ screen: "barrel", focusToken: crypto.randomUUID() });
+    return;
+  }
+  if (currentState?.wheel?.spinning) return;
+
   refs.spinDemoBtn.disabled = true;
   closeDrawer();
+  closeLocal();
+
+  const targetName = available[Math.floor(Math.random() * available.length)];
+  const target = teamByName(targetName);
+  const spinId = crypto.randomUUID();
+  const duration = 5000;
+  const startedAt = Date.now();
+
   try {
-    const spinId = crypto.randomUUID();
     await sendPatch({
       screen: "wheel",
       currentTeam: null,
-      wheel: { spinning: true, selectedTeam: null, spinId },
+      currentBid: null,
+      wheel: { spinning: true, targetTeam: targetName, selectedTeam: null, spinId, startedAt, duration },
       focusToken: crypto.randomUUID()
     });
 
     setTimeout(async () => {
-      const team = TEAMS[Math.floor(Math.random() * TEAMS.length)];
       try {
         const state = await sendPatch({
           screen: "team",
-          currentTeam: team.name,
-          lastSeasonWins: team.lastWins,
-          winLine: team.line,
-          wheel: { spinning: false, selectedTeam: team.name, spinId }
+          currentTeam: targetName,
+          lastSeasonWins: target?.lastWins ?? null,
+          winLine: target?.line ?? null,
+          currentBid: null,
+          wheel: { spinning: false, targetTeam: targetName, selectedTeam: targetName, spinId, startedAt, duration }
         });
         syncControlsFromState(state);
       } catch (_) {}
       refs.spinDemoBtn.disabled = false;
-    }, 1800);
+    }, duration + 450);
   } catch (_) {
     refs.spinDemoBtn.disabled = false;
   }
+}
+
+async function assignCurrentTeam() {
+  const teamName = currentState?.currentTeam || refs.team.value;
+  if (!teamName) {
+    refs.error.textContent = "Spin or select a team first.";
+    return;
+  }
+  const players = (currentState?.players || readPlayers()).map(p => ({ ...p, teams: [...(p.teams || [])] }));
+  const idx = Math.max(0, Math.min(players.length - 1, Number(refs.bidder?.value || 0)));
+  const price = Math.max(0, Number(refs.bid.value || 0));
+  const player = players[idx];
+
+  if (!player) return;
+  if (player.teams.length >= Number(currentState?.teamCap || 5)) {
+    refs.error.textContent = `${player.name} already has the maximum number of teams.`;
+    return;
+  }
+  if (price > Number(player.remaining || 0)) {
+    refs.error.textContent = `${player.name} only has $${player.remaining} remaining.`;
+    return;
+  }
+
+  player.remaining = Number(player.remaining || 0) - price;
+  if (!player.teams.includes(teamName)) player.teams.push(teamName);
+
+  const assignments = {
+    ...(currentState?.assignments || {}),
+    [teamName]: { player: player.name, playerIndex: idx, price }
+  };
+  const available = (currentState?.available || []).filter(name => name !== teamName);
+  const history = [...(currentState?.history || []), { type: "assign", team: teamName, player: player.name, price, at: Date.now() }];
+
+  const state = await sendPatch({
+    players,
+    assignments,
+    available,
+    history,
+    currentTeam: null,
+    currentBid: null,
+    screen: available.length ? "wheel" : "barrel",
+    wheel: { spinning: false, targetTeam: null, selectedTeam: null, spinId: null },
+    focusToken: crypto.randomUUID()
+  });
+  syncControlsFromState(state);
+  closeDrawer();
+}
+
+async function passCurrentTeam() {
+  const teamName = currentState?.currentTeam || refs.team.value;
+  if (!teamName) {
+    refs.error.textContent = "Spin or select a team first.";
+    return;
+  }
+  const available = (currentState?.available || []).filter(name => name !== teamName);
+  const passed = Array.from(new Set([...(currentState?.passed || []), teamName]));
+  const history = [...(currentState?.history || []), { type: "pass", team: teamName, at: Date.now() }];
+
+  const state = await sendPatch({
+    available,
+    passed,
+    history,
+    currentTeam: null,
+    currentBid: null,
+    screen: available.length ? "wheel" : "barrel",
+    wheel: { spinning: false, targetTeam: null, selectedTeam: null, spinId: null },
+    focusToken: crypto.randomUUID()
+  });
+  syncControlsFromState(state);
+  closeDrawer();
 }
 
 async function connect() {
@@ -268,7 +365,9 @@ refs.closeControlsBtn.addEventListener("click", closeDrawer);
 refs.scrim.addEventListener("click", closeDrawer);
 refs.publishBtn.addEventListener("click", publishFromControls);
 refs.returnEveryoneBtn.addEventListener("click", returnEveryone);
-refs.spinDemoBtn.addEventListener("click", demoSpin);
+refs.spinDemoBtn.addEventListener("click", spinWheel);
+refs.assignBtn?.addEventListener("click", assignCurrentTeam);
+refs.passBtn?.addEventListener("click", passCurrentTeam);
 
 refs.copyLinkBtn.addEventListener("click", async () => {
   try {
