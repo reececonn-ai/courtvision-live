@@ -3665,6 +3665,23 @@ body.tv-mode .wheel-screen .wheel-wrap{
   }
 }
 
+
+.draft-readiness{padding:10px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08)}
+.draft-room-line{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.08em}
+.room-dot{width:8px;height:8px;border-radius:50%;background:#f0ad3d;box-shadow:0 0 10px rgba(240,173,61,.6)}
+.room-dot.connected{background:#46d98a;box-shadow:0 0 10px rgba(70,217,138,.7)}
+.room-dot.offline{background:#ef5368;box-shadow:0 0 10px rgba(239,83,104,.7)}
+#preflightMini{margin-top:6px;text-align:center}
+.bid-safety{margin:-2px 0 10px;padding:9px 10px;border-radius:10px;background:rgba(60,190,130,.08);border:1px solid rgba(80,220,150,.16);color:#c8f5dc;font-size:10px;font-weight:800;line-height:1.35}
+.bid-safety.warn{background:rgba(255,175,45,.09);border-color:rgba(255,175,45,.22);color:#ffe0a1}
+.preflight-card{width:min(720px,95vw)}
+.preflight-summary{padding:12px;border-radius:12px;background:rgba(255,255,255,.05);font-weight:900;margin-bottom:10px}
+.preflight-summary.ready{background:rgba(54,196,123,.13);color:#aef0ca;border:1px solid rgba(54,196,123,.25)}
+.preflight-summary.warn{background:rgba(255,181,50,.12);color:#ffe0a1;border:1px solid rgba(255,181,50,.25)}
+.preflight-results{display:grid;gap:6px}
+.preflight-row{display:grid;grid-template-columns:62px 1fr;gap:10px;padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.035);font-size:12px}
+.preflight-row b{font-size:10px;letter-spacing:.08em}
+.preflight-row.pass b{color:#69e3a3}.preflight-row.warn b{color:#ffc85d}.preflight-row.fail b{color:#ff7187}
 </style>
 </head>
 <body>
@@ -3688,6 +3705,11 @@ body.tv-mode .wheel-screen .wheel-wrap{
     <button class="btn secondary sound-toggle" id="soundBtn" onclick="toggleSound()">🔊 Hype Sound: ON</button>
     <button class="btn secondary" id="syncBtn" onclick="syncLeagueData(true)" style="width:100%">↻ Sync Live NBA Data</button>
     <div class="tiny" id="syncStatus" style="text-align:center"></div>
+    <div class="draft-readiness">
+      <div class="draft-room-line"><span class="room-dot connecting" id="roomDot"></span><strong id="roomConnection">ROOM CONNECTING</strong></div>
+      <button class="btn secondary" style="width:100%;margin-top:7px" onclick="runDraftPreflight()">Draft Night Preflight</button>
+      <div class="tiny" id="preflightMini">Run once before everyone arrives.</div>
+    </div>
 
     <div class="commissioner-status">
       <div class="kicker">Last action</div>
@@ -3917,8 +3939,9 @@ body.tv-mode .wheel-screen .wheel-wrap{
             <h2>MAKE THE PICK</h2>
             <p id="bidContext">Choose a bidder and lock the price, or pass.</p>
             <div class="quick-player-grid" id="quickPlayerGrid"></div>
-          <div class="field"><label>Player</label><select id="bidPlayer" onchange="syncQuickPlayerSelection()"></select></div>
-            <div class="field"><label>Bid amount</label><input id="bidAmount" type="number" min="0" step="0.5" value="1"></div>
+          <div class="field"><label>Player</label><select id="bidPlayer" onchange="syncQuickPlayerSelection();renderBidSafety()"></select></div>
+            <div class="field"><label>Bid amount</label><input id="bidAmount" type="number" min="0" step="0.5" value="1" oninput="renderBidSafety()"></div>
+            <div class="bid-safety" id="bidSafety">Choose a player to preview the budget after purchase.</div>
           <div class="bid-step-grid">
             <button class="bid-step" onclick="adjustBid(1)">+$1</button>
             <button class="bid-step" onclick="adjustBid(2)">+$2</button>
@@ -3928,8 +3951,8 @@ body.tv-mode .wheel-screen .wheel-wrap{
             <button class="bid-step" onclick="clearBid()">CLEAR</button>
           </div>
             <div class="bid-actions">
-              <button class="btn" onclick="assignCurrent()">Assign Team</button>
-              <button class="btn danger" onclick="passCurrent()">Pass</button>
+              <button class="btn" id="assignTeamBtn" onclick="assignCurrent()">Assign Team</button>
+              <button class="btn danger" id="passTeamBtn" onclick="passCurrent()">Pass</button>
             </div>
             <button class="btn secondary" style="width:100%;margin-top:10px" onclick="backToWheel()">Return to wheel</button>
             <div class="preview-exit" id="teamPreviewExit">
@@ -4194,6 +4217,18 @@ body.tv-mode .wheel-screen .wheel-wrap{
     </section>
 
   </main>
+</div>
+
+<div class="modal" id="preflightModal">
+  <div class="modal-card preflight-card">
+    <div class="modal-head">
+      <div><div class="kicker">Draft Night Safety Check</div><h2>PRE-FLIGHT</h2></div>
+      <button class="close" onclick="closeDraftPreflight()">×</button>
+    </div>
+    <div class="preflight-summary" id="preflightSummary">Running checks…</div>
+    <div class="preflight-results" id="preflightResults"></div>
+    <button class="btn" style="width:100%;margin-top:14px" onclick="closeDraftPreflight()">DONE</button>
+  </div>
 </div>
 
 <div class="modal" id="settingsModal">
@@ -4616,11 +4651,90 @@ function cvApplySnapshot(snapshot,serverVersion=0){
   }
 }
 
+
+let draftActionLocked=false;
+function setDraftActionLocked(locked){
+  draftActionLocked=!!locked;
+  const a=document.getElementById("assignTeamBtn"),p=document.getElementById("passTeamBtn");
+  if(a)a.disabled=draftActionLocked;
+  if(p)p.disabled=draftActionLocked;
+}
+function updateRoomConnection(status){
+  const dot=document.getElementById("roomDot"),text=document.getElementById("roomConnection");
+  if(!dot||!text)return;
+  dot.className="room-dot "+(status==="connected"?"connected":status==="offline"?"offline":"connecting");
+  text.textContent=status==="connected"?"ROOM CONNECTED":status==="offline"?"ROOM OFFLINE":"ROOM CONNECTING";
+}
+function renderBidSafety(){
+  const el=document.getElementById("bidSafety"),sel=document.getElementById("bidPlayer"),inp=document.getElementById("bidAmount");
+  if(!el||!sel||!inp)return;
+  const p=state.players[+sel.value],amount=Number(inp.value);
+  if(!p||!Number.isFinite(amount)){el.textContent="Choose a player and valid bid.";el.classList.add("warn");return}
+  const after=p.remaining-amount,nextCount=p.teams.length+1;
+  const issues=[];
+  if(nextCount>state.teamCap)issues.push("ROSTER FULL");
+  if(after<0)issues.push("OVER BUDGET");
+  el.classList.toggle("warn",issues.length>0);
+  el.textContent=issues.length
+    ?issues.join(" · ")+" — cannot assign"
+    :p.name+" → "+nextCount+"/"+state.teamCap+" teams · $"+money(after)+" left after this pick";
+}
+function closeDraftPreflight(){document.getElementById("preflightModal")?.classList.remove("open")}
+async function runDraftPreflight(){
+  const modal=document.getElementById("preflightModal"),results=document.getElementById("preflightResults"),summary=document.getElementById("preflightSummary"),mini=document.getElementById("preflightMini");
+  modal?.classList.add("open");
+  if(results)results.innerHTML='<div class="tiny">Checking CourtVision…</div>';
+  if(summary){summary.className="preflight-summary";summary.textContent="Running checks…"}
+  const checks=[];
+  const add=(label,status,detail)=>checks.push({label,status,detail});
+  try{
+    const r=await fetch("/api/health",{cache:"no-store"});
+    add("SERVER",r.ok?"pass":"fail",r.ok?"Cloudflare Worker responding":"Health endpoint failed");
+  }catch(e){add("SERVER","fail","Could not reach CourtVision Worker")}
+  try{
+    const path="/api/rooms/"+encodeURIComponent(CV_SYNC_ROOM);
+    const r=await fetch(path,{cache:"no-store"});
+    add("ROOM",r.ok?"pass":"fail",r.ok?"Shared draft room reachable":"Room API unavailable");
+  }catch(e){add("ROOM","fail","Shared room could not be reached")}
+  try{
+    const k="cv_preflight_"+Date.now();localStorage.setItem(k,"ok");const ok=localStorage.getItem(k)==="ok";localStorage.removeItem(k);
+    add("STORAGE",ok?"pass":"fail",ok?"Browser recovery storage works":"Local storage unavailable");
+  }catch(e){add("STORAGE","fail","Browser recovery storage unavailable")}
+  add("TEAMS",TEAM_DATA.length===30?"pass":"fail",TEAM_DATA.length+"/30 franchises loaded");
+  const names=state.players.map(p=>String(p.name||"").trim());
+  const unique=new Set(names.filter(Boolean));
+  add("PLAYERS",state.players.length&&unique.size===state.players.length?"pass":"warn",state.players.length+" players · "+unique.size+" unique names");
+  const canvas=document.getElementById("wheel");
+  let canvasOK=false;try{canvasOK=!!canvas?.getContext("2d")}catch(_){}
+  add("WHEEL",canvasOK?"pass":"fail",canvasOK?"Canvas ready":"Wheel canvas unavailable");
+  if(state.liveSyncAt){
+    const age=(Date.now()-new Date(state.liveSyncAt).getTime())/36e5;
+    add("NBA DATA",age<=12?"pass":"warn","Last roster sync "+age.toFixed(1)+"h ago");
+  }else add("NBA DATA","warn","No live roster sync yet · curated fallbacks will still work");
+  let logoOK=0;
+  await Promise.all(TEAM_DATA.map(t=>new Promise(resolve=>{
+    const img=new Image(),timer=setTimeout(()=>resolve(),3500);
+    img.onload=()=>{clearTimeout(timer);logoOK++;resolve()};
+    img.onerror=()=>{clearTimeout(timer);resolve()};
+    img.src=logoUrl(t[1])+"?cvpreflight=1";
+  })));
+  add("LOGOS",logoOK===30?"pass":logoOK>=27?"warn":"fail",logoOK+"/30 team logos loaded · failed images use CourtVision fallback");
+  const fail=checks.filter(x=>x.status==="fail").length,warn=checks.filter(x=>x.status==="warn").length;
+  if(results)results.innerHTML=checks.map(x=>'<div class="preflight-row '+x.status+'"><b>'+x.status.toUpperCase()+'</b><span><strong>'+escapeHtml(x.label)+'</strong> · '+escapeHtml(x.detail)+'</span></div>').join("");
+  if(summary){
+    summary.className="preflight-summary "+(fail?"warn":"ready");
+    summary.textContent=fail?fail+" blocking issue"+(fail===1?"":"s")+" found":warn?"READY WITH "+warn+" WARNING"+(warn===1?"":"S"):"READY FOR DRAFT ✓";
+  }
+  if(mini){mini.textContent=fail?"Preflight found an issue. Open to review.":warn?"Preflight passed with warnings.":"READY FOR DRAFT ✓";mini.style.color=fail?"#ff7187":warn?"#ffc85d":"#69e3a3"}
+}
+
 function cvConnectSocket(){
   try{cvSyncSocket?.close()}catch(_){}
   const protocol=location.protocol==="https:"?"wss:":"ws:";
   const ws=new WebSocket(protocol+"//"+location.host+"/ws/rooms/"+encodeURIComponent(CV_SYNC_ROOM)+"/socket");
   cvSyncSocket=ws;
+  updateRoomConnection("connecting");
+  ws.addEventListener("open",()=>updateRoomConnection("connected"));
   ws.addEventListener("message",e=>{
     if(e.data==="pong")return;
     try{
@@ -4628,8 +4742,8 @@ function cvConnectSocket(){
       if(msg.type==="state"&&msg.state?.sharedSnapshot)cvApplySnapshot(msg.state.sharedSnapshot,msg.state.version);
     }catch(_){}
   });
-  ws.addEventListener("close",()=>setTimeout(cvConnectSocket,1200));
-  ws.addEventListener("error",()=>{try{ws.close()}catch(_){}});
+  ws.addEventListener("close",()=>{updateRoomConnection("offline");setTimeout(cvConnectSocket,1200)});
+  ws.addEventListener("error",()=>{updateRoomConnection("offline");try{ws.close()}catch(_){}});
 }
 
 async function cvStartSync(){
@@ -5147,6 +5261,7 @@ function renderDraftPulse(){
     tile("Budget per open slot",`$${money(d.perSlot)}`,`$${money(d.moneyLeft)} left · ${d.openSlots} slots`),
     tile("Elite teams left",String(d.elite),`${d.playoff} playoff-grade (43.5+) of ${d.availCount}`),
     tile("Still need 2+",String(d.needTwo),`of ${state.players.length} bidders`),
+    tile("Teams remaining",String(state.available.length),`${Object.keys(state.assignments).length} assigned · ${state.passed.length} barrel`),
     tile("Priciest so far",d.priciest?`$${money(d.priciest.amount)}`:"—",d.priciest?teamByName(d.priciest.name)?.[1]:"—"),
     tile("Cheapest playoff team",d.bargain?`$${money(d.bargain.amount)}`:"—",d.bargain?teamByName(d.bargain.name)?.[1]:"none sold yet"),
     `<div class="pulse-tile wide"><label>Avg paid by tier</label><strong class="small">${escapeHtml(tierText)}</strong></div>`
@@ -5370,7 +5485,7 @@ function renderBidPlayers(){
   renderQuickPlayers();
 }
 function renderHistory(){document.getElementById("history").innerHTML=state.history.length?state.history.slice().reverse().map(x=>`<div>• ${escapeHtml(x)}</div>`).join(""):"<span class='tiny'>No picks yet.</span>"}
-function renderAll(){renderPlayers();renderBidPlayers();renderHistory();drawWheel();renderWheelTeamBoard();updateSoundButton();updateSyncStatus();updateTickerForScreen(document.querySelector(".screen.active")?.id||"homeScreen");if(currentTeam){renderPricePressure(currentTeam);renderBidContext(currentTeam)}renderDraftBoard();renderBarrelMode();renderRecap();setLastAction(state.lastAction||"Draft ready")}
+function renderAll(){renderPlayers();renderBidPlayers();renderHistory();drawWheel();renderWheelTeamBoard();updateSoundButton();updateSyncStatus();updateTickerForScreen(document.querySelector(".screen.active")?.id||"homeScreen");if(currentTeam){renderPricePressure(currentTeam);renderBidContext(currentTeam)}renderDraftBoard();renderBarrelMode();renderRecap();setLastAction(state.lastAction||"Draft ready");renderBidSafety()}
 
 function drawWheel(){
   const canvas=document.getElementById("wheel");if(!canvas)return;
@@ -5469,8 +5584,13 @@ function teamTickerItems(name){
   return items;
 }
 function draftTickerItems(){
-  const out=[{tag:"DRAFT UPDATE",text:`${state.available.length} TEAMS REMAIN · ${state.passed.length} IN THE BARREL`,kind:"draft"}];
-  state.players.forEach(p=>out.push({tag:"DRAFT",text:`${p.name.toUpperCase()} · ${p.teams.length}/${state.teamCap} TEAMS · $${money(p.remaining)} LEFT`,kind:"draft"}));
+  const d=draftPulse();
+  const out=[{tag:state.available.length<=6?"FINAL STRETCH":"DRAFT UPDATE",text:`${state.available.length} TEAMS REMAIN · ${state.passed.length} IN THE BARREL · ${Object.keys(state.assignments).length} ASSIGNED`,kind:"draft"}];
+  if(state.lastAction&&state.lastAction!=="Draft ready")out.push({tag:"LAST PICK",text:state.lastAction,kind:"draft"});
+  if(d.priciest)out.push({tag:"TOP PRICE",text:`${teamByName(d.priciest.name)?.[1]||d.priciest.name} · ${money(d.priciest.amount)}`,kind:"draft"});
+  const cash=[...state.players].sort((a,b)=>b.remaining-a.remaining)[0];
+  if(cash)out.push({tag:"MOST CASH",text:`${cash.name.toUpperCase()} · ${money(cash.remaining)} LEFT · ${cash.teams.length}/${state.teamCap} TEAMS`,kind:"draft"});
+  state.players.forEach(p=>out.push({tag:p.teams.length>=state.teamCap?"ROSTER FULL":"DRAFT",text:`${p.name.toUpperCase()} · ${p.teams.length}/${state.teamCap} TEAMS · ${money(p.remaining)} LEFT`,kind:"draft"}));
   return out;
 }
 function setTicker(items,brand="NBA DRAFT"){
@@ -5806,24 +5926,26 @@ function closeTeamPreview(){
 }
 
 function assignCurrent(){
-  if(!currentTeam)return;
+  if(!currentTeam||draftActionLocked)return;
   if(state.paused)return toast("Draft is paused");
   const idx=+document.getElementById("bidPlayer").value,amount=+document.getElementById("bidAmount").value,p=state.players[idx];
   if(!p)return toast("Choose a player");if(p.teams.length>=state.teamCap)return toast(`${p.name} is already full`);
   if(!Number.isFinite(amount)||amount<0)return toast("Enter a valid bid");if(amount>p.remaining)return toast(`${p.name} only has $${money(p.remaining)} left`);
   if(!state.available.includes(currentTeam))return toast("That team is no longer on the wheel");
+  setDraftActionLocked(true);
   pushUndo(`Assign ${currentTeam}`);
   p.remaining-=amount;p.teams.push(currentTeam);state.assignments[currentTeam]={player:p.name,amount};
   state.available=state.available.filter(x=>x!==currentTeam);state.history.push(`${currentTeam} → ${p.name} for $${money(amount)}`);setLastAction(`${currentTeam} → ${p.name} · $${money(amount)}`);
-  currentTeam=null;state.onTheBoard=null;state.liveSpin=null;state.lastScreen=isDraftComplete()?"recapScreen":"wheelScreen";saveState();assignSting();confettiBurst();toast("FRANCHISE ASSIGNED");setTimeout(()=>{if(isDraftComplete())finishDraft();else{flash();showScreen("wheelScreen")}},800);
+  currentTeam=null;state.onTheBoard=null;state.liveSpin=null;state.lastScreen=isDraftComplete()?"recapScreen":"wheelScreen";saveState();assignSting();confettiBurst();toast("FRANCHISE ASSIGNED");setTimeout(()=>{if(isDraftComplete())finishDraft();else{flash();showScreen("wheelScreen")}setDraftActionLocked(false)},800);
 }
 function passCurrent(){
-  if(!currentTeam)return;
+  if(!currentTeam||draftActionLocked)return;
   if(state.paused)return toast("Draft is paused");
   if(!state.available.includes(currentTeam))return toast("That team is no longer on the wheel");
+  setDraftActionLocked(true);
   pushUndo(`Pass ${currentTeam}`);
   state.available=state.available.filter(x=>x!==currentTeam);if(!state.passed.includes(currentTeam))state.passed.push(currentTeam);
-  state.history.push(`${currentTeam} passed into the barrel`);setLastAction(`${currentTeam} passed to barrel`);currentTeam=null;state.onTheBoard=null;state.liveSpin=null;state.lastScreen="wheelScreen";saveState();passSting();shake();toast("THROWN INTO THE BARREL");setTimeout(()=>showScreen("wheelScreen"),650);
+  state.history.push(`${currentTeam} passed into the barrel`);setLastAction(`${currentTeam} passed to barrel`);currentTeam=null;state.onTheBoard=null;state.liveSpin=null;state.lastScreen="wheelScreen";saveState();passSting();shake();toast("THROWN INTO THE BARREL");setTimeout(()=>{showScreen("wheelScreen");setDraftActionLocked(false)},650);
 }
 function backToWheel(){currentTeam=null;state.onTheBoard=null;persist();showScreen("wheelScreen")}
 function startBarrel(){openBarrelMode()}
