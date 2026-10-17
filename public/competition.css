@@ -1958,3 +1958,44 @@ body[data-screen="statsForNerdsScreen"] .scanlines{
   .nerd-record strong{font-size:24px!important}
   .nerd-two-col{grid-template-columns:1fr!important}
 }
+
+
+/* =========================================================
+   STATS FOR NERDS — FULL-WIDTH MODE
+   Hide the draft-day control rail on this analytics screen.
+   ========================================================= */
+
+body[data-screen="statsForNerdsScreen"] .shell{
+  grid-template-columns:minmax(0,1fr)!important;
+  padding:0!important;
+  gap:0!important;
+}
+body[data-screen="statsForNerdsScreen"] .sidebar{
+  display:none!important;
+}
+body[data-screen="statsForNerdsScreen"] .stage{
+  grid-column:1!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:100vh!important;
+  border-radius:0!important;
+}
+body[data-screen="statsForNerdsScreen"] .nerd-screen{
+  min-height:100vh!important;
+}
+body[data-screen="statsForNerdsScreen"] .nerd-shell{
+  width:min(1760px,100%)!important;
+}
+body.tv-mode[data-screen="statsForNerdsScreen"] .shell{
+  grid-template-columns:minmax(0,1fr)!important;
+}
+body.tv-mode[data-screen="statsForNerdsScreen"] .sidebar{
+  display:none!important;
+}
+body.tv-mode[data-screen="statsForNerdsScreen"] .stage{
+  width:100%!important;
+  height:100vh!important;
+}
+body.tv-mode[data-screen="statsForNerdsScreen"] .broadcast-ticker{
+  left:0!important;
+}
