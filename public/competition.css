@@ -2153,3 +2153,72 @@ body[data-screen="competitionScreen"] .scanlines{
   #competitionGames .comp-game-center span{font-size:10px!important}
   #competitionGames .comp-game-center b{font-size:6px!important}
 }
+
+
+/* =========================================================
+   MATCHUP FINAL SPACING — keep score out of team-copy lane
+   ========================================================= */
+
+#competitionGames .comp-game-side{
+  grid-template-columns:72px minmax(120px,1fr) 92px!important;
+  gap:16px!important;
+}
+
+#competitionGames .comp-game-copy{
+  min-width:120px!important;
+  padding-right:4px!important;
+}
+
+#competitionGames .comp-game-copy strong{
+  font-size:29px!important;
+  line-height:.92!important;
+}
+
+#competitionGames .comp-game-side > b{
+  width:92px!important;
+  min-width:92px!important;
+  max-width:92px!important;
+  justify-self:end!important;
+  text-align:right!important;
+  font-size:40px!important;
+  letter-spacing:-.02em!important;
+}
+
+#competitionGames .comp-game-side.away{
+  padding-right:86px!important;
+}
+
+#competitionGames .comp-game-side.home{
+  padding-left:86px!important;
+}
+
+@media(max-width:820px){
+  #competitionGames .comp-game-side{
+    grid-template-columns:44px minmax(76px,1fr) 54px!important;
+    gap:7px!important;
+  }
+
+  #competitionGames .comp-game-copy{
+    min-width:76px!important;
+    padding-right:2px!important;
+  }
+
+  #competitionGames .comp-game-copy strong{
+    font-size:19px!important;
+  }
+
+  #competitionGames .comp-game-side > b{
+    width:54px!important;
+    min-width:54px!important;
+    max-width:54px!important;
+    font-size:27px!important;
+  }
+
+  #competitionGames .comp-game-side.away{
+    padding-right:48px!important;
+  }
+
+  #competitionGames .comp-game-side.home{
+    padding-left:48px!important;
+  }
+}
