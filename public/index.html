@@ -4427,7 +4427,6 @@ function cvSharedSnapshot(){
       barrelCurrent:state.barrelCurrent||null,
       onTheBoard:state.onTheBoard||null,
       liveSpin:state.liveSpin?JSON.parse(JSON.stringify(state.liveSpin)):null,
-      lastScreen:state.lastScreen||"homeScreen",
       competitionSnapshots:JSON.parse(JSON.stringify(state.competitionSnapshots||[]))
     }
   };
@@ -4521,7 +4520,6 @@ function cvApplySnapshot(snapshot){
     state.barrelCurrent=d.barrelCurrent||null;
     state.onTheBoard=d.onTheBoard||null;
     state.liveSpin=d.liveSpin?JSON.parse(JSON.stringify(d.liveSpin)):null;
-    state.lastScreen=d.lastScreen||"wheelScreen";
     state.competitionSnapshots=Array.isArray(d.competitionSnapshots)?JSON.parse(JSON.stringify(d.competitionSnapshots)):state.competitionSnapshots||[];
     currentTeam=state.onTheBoard||null;
     reconcileState();
@@ -4529,18 +4527,17 @@ function cvApplySnapshot(snapshot){
     renderAll();
 
     if(state.liveSpin&&!state.onTheBoard){
-      showScreen("wheelScreen");
+      showScreenLocal("wheelScreen");
       cvPlayRemoteSpin(state.liveSpin);
     }else{
       if(cvRemoteSpinId)cvStopRemoteSpin();
       if(state.onTheBoard&&state.available.includes(state.onTheBoard)){
         showReveal(state.onTheBoard);
-      }else if(state.lastScreen==="barrelScreen"&&!state.available.length&&state.passed.length){
-        openBarrelMode();
-      }else{
-        const target=document.getElementById(state.lastScreen)?state.lastScreen:"wheelScreen";
-        if(target==="revealScreen")showScreen("wheelScreen");else showScreen(target);
+      }else if(!state.available.length&&state.passed.length&&document.querySelector(".screen.active")?.id==="barrelScreen"){
+        renderBarrel();
       }
+      // Ordinary navigation is deliberately local to each browser.
+      // Shared room updates change data, not the page another person is viewing.
     }
   }finally{
     cvSyncApplying=false;
