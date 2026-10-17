@@ -1,0 +1,117 @@
+name: CourtVision Mobile Visual QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "public/index.html"
+      - ".github/workflows/mobile-visual-qa.yml"
+  workflow_dispatch:
+
+jobs:
+  mobile-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Selenium
+        run: pip install selenium
+
+      - name: Start local server
+        run: |
+          python -m http.server 8000 --directory public > /tmp/cv-http.log 2>&1 &
+          sleep 2
+
+      - name: Run iPhone viewport checks
+        run: |
+          cat > /tmp/mobile_qa.py <<'PY'
+          import json, time
+          from selenium import webdriver
+          from selenium.webdriver.chrome.options import Options
+
+          opts = Options()
+          opts.add_argument("--headless=new")
+          opts.add_argument("--no-sandbox")
+          opts.add_argument("--disable-dev-shm-usage")
+          opts.add_argument("--hide-scrollbars")
+          opts.add_experimental_option("mobileEmulation", {
+              "deviceMetrics": {"width": 390, "height": 844, "pixelRatio": 3},
+              "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1"
+          })
+
+          driver = webdriver.Chrome(options=opts)
+          driver.set_page_load_timeout(30)
+
+          def rect(selector):
+              return driver.execute_script("""
+                const e=document.querySelector(arguments[0]);
+                if(!e)return null;
+                const r=e.getBoundingClientRect();
+                return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom,
+                        scrollWidth:e.scrollWidth,clientWidth:e.clientWidth};
+              """, selector)
+
+          try:
+              driver.get("http://127.0.0.1:8000/?room=mobileqa")
+              time.sleep(2)
+
+              driver.execute_script("showReveal('New Orleans Pelicans')")
+              time.sleep(1)
+              reveal = {
+                  "viewport": driver.execute_script("return {w:innerWidth,h:innerHeight,dpr:devicePixelRatio,scrollWidth:document.documentElement.scrollWidth};"),
+                  "shell": rect(".shell"),
+                  "sidebar": rect(".sidebar"),
+                  "stage": rect(".stage"),
+                  "screen": rect("#revealScreen"),
+                  "grid": rect("#revealScreen .reveal-grid"),
+                  "teamMain": rect("#revealScreen .team-main"),
+                  "masthead": rect("#revealScreen .team-masthead"),
+                  "metrics": rect("#revealScreen .masthead-metrics"),
+                  "startingFive": rect("#revealScreen .starting-five-panel"),
+                  "rightRail": rect("#revealScreen .right-rail"),
+              }
+              print("REVEAL_METRICS="+json.dumps(reveal, sort_keys=True))
+              driver.save_screenshot("/tmp/reveal-390x844.png")
+
+              driver.execute_script("showScreen('wheelScreen')")
+              time.sleep(1)
+              wheel = {
+                  "viewport": driver.execute_script("return {w:innerWidth,h:innerHeight,scrollWidth:document.documentElement.scrollWidth};"),
+                  "screen": rect("#wheelScreen"),
+                  "wheelWrap": rect("#wheelScreen .wheel-wrap"),
+                  "canvas": rect("#wheel"),
+                  "spin": rect("#spinBtn"),
+              }
+              print("WHEEL_METRICS="+json.dumps(wheel, sort_keys=True))
+              driver.save_screenshot("/tmp/wheel-390x844.png")
+
+              if reveal["viewport"]["scrollWidth"] > reveal["viewport"]["w"] + 2:
+                  raise SystemExit("Horizontal overflow remains on reveal")
+              if reveal["grid"] and reveal["grid"]["width"] > reveal["viewport"]["w"] + 2:
+                  raise SystemExit("Reveal grid wider than viewport")
+              if reveal["teamMain"] and reveal["teamMain"]["width"] > reveal["viewport"]["w"] + 2:
+                  raise SystemExit("Team main wider than viewport")
+              if wheel["viewport"]["scrollWidth"] > wheel["viewport"]["w"] + 2:
+                  raise SystemExit("Horizontal overflow remains on wheel")
+              if wheel["wheelWrap"] and wheel["wheelWrap"]["width"] > wheel["viewport"]["w"]:
+                  raise SystemExit("Wheel wider than viewport")
+          finally:
+              driver.quit()
+          PY
+          python /tmp/mobile_qa.py
+
+      - name: Upload phone screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: courtvision-mobile-qa
+          path: |
+            /tmp/reveal-390x844.png
+            /tmp/wheel-390x844.png
+          if-no-files-found: warn
