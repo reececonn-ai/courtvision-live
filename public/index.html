@@ -3739,9 +3739,7 @@ body.tv-mode .wheel-screen .wheel-wrap{
 
     <div class="side-actions">
       <button class="btn secondary" onclick="openSettings()">Settings</button>
-      <button class="btn secondary" onclick="toggleFullscreen()">Fullscreen</button>
       <button class="btn secondary" id="layoutBtn" onclick="toggleLayout()" title="Switch between the Readable layout and the Classic v1.4.3 layout">Use Classic</button>
-      <button class="btn secondary" id="displayModeBtn" onclick="toggleDisplayMode()">65&quot; TV Mode</button>
       <button class="btn secondary" id="zoomBtn" onclick="cycleZoom()">Text: M</button>
       <button class="btn secondary" onclick="openDraftBoard()">Draft Board</button>
       <button class="btn secondary" onclick="openCompetitionBoard()">Competition</button>
@@ -5135,27 +5133,12 @@ function assignSting(){[261,329,392,523].forEach((f,i)=>tone(f,.24,"triangle",.0
 function passSting(){tone(120,.55,"sawtooth",.035);tone(80,.7,"square",.018,.06)}
 function toggleSound(){state.sound=!state.sound;saveState();updateSoundButton();if(state.sound){ensureAudio();hypeSting()}}
 function updateSoundButton(){document.getElementById("soundBtn").textContent=state.sound?"🔊 Hype Sound: ON":"🔇 Hype Sound: OFF"}
-function toggleFullscreen(){
-  if(!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.();
-}
-/* ---- Layout (v1.4.4): "readable" scales from the viewport; "classic" is the v1.4.3 desktop / 65" TV layout.
-        Readable never combines with .tv-mode — the saved TV preference is kept and re-applied if you roll back. ---- */
-let displayModePref="desktop";
+/* Laptop / phone only. Legacy TV classes are explicitly disabled on startup. */
 function syncBodyModes(){
-  const readable=document.body.classList.contains("readable");
-  const tv=!readable&&displayModePref==="tv";
-  document.body.classList.toggle("tv-mode",tv);
-  document.body.classList.toggle("room-65",tv);
-  const btn=document.getElementById("displayModeBtn");
-  if(btn) btn.textContent=tv?"Desktop Mode":"65\" TV Mode";
+  document.body.classList.remove("tv-mode","room-65");
+  try{localStorage.removeItem("nbaDraftDisplayMode")}catch(_){}
   setTimeout(()=>{drawWheel(); if(currentTeam&&document.getElementById("revealScreen")?.classList.contains("active"))renderTeamIntel(currentTeam)},30);
 }
-function applyDisplayMode(mode){
-  displayModePref=mode==="tv"?"tv":"desktop";
-  localStorage.setItem("nbaDraftDisplayMode",displayModePref);
-  syncBodyModes();
-}
-function toggleDisplayMode(){applyDisplayMode(displayModePref==="tv"?"desktop":"tv")}
 function applyLayout(mode){
   const readable=mode!=="classic";
   document.body.classList.toggle("readable",readable);
@@ -5177,9 +5160,8 @@ function applyZoom(z){
 function cycleZoom(){const cur=localStorage.getItem("nbaDraftZoom")||"m";applyZoom(cur==="m"?"l":cur==="l"?"xl":"m")}
 function initDisplayMode(){
   document.body.dataset.screen=document.querySelector(".screen.active")?.id||"homeScreen";
-  const saved=localStorage.getItem("nbaDraftDisplayMode");
-  displayModePref=(saved==="tv"||saved==="desktop")?saved:(window.innerWidth>=2200?"tv":"desktop");
-  localStorage.setItem("nbaDraftDisplayMode",displayModePref);
+  document.body.classList.remove("tv-mode","room-65");
+  try{localStorage.removeItem("nbaDraftDisplayMode")}catch(_){}
   applyZoom(localStorage.getItem("nbaDraftZoom")||"m");
   applyLayout(localStorage.getItem("nbaDraftLayout")||"readable");
 }
