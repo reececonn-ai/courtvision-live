@@ -710,12 +710,12 @@
     }));
 
     if(expectation){
-      expectation.innerHTML=[...teamValueRows].sort((a,b)=>b.delta-a.delta).map((t,i)=>
-        '<div class="nerd-list-row team-accent '+(t.delta<0?'negative':'')+'" style="'+teamStyle(t.name)+'">'+
-          '<div><strong>'+esc(shortTeam(t.name))+' · '+esc(t.owner)+'</strong><small>'+t.pace.toFixed(1)+' win pace vs '+t.line.toFixed(1)+' preseason line</small></div>'+
-          '<b>'+(t.delta>=0?'+':'')+t.delta.toFixed(1)+'</b>'+
-        '</div>'
-      ).join("");
+      const overs=[...teamValueRows].sort((a,b)=>b.delta-a.delta).slice(0,3);
+      const unders=[...teamValueRows].sort((a,b)=>a.delta-b.delta).slice(0,3);
+      expectation.innerHTML=[
+        ...overs.map((t,i)=>'<div class="nerd-list-row team-accent compact" style="'+teamStyle(t.name)+'"><div><strong>OVER #'+(i+1)+' · '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · '+t.pace.toFixed(1)+' pace vs '+t.line.toFixed(1)+'</small></div><b>+'+t.delta.toFixed(1)+'</b></div>'),
+        ...unders.map((t,i)=>'<div class="nerd-list-row team-accent compact negative" style="'+teamStyle(t.name)+'"><div><strong>UNDER #'+(i+1)+' · '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · '+t.pace.toFixed(1)+' pace vs '+t.line.toFixed(1)+'</small></div><b>'+t.delta.toFixed(1)+'</b></div>')
+      ].join("");
     }
 
     if(pickValue){
@@ -791,6 +791,19 @@
     if(odd){
       const bits=competitionTidbits(rows,games,recent).filter(x=>!["LEADER","TODAY"].includes(x.tag)).slice(0,8);
       odd.innerHTML=bits.length?bits.map(x=>'<div class="nerd-oddity"><label>'+esc(x.tag)+'</label><p>'+esc(x.text)+'</p></div>').join(""):'<div class="comp-empty">Not enough chaos yet.</div>';
+    }
+
+    const nerdTicker=[];
+    const bestValue=[...teamValueRows].sort((a,b)=>b.delta-a.delta)[0];
+    const worstValue=[...teamValueRows].sort((a,b)=>a.delta-b.delta)[0];
+    const rivalryTop=ownerHeadToHead(recent,180).sort((a,b)=>b.games-a.games)[0];
+    if(bestValue)nerdTicker.push({tag:"BIGGEST OVER",text:shortTeam(bestValue.name)+" ("+bestValue.owner+") is "+(bestValue.delta>=0?"+":"")+bestValue.delta.toFixed(1)+" wins vs preseason pace.",kind:"draft"});
+    if(worstValue)nerdTicker.push({tag:"BIGGEST UNDER",text:shortTeam(worstValue.name)+" ("+worstValue.owner+") is "+worstValue.delta.toFixed(1)+" wins vs preseason pace.",kind:"alert"});
+    if(rivalryTop)nerdTicker.push({tag:"RIVALRY",text:rivalryTop.a+" vs "+rivalryTop.b+" is "+rivalryTop.aw+"-"+rivalryTop.bw+" across "+rivalryTop.games+" recent direct games.",kind:"team"});
+    rows.slice(0,3).forEach((r,i)=>nerdTicker.push({tag:"TITLE #"+(i+1),text:r.name+" "+r.probability.toFixed(1)+"% title chance · "+r.w+"-"+r.l+" actual.",kind:"draft"}));
+    window.cvNerdTicker=nerdTicker;
+    if(document.querySelector(".screen.active")?.id==="statsForNerdsScreen"){
+      setTicker(nerdTicker.length?nerdTicker:[{tag:"NERD ALERT",text:"Deep cuts, rivalry records and unnecessary specificity.",kind:"draft"}],"STATS FOR NERDS");
     }
 
     const history=$("nerdHistory");
@@ -933,7 +946,7 @@
       return;
     }
     if(id==="statsForNerdsScreen"){
-      setTicker([{tag:"NERD ALERT",text:"Deep cuts, rivalry records and unnecessary specificity.",kind:"draft"}],"STATS");
+      setTicker(window.cvNerdTicker?.length?window.cvNerdTicker:[{tag:"NERD ALERT",text:"Deep cuts, rivalry records and unnecessary specificity.",kind:"draft"}],"STATS FOR NERDS");
       return;
     }
     return baseTicker(id);
