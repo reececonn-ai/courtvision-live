@@ -424,98 +424,6 @@ body[data-screen="competitionScreen"] .scanlines{
   border:1px solid var(--comp-line);
   background:#040a12;
 }
-.comp-games{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:5px;
-  padding:6px;
-}
-.comp-game{
-  position:relative;
-  min-width:0;
-  min-height:128px;
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 78px minmax(0,1fr);
-  grid-template-areas:
-    "away meta home"
-    "away status home";
-  align-items:center;
-  gap:7px;
-  padding:12px;
-  overflow:hidden;
-  background:
-    linear-gradient(120deg,#07111f 0 48%,#08182c 48% 52%,#07111f 52% 100%);
-  border-left:5px solid #395878;
-}
-.comp-game.in{
-  border-left-color:var(--comp-red);
-  box-shadow:inset 0 0 0 1px rgba(225,39,70,.18);
-}
-.comp-game.final{border-left-color:var(--comp-blue)}
-.comp-game.rivalry:before{
-  content:"OWNER VS OWNER";
-  position:absolute;
-  top:5px;
-  left:50%;
-  transform:translateX(-50%);
-  color:var(--comp-gold);
-  font:1000 6px Arial,Helvetica,sans-serif;
-  letter-spacing:.12em;
-}
-.comp-game-side{
-  min-width:0;
-  display:grid;
-  grid-template-columns:58px minmax(0,1fr);
-  grid-template-rows:auto auto auto;
-  gap:1px 8px;
-  align-items:center;
-}
-.comp-game-side.away{grid-area:away}
-.comp-game-side.home{grid-area:home}
-.comp-game-side img{
-  grid-row:1/span 3;
-  width:54px;
-  height:54px;
-  object-fit:contain;
-}
-.comp-game-side strong{
-  min-width:0;
-  color:#fff;
-  font-family:Impact,"Arial Narrow",Arial,sans-serif;
-  font-size:22px;
-  font-weight:400;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.comp-game-owner{
-  color:var(--comp-blue);
-  font:1000 8px Arial,Helvetica,sans-serif;
-  text-transform:uppercase;
-}
-.comp-game-side b{
-  color:#fff;
-  font-family:Impact,"Arial Narrow",Arial,sans-serif;
-  font-size:27px;
-  font-weight:400;
-}
-.comp-game-meta{
-  grid-area:meta;
-  align-self:end;
-  text-align:center;
-  color:#7890ae;
-  font:900 7px Arial,Helvetica,sans-serif;
-  letter-spacing:.06em;
-}
-.comp-game-status{
-  grid-area:status;
-  align-self:start;
-  text-align:center;
-  color:#fff;
-  font-family:Impact,"Arial Narrow",Arial,sans-serif;
-  font-size:15px;
-}
-.comp-game.in .comp-game-status{color:#ff627b}
 .comp-vs{display:none}
 
 /* Stories */
@@ -712,7 +620,6 @@ body .broadcast-ticker .ticker-track{
   .comp-lead-grid{grid-template-columns:1fr minmax(360px,.62fr)}
   .comp-daily-grid{grid-template-columns:1fr}
   .comp-leaderboard{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .comp-games{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 /* Phone */
@@ -866,29 +773,6 @@ body .broadcast-ticker .ticker-track{
     margin-top:6px;
   }
   .comp-stories-panel{margin-top:6px}
-  .comp-games{
-    grid-template-columns:1fr;
-    gap:4px;
-    padding:4px;
-  }
-  .comp-game{
-    min-height:106px;
-    grid-template-columns:minmax(0,1fr) 62px minmax(0,1fr);
-    padding:8px 6px;
-  }
-  .comp-game-side{
-    grid-template-columns:42px minmax(0,1fr);
-    gap:1px 5px;
-  }
-  .comp-game-side img{
-    width:40px;
-    height:40px;
-  }
-  .comp-game-side strong{font-size:17px}
-  .comp-game-owner{font-size:6px}
-  .comp-game-side b{font-size:21px}
-  .comp-game-meta{font-size:6px}
-  .comp-game-status{font-size:13px}
 
   .comp-tidbit{
     grid-template-columns:64px minmax(0,1fr);
@@ -942,7 +826,6 @@ body .broadcast-ticker .ticker-track{
   .comp-spotlight-name{font-size:48px}
   .comp-spot-team{width:49px;height:49px}
   .comp-spot-team img{width:34px;height:34px}
-  .comp-game-side strong{font-size:15px}
 }
 
 
@@ -962,49 +845,11 @@ body .broadcast-ticker .ticker-track{
   color:#d5e0ee!important;
 }
 
-.comp-updated,
-.comp-section-head small,
-.comp-race-name small,
-.comp-game-meta,
-.comp-card-meta,
-.comp-team-chip b,
-.comp-big-prob-label,
-.comp-big-proj small,
-.comp-spotlight-recordline span{
-  color:#afc1d8!important;
-}
-
-.comp-eyebrow,
-.comp-section-kicker,
-.comp-spotlight-label,
-.comp-game-owner{
-  text-shadow:0 1px 2px #000;
-}
-
 /* Give text-heavy surfaces a more solid broadcast-card backing. */
-.comp-spotlight,
-.comp-race-panel,
-.comp-slate-panel,
-.comp-stories-panel,
-.comp-table-panel,
-.comp-player-card,
-.comp-game,
-.comp-tidbit,
-.comp-team-chip{
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);
-}
 
 .comp-spotlight{
   background:
     linear-gradient(100deg,rgba(3,9,18,.995) 0 55%,rgba(7,25,48,.98) 55% 100%)!important;
-}
-
-.comp-tidbit,
-.comp-player-card,
-.comp-race-row,
-.comp-game-side,
-.comp-team-chip{
-  text-shadow:0 1px 2px rgba(0,0,0,.95);
 }
 
 /* Desktop / TV small text was too fine. */
@@ -1022,8 +867,6 @@ body .broadcast-ticker .ticker-track{
 .comp-big-proj small{font-size:9px!important}
 .comp-race-name{font-size:13px!important}
 .comp-race-name small{font-size:9px!important}
-.comp-game-owner{font-size:10px!important}
-.comp-game-meta{font-size:9px!important}
 .comp-tidbit label{font-size:9px!important}
 .comp-tidbit p{font-size:11px!important;line-height:1.45!important}
 .comp-card-meta{font-size:9px!important}
@@ -1100,8 +943,6 @@ body .broadcast-ticker .ticker-track{
   .comp-big-prob-label{font-size:8px!important}
   .comp-race-name{font-size:11px!important}
   .comp-race-name small{font-size:8px!important}
-  .comp-game-owner{font-size:8px!important}
-  .comp-game-meta{font-size:8px!important}
   .comp-tidbit label{font-size:8px!important}
   .comp-tidbit p{font-size:10px!important}
   .comp-card-meta{font-size:8px!important}
@@ -1133,25 +974,6 @@ body .broadcast-ticker .ticker-track{
    ========================================================= */
 
 /* Primary reading surfaces: mostly solid. */
-.comp-spotlight,
-.comp-race-panel,
-.comp-slate-panel,
-.comp-stories-panel,
-.comp-table-panel,
-.comp-player-card,
-.comp-game,
-.comp-tidbit,
-#revealScreen .team-masthead,
-#revealScreen .starting-five-panel,
-#revealScreen .profile-stage,
-#revealScreen .decision-stage,
-#revealScreen .franchise-resume,
-#revealScreen .glance-panel,
-#revealScreen .bid-panel{
-  background:rgba(5,12,22,.91)!important;
-  backdrop-filter:blur(4px);
-  -webkit-backdrop-filter:blur(4px);
-}
 
 /* Secondary cards: still show a little depth/background. */
 .comp-race-row,
@@ -1181,20 +1003,6 @@ body .broadcast-ticker .ticker-track{
   border-color:rgba(122,157,201,.34)!important;
 }
 
-.comp-player-card,
-.comp-game,
-.comp-tidbit,
-.comp-race-row,
-.comp-team-chip,
-#revealScreen .decision-card,
-#revealScreen .intel-box,
-#revealScreen .resume-cell,
-#revealScreen .glance-cell{
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.025),
-    0 4px 12px rgba(0,0,0,.16);
-}
-
 /* Slightly darken the graphic background itself, but don't bury team colour. */
 #revealScreen .team-bg:after{
   background:
@@ -1221,23 +1029,6 @@ body .broadcast-ticker .ticker-track{
 
 /* Mobile: slightly more solid to compensate for the smaller type. */
 @media(max-width:820px){
-  .comp-spotlight,
-  .comp-race-panel,
-  .comp-slate-panel,
-  .comp-stories-panel,
-  .comp-table-panel,
-  .comp-player-card,
-  .comp-game,
-  .comp-tidbit,
-  #revealScreen .team-masthead,
-  #revealScreen .starting-five-panel,
-  #revealScreen .profile-stage,
-  #revealScreen .decision-stage,
-  #revealScreen .franchise-resume,
-  #revealScreen .glance-panel,
-  #revealScreen .bid-panel{
-    background:rgba(5,12,22,.94)!important;
-  }
 
   .comp-race-row,
   .comp-team-chip,
@@ -1257,18 +1048,6 @@ body .broadcast-ticker .ticker-track{
    ========================================================= */
 
 /* Competition board: near-solid panels so copy wins over decoration. */
-.comp-spotlight,
-.comp-race-panel,
-.comp-slate-panel,
-.comp-stories-panel,
-.comp-table-panel,
-.comp-player-card,
-.comp-game,
-.comp-tidbit{
-  background:rgba(4,10,18,.98)!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-}
 
 .comp-race-row,
 .comp-team-chip{
@@ -1287,28 +1066,6 @@ body[data-screen="competitionScreen"] .scanlines{
 }
 
 /* Stronger text colours. */
-.comp-data-status,
-.comp-spotlight-copy,
-.comp-tidbit p,
-.comp-method,
-.comp-empty,
-.comp-section-head small,
-.comp-race-name small,
-.comp-game-meta,
-.comp-card-meta,
-.comp-team-chip b,
-.comp-big-prob-label,
-.comp-big-proj small,
-.comp-spotlight-recordline span{
-  color:#e4edf8!important;
-}
-
-.comp-eyebrow,
-.comp-section-kicker,
-.comp-spotlight-label,
-.comp-game-owner{
-  color:#7fd0ff!important;
-}
 
 /* Obvious desktop size increase. */
 .comp-eyebrow{font-size:13px!important}
@@ -1328,15 +1085,6 @@ body[data-screen="competitionScreen"] .scanlines{
 .comp-race-name small{font-size:10px!important}
 .comp-race-row{min-height:50px!important}
 .comp-race-pct{font-size:31px!important}
-
-.comp-game{min-height:150px!important;padding:16px!important}
-.comp-game-side{grid-template-columns:66px minmax(0,1fr)!important;gap:2px 10px!important}
-.comp-game-side img{width:60px!important;height:60px!important}
-.comp-game-side strong{font-size:26px!important}
-.comp-game-owner{font-size:11px!important}
-.comp-game-side b{font-size:31px!important}
-.comp-game-meta{font-size:10px!important}
-.comp-game-status{font-size:18px!important}
 
 .comp-tidbit{min-height:84px!important;grid-template-columns:86px minmax(0,1fr)!important;padding:13px!important}
 .comp-tidbit:first-child{min-height:128px!important}
@@ -1408,8 +1156,6 @@ body[data-screen="competitionScreen"] .scanlines{
   .comp-spotlight-copy{font-size:12px!important}
   .comp-race-name{font-size:12px!important}
   .comp-race-name small{font-size:9px!important}
-  .comp-game-owner{font-size:9px!important}
-  .comp-game-meta{font-size:9px!important}
   .comp-tidbit label{font-size:9px!important}
   .comp-tidbit p{font-size:11px!important}
   .comp-card-meta{font-size:9px!important}
