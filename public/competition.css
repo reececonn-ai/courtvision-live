@@ -944,3 +944,185 @@ body .broadcast-ticker .ticker-track{
   .comp-spot-team img{width:34px;height:34px}
   .comp-game-side strong{font-size:15px}
 }
+
+
+/* =========================================================
+   READABILITY PASS — stronger contrast and larger support text
+   ========================================================= */
+:root{
+  --comp-muted:#b8c8dc;
+}
+
+/* Competition board: lift all secondary copy out of the background. */
+.comp-data-status,
+.comp-spotlight-copy,
+.comp-tidbit p,
+.comp-method,
+.comp-empty{
+  color:#d5e0ee!important;
+}
+
+.comp-updated,
+.comp-section-head small,
+.comp-race-name small,
+.comp-game-meta,
+.comp-card-meta,
+.comp-team-chip b,
+.comp-big-prob-label,
+.comp-big-proj small,
+.comp-spotlight-recordline span{
+  color:#afc1d8!important;
+}
+
+.comp-eyebrow,
+.comp-section-kicker,
+.comp-spotlight-label,
+.comp-game-owner{
+  text-shadow:0 1px 2px #000;
+}
+
+/* Give text-heavy surfaces a more solid broadcast-card backing. */
+.comp-spotlight,
+.comp-race-panel,
+.comp-slate-panel,
+.comp-stories-panel,
+.comp-table-panel,
+.comp-player-card,
+.comp-game,
+.comp-tidbit,
+.comp-team-chip{
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);
+}
+
+.comp-spotlight{
+  background:
+    linear-gradient(100deg,rgba(3,9,18,.995) 0 55%,rgba(7,25,48,.98) 55% 100%)!important;
+}
+
+.comp-tidbit,
+.comp-player-card,
+.comp-race-row,
+.comp-game-side,
+.comp-team-chip{
+  text-shadow:0 1px 2px rgba(0,0,0,.95);
+}
+
+/* Desktop / TV small text was too fine. */
+.comp-eyebrow{font-size:12px!important}
+.comp-mode-badge{font-size:10px!important}
+.comp-data-status{font-size:12px!important;line-height:1.5!important}
+.comp-updated{font-size:10px!important}
+.comp-icon-btn{font-size:10px!important}
+.comp-section-kicker{font-size:9px!important}
+.comp-section-head small{font-size:9px!important}
+.comp-spotlight-label{font-size:11px!important}
+.comp-spotlight-recordline span{font-size:11px!important}
+.comp-spotlight-copy{font-size:13px!important;line-height:1.55!important}
+.comp-big-prob-label{font-size:10px!important}
+.comp-big-proj small{font-size:9px!important}
+.comp-race-name{font-size:13px!important}
+.comp-race-name small{font-size:9px!important}
+.comp-game-owner{font-size:10px!important}
+.comp-game-meta{font-size:9px!important}
+.comp-tidbit label{font-size:9px!important}
+.comp-tidbit p{font-size:11px!important;line-height:1.45!important}
+.comp-card-meta{font-size:9px!important}
+.comp-team-chip span{font-size:9px!important}
+.comp-team-chip b{font-size:8px!important}
+.comp-method{font-size:10px!important;line-height:1.5!important}
+.comp-empty{font-size:11px!important}
+
+/* Reveal / team profile: improve secondary text contrast over graphics. */
+#revealScreen .team-bg:after{
+  background:
+    linear-gradient(90deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.58) 48%,rgba(0,0,0,.42) 100%),
+    linear-gradient(180deg,rgba(0,0,0,.32),rgba(0,0,0,.18) 40%,rgba(0,0,0,.42) 100%)!important;
+}
+#revealScreen .team-masthead,
+#revealScreen .starting-five-panel,
+#revealScreen .intel-strip,
+#revealScreen .profile-stage,
+#revealScreen .decision-stage,
+#revealScreen .franchise-resume,
+#revealScreen .glance-panel,
+#revealScreen .bid-panel{
+  box-shadow:0 8px 22px rgba(0,0,0,.28);
+}
+
+#revealScreen .masthead-kicker,
+#revealScreen .masthead-metric label,
+#revealScreen .masthead-metric small,
+#revealScreen .intel-box label,
+#revealScreen .intel-sub,
+#revealScreen .resume-cell label,
+#revealScreen .resume-cell small,
+#revealScreen .resume-head span,
+#revealScreen .glance-head span,
+#revealScreen .glance-cell label,
+#revealScreen .glance-cell small,
+#revealScreen .decision-card label,
+#revealScreen .decision-head p,
+#revealScreen .decision-footer span,
+#revealScreen .move-panel label,
+#revealScreen .changed-panel label{
+  color:#bfd0e5!important;
+}
+
+#revealScreen .masthead-kicker,
+#revealScreen .masthead-metric label,
+#revealScreen .intel-box label,
+#revealScreen .resume-cell label,
+#revealScreen .glance-cell label,
+#revealScreen .decision-card label{
+  font-size:9px!important;
+}
+#revealScreen .masthead-sub{font-size:12px!important}
+#revealScreen .masthead-metric small,
+#revealScreen .intel-sub,
+#revealScreen .resume-cell small,
+#revealScreen .glance-cell small{font-size:10px!important}
+#revealScreen .decision-card p,
+#revealScreen .changed-panel p{font-size:12px!important;line-height:1.5!important}
+#revealScreen .depth-list,
+#revealScreen .move-col ul{font-size:11px!important;line-height:1.55!important}
+
+/* Phone: preserve hierarchy but stop support copy dropping to 6–7px. */
+@media(max-width:820px){
+  .comp-eyebrow{font-size:9px!important}
+  .comp-mode-badge{font-size:8px!important}
+  .comp-data-status{font-size:10px!important}
+  .comp-updated{font-size:9px!important}
+  .comp-icon-btn{font-size:9px!important}
+  .comp-section-kicker{font-size:8px!important}
+  .comp-section-head small{font-size:8px!important}
+  .comp-spotlight-recordline span{font-size:9px!important}
+  .comp-spotlight-copy{font-size:11px!important;line-height:1.5!important}
+  .comp-big-prob-label{font-size:8px!important}
+  .comp-race-name{font-size:11px!important}
+  .comp-race-name small{font-size:8px!important}
+  .comp-game-owner{font-size:8px!important}
+  .comp-game-meta{font-size:8px!important}
+  .comp-tidbit label{font-size:8px!important}
+  .comp-tidbit p{font-size:10px!important}
+  .comp-card-meta{font-size:8px!important}
+  .comp-team-chip span{font-size:8px!important}
+  .comp-team-chip b{font-size:8px!important}
+  .comp-method{font-size:9px!important}
+  .comp-empty{font-size:10px!important}
+
+  #revealScreen .masthead-kicker,
+  #revealScreen .masthead-metric label,
+  #revealScreen .intel-box label,
+  #revealScreen .resume-cell label,
+  #revealScreen .glance-cell label,
+  #revealScreen .decision-card label{
+    font-size:8px!important;
+  }
+  #revealScreen .masthead-sub{font-size:10px!important}
+  #revealScreen .masthead-metric small,
+  #revealScreen .intel-sub,
+  #revealScreen .resume-cell small,
+  #revealScreen .glance-cell small{font-size:9px!important}
+  #revealScreen .decision-card p,
+  #revealScreen .changed-panel p{font-size:11px!important}
+}
