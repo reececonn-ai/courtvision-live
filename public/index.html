@@ -6182,6 +6182,7 @@ function renderDecisionView(name){
 }
 let revealAutoTimer=null;
 let revealFadeTimer=null;
+let revealNextMode="decision";
 const REVEAL_AUTO_MS=10000;
 const REVEAL_FADE_MS=250;
 
@@ -6199,9 +6200,9 @@ function scheduleRevealAutoSlide(){
   revealAutoTimer=setTimeout(()=>{
     revealAutoTimer=null;
     if(document.querySelector(".screen.active")?.id!=="revealScreen"||!currentTeam||state.paused||teamPreviewActive)return;
-    const main=document.querySelector("#revealScreen .team-main");
-    if(main?.classList.contains("decision-mode"))showProfileView();
-    else showDecisionView();
+    const mode=revealNextMode;
+    revealNextMode=mode==="decision"?"profile":"decision";
+    switchRevealMode(mode,true,true);
   },REVEAL_AUTO_MS);
 }
 function applyRevealMode(mode){
@@ -6235,8 +6236,14 @@ function switchRevealMode(mode,auto=true,animate=true){
     if(auto)scheduleRevealAutoSlide();
   },REVEAL_FADE_MS);
 }
-function showDecisionView(auto=true,animate=true){switchRevealMode("decision",auto,animate)}
-function showProfileView(auto=true,animate=true){switchRevealMode("profile",auto,animate)}
+function showDecisionView(auto=true,animate=true){
+  revealNextMode="profile";
+  switchRevealMode("decision",auto,animate);
+}
+function showProfileView(auto=true,animate=true){
+  revealNextMode="decision";
+  switchRevealMode("profile",auto,animate);
+}
 let teamPreviewActive=false,teamPreviewPreviousCurrent=null,teamPreviewReturnScreen="draftBoardScreen";
 
 function showReveal(name,options={}){
@@ -6257,6 +6264,9 @@ function showReveal(name,options={}){
     state.onTheBoard=name;
     persist();
   }
+
+  applyRevealMode("profile");
+  revealNextMode="decision";
 
   const bidInput=document.getElementById("bidAmount");if(bidInput)bidInput.value=1;
   const t=teamByName(name),content=state.teamContent[name]||{};
