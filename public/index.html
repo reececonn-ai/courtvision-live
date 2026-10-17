@@ -3588,6 +3588,13 @@ body.readable.paused:after{font-size:clamp(80px,9vw,300px)}
         <div><div class="kicker">Main Draft Wheel</div><h2>Spin the league</h2></div>
         <button class="btn secondary" onclick="showScreen('homeScreen')">Back</button>
       </div>
+      <div class="wheel-team-board" id="wheelTeamBoardWrap">
+        <div class="wheel-team-board-head">
+          <span>DRAFT BOARD</span>
+          <small>PRESS A TEAM TO SCOUT</small>
+        </div>
+        <div class="wheel-team-grid" id="wheelTeamGrid"></div>
+      </div>
       <div class="wheel-wrap">
         <div class="wheel-halo"></div>
         <canvas id="wheel" width="1000" height="1000"></canvas>
@@ -5317,7 +5324,7 @@ function showDecisionView(){
 function showProfileView(){
   document.querySelector("#revealScreen .team-main")?.classList.remove("decision-mode");
 }
-let teamPreviewActive=false,teamPreviewPreviousCurrent=null;
+let teamPreviewActive=false,teamPreviewPreviousCurrent=null,teamPreviewReturnScreen="draftBoardScreen";
 
 function showReveal(name,options={}){
   const preview=!!options.preview;
@@ -5373,11 +5380,21 @@ function showReveal(name,options={}){
 
 function previewTeamFromBoard(name){
   if(!teamByName(name))return;
+  teamPreviewReturnScreen="draftBoardScreen";
+  showReveal(name,{preview:true});
+}
+
+function previewTeamFromWheel(name){
+  if(!teamByName(name))return;
+  teamPreviewReturnScreen="wheelScreen";
   showReveal(name,{preview:true});
 }
 
 function closeTeamPreview(){
-  if(!teamPreviewActive)return openDraftBoard();
+  if(!teamPreviewActive){
+    if(teamPreviewReturnScreen==="wheelScreen")return showScreenLocal("wheelScreen");
+    return openDraftBoard();
+  }
   teamPreviewActive=false;
   document.getElementById("revealScreen")?.classList.remove("team-preview-mode");
   currentTeam=state.onTheBoard&&state.available.includes(state.onTheBoard)
@@ -5385,7 +5402,10 @@ function closeTeamPreview(){
     :(teamPreviewPreviousCurrent&&state.available.includes(teamPreviewPreviousCurrent)?teamPreviewPreviousCurrent:null);
   teamPreviewPreviousCurrent=null;
   renderDraftBoard();
-  showScreenLocal("draftBoardScreen");
+  renderWheelTeamBoard();
+  const target=teamPreviewReturnScreen==="wheelScreen"?"wheelScreen":"draftBoardScreen";
+  teamPreviewReturnScreen="draftBoardScreen";
+  showScreenLocal(target);
 }
 
 function assignCurrent(){
