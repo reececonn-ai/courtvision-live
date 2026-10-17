@@ -162,10 +162,11 @@
     return null;
   }
 
-  async function fetchRecords(){
+  async function fetchRecords(force=false){
     try{
       const direct="https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?season="+SEASON_YEAR;
-      const data=await fetchNbaJson("/api/nba/standings?season="+SEASON_YEAR,direct,9000);
+      const local="/api/nba/standings?season="+SEASON_YEAR+(force?"&fresh=1":"");
+      const data=await fetchNbaJson(local,direct,9000);
       const out=parseStandings(data);
       if(Object.keys(out).length>=24)return out;
     }catch(e){}
@@ -904,7 +905,7 @@
     const demo=isTestDraft();
     if(demo)return demoCompetitionData();
     if(!force&&cache.records&&Date.now()-cache.at<CACHE_MS)return cache;
-    const [records,score]=await Promise.all([fetchRecords(),fetchScoreboards()]);
+    const [records,score]=await Promise.all([fetchRecords(force),fetchScoreboards()]);
     cache={at:Date.now(),records,games:score.games,recent:score.recent,demo:false};
     return cache;
   }
