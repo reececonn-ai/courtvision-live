@@ -525,6 +525,146 @@
     window.cvCompetitionTicker=bits.map(x=>({tag:x.tag,text:x.text,kind:x.tag==="COLD"?"alert":"draft"}));
   }
 
+
+  function saveCompetitionSnapshot(rows,demo=false){
+    if(!Array.isArray(state.competitionSnapshots))state.competitionSnapshots=[];
+    const key=sydneyKey(new Date());
+    const snapshot={
+      key,
+      at:new Date().toISOString(),
+      demo:!!demo,
+      rows:rows.map((r,i)=>({name:r.name,rank:i+1,w:r.w,l:r.l,projected:+r.projected.toFixed(2),probability:+r.probability.toFixed(2)}))
+    };
+    const idx=state.competitionSnapshots.findIndex(x=>x.key===key&&!!x.demo===!!demo);
+    if(idx>=0)state.competitionSnapshots[idx]=snapshot;else state.competitionSnapshots.push(snapshot);
+    state.competitionSnapshots=state.competitionSnapshots.slice(-120);
+    if(typeof persist==="function")persist();
+  }
+
+  function pct(w,l){
+    const g=w+l;return g?w/g:0;
+  }
+
+  function nerdRecordBook(rows,recent){
+    const form=ownerRecentStats(recent,10),streaks=ownerStreaks(recent);
+    const allTeams=rows.flatMap(r=>r.teams.map(t=>({...t,owner:r.name,pct:pct(t.w,t.l)})));
+    const bestTeam=[...allTeams].sort((a,b)=>b.pct-a.pct||b.w-a.w)[0];
+    const worstTeam=[...allTeams].filter(t=>t.w+t.l>0).sort((a,b)=>a.pct-b.pct||a.w-b.w)[0];
+    const bestForm=[...rows].map(r=>({name:r.name,...(form[r.name]||{})})).sort((a,b)=>(b.w-b.l)-(a.w-a.l)||b.w-a.w)[0];
+    const hottest=[...rows].map(r=>({name:r.name,...(streaks[r.name]||{n:0,type:""})})).sort((a,b)=>b.n-a.n)[0];
+    const hist=state.competitionSnapshots||[];
+    let highProb=null,biggestLead=null;
+    for(const s of hist){
+      const sr=[...(s.rows||[])].sort((a,b)=>a.rank-b.rank);
+      for(const r of sr){if(!highProb||r.probability>highProb.probability)highProb={...r,key:s.key}}
+      if(sr.length>1){
+        const lead=sr[0].w-sr[1].w;
+        if(!biggestLead||lead>biggestLead.lead)biggestLead={lead,name:sr[0].name,key:s.key};
+      }
+    }
+    return [
+      {label:"BEST TEAM RECORD",value:bestTeam?shortTeam(bestTeam.name)+" "+bestTeam.w+"-"+bestTeam.l:"—",sub:bestTeam?bestTeam.owner:"No data"},
+      {label:"WORST TEAM RECORD",value:worstTeam?shortTeam(worstTeam.name)+" "+worstTeam.w+"-"+worstTeam.l:"—",sub:worstTeam?worstTeam.owner:"No data"},
+      {label:"BEST LAST 10",value:bestForm&&bestForm.games?bestForm.name+" "+bestForm.w+"-"+bestForm.l:"—",sub:"Recent completed team games"},
+      {label:"LONGEST CURRENT STREAK",value:hottest&&hottest.n?hottest.name+" "+hottest.n+(hottest.type==="W"?"W":"L"):"—",sub:"Current streak"},
+      {label:"HIGHEST TITLE %",value:highProb?highProb.name+" "+highProb.probability.toFixed(1)+"%":"—",sub:highProb?highProb.key:"History builds daily"},
+      {label:"BIGGEST LEAD",value:biggestLead?biggestLead.name+" +"+biggestLead.lead:"—",sub:biggestLead?biggestLead.key:"History builds daily"}
+    ];
+  }
+
+  function renderStatsForNerds(rows,games,recent,demo){
+    const status=$("nerdStatus");if(status)status.textContent=(demo?"DEMO DATA · ":"")+"Deep stats from current records, recent results and saved daily snapshots.";
+
+    const recordBook=$("nerdRecordBook");
+    if(recordBook){
+      recordBook.innerHTML=nerdRecordBook(rows,recent).map(x=>
+        '<article class="nerd-record"><label>'+esc(x.label)+'</label><strong>'+esc(x.value)+'</strong><span>'+esc(x.sub)+'</span></article>'
+      ).join("");
+    }
+
+    const form=ownerRecentStats(recent,10);
+    const owners=$("nerdOwners");
+    if(owners){
+      owners.innerHTML=rows.map(r=>{
+        const f=form[r.name]||{w:0,l:0,games:0,closeW:0,closeL:0,blowoutW:0,blowoutL:0,pf:0,pa:0};
+        const best=[...r.teams].sort((a,b)=>pct(b.w,b.l)-pct(a.w,a.l)||b.w-a.w)[0];
+        const worst=[...r.teams].sort((a,b)=>pct(a.w,a.l)-pct(b.w,b.l)||a.w-b.w)[0];
+        const margin=f.pf-f.pa;
+        return '<article class="nerd-owner-card">'+
+          '<header><strong>'+esc(r.name)+'</strong><b>'+r.w+'-'+r.l+'</b></header>'+
+          '<div class="nerd-metrics">'+
+            '<span><small>LAST 10</small><b>'+f.w+'-'+f.l+'</b></span>'+
+            '<span><small>CLUTCH ≤5</small><b>'+f.closeW+'-'+f.closeL+'</b></span>'+
+            '<span><small>BLOWOUTS 15+</small><b>'+f.blowoutW+'-'+f.blowoutL+'</b></span>'+
+            '<span><small>SCORING MARGIN</small><b>'+(margin>0?'+':'')+margin+'</b></span>'+
+          '</div>'+
+          '<footer><span>Carry: <b>'+esc(best?shortTeam(best.name):"—")+'</b></span><span>Weakest: <b>'+esc(worst?shortTeam(worst.name):"—")+'</b></span></footer>'+
+        '</article>';
+      }).join("");
+    }
+
+    const rival=$("nerdRivalries");
+    if(rival){
+      const h2h=ownerHeadToHead(recent,120).sort((a,b)=>b.games-a.games||Math.abs(b.aw-b.bw)-Math.abs(a.aw-a.bw));
+      rival.innerHTML=h2h.length?h2h.map(x=>
+        '<div class="nerd-list-row"><div><strong>'+esc(x.a)+' vs '+esc(x.b)+'</strong><small>'+x.games+' recent direct games</small></div><b>'+x.aw+'-'+x.bw+'</b></div>'
+      ).join(""):'<div class="comp-empty">No direct owner-v-owner results yet.</div>';
+    }
+
+    const impacts=$("nerdTeamImpact");
+    if(impacts){
+      const teams=rows.flatMap(r=>r.teams.map(t=>({...t,owner:r.name,pct:pct(t.w,t.l)})));
+      const top=[...teams].sort((a,b)=>b.pct-a.pct||b.w-a.w).slice(0,5);
+      const low=[...teams].filter(t=>t.w+t.l>0).sort((a,b)=>a.pct-b.pct||a.w-b.w).slice(0,3);
+      impacts.innerHTML=[
+        ...top.map((t,i)=>'<div class="nerd-list-row"><div><strong>#'+(i+1)+' '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · team impact leader</small></div><b>'+t.w+'-'+t.l+'</b></div>'),
+        ...low.map(t=>'<div class="nerd-list-row negative"><div><strong>'+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · lowest win rate</small></div><b>'+t.w+'-'+t.l+'</b></div>')
+      ].join("");
+    }
+
+    const odd=$("nerdOddities");
+    if(odd){
+      const bits=competitionTidbits(rows,games,recent).filter(x=>!["LEADER","TODAY"].includes(x.tag)).slice(0,8);
+      odd.innerHTML=bits.length?bits.map(x=>'<div class="nerd-oddity"><label>'+esc(x.tag)+'</label><p>'+esc(x.text)+'</p></div>').join(""):'<div class="comp-empty">Not enough chaos yet.</div>';
+    }
+
+    const history=$("nerdHistory");
+    if(history){
+      const snaps=(state.competitionSnapshots||[]).filter(s=>!!s.demo===!!demo).sort((a,b)=>String(a.key).localeCompare(String(b.key)));
+      if(snaps.length<2){
+        history.innerHTML='<div class="comp-empty">History starts now. CourtVision will save one snapshot per Sydney day so movement, highs and collapses become available automatically.</div>';
+      }else{
+        const first=snaps[0],last=snaps[snaps.length-1],items=[];
+        for(const r of last.rows||[]){
+          const old=(first.rows||[]).find(x=>x.name===r.name);if(!old)continue;
+          const rankMove=old.rank-r.rank,probMove=r.probability-old.probability;
+          items.push({score:Math.abs(rankMove)*3+Math.abs(probMove),text:r.name+" moved "+(rankMove===0?"0 places":(rankMove>0?"up ":"down ")+Math.abs(rankMove)+" place"+(Math.abs(rankMove)===1?"":"s"))+" since "+first.key+"; title probability "+(probMove>=0?"+":"")+probMove.toFixed(1)+" pts."});
+        }
+        history.innerHTML=items.sort((a,b)=>b.score-a.score).slice(0,8).map(x=>'<div class="nerd-history-row">'+esc(x.text)+'</div>').join("");
+      }
+    }
+  }
+
+  async function refreshStatsForNerds(force=false){
+    const status=$("nerdStatus");if(status)status.textContent="Crunching the nerd stuff…";
+    try{
+      const data=await getCompetitionData(force);
+      const rows=calculateProbabilities(ownerSummaries(data.records||{}));
+      saveCompetitionSnapshot(rows,data.demo);
+      renderStatsForNerds(rows,data.games||[],data.recent||[],data.demo);
+    }catch(e){
+      console.warn("Stats for Nerds failed",e);
+      if(status)status.textContent="Stats unavailable · try Refresh";
+    }
+  }
+  window.refreshStatsForNerds=refreshStatsForNerds;
+
+  function openStatsForNerds(){
+    showScreenLocal("statsForNerdsScreen");
+    refreshStatsForNerds(false);
+  }
+  window.openStatsForNerds=openStatsForNerds;
+
   function previewTeamFromCompetition(name){
     teamPreviewReturnScreen="competitionScreen";
     showReveal(name,{preview:true});
@@ -561,6 +701,7 @@
     try{
       const data=await getCompetitionData(force);if(token!==refreshToken)return;
       let rows=calculateProbabilities(ownerSummaries(data.records||{}));
+      saveCompetitionSnapshot(rows,data.demo);
       renderLeaderboard(rows,data.demo,data.games||[]);
       renderGames(data.games||[],data.records||{});
       const bits=competitionTidbits(rows,data.games||[],data.recent||[]);
@@ -622,6 +763,10 @@
   window.updateTickerForScreen=function(id){
     if(id==="competitionScreen"){
       setTicker(window.cvCompetitionTicker?.length?window.cvCompetitionTicker:[{tag:"COMPETITION",text:"Daily rivalry board",kind:"draft"}],"COMP BOARD");
+      return;
+    }
+    if(id==="statsForNerdsScreen"){
+      setTicker([{tag:"NERD ALERT",text:"Deep cuts, rivalry records and unnecessary specificity.",kind:"draft"}],"STATS");
       return;
     }
     return baseTicker(id);
