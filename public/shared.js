@@ -13,24 +13,18 @@ export function generateRoomName() {
   return `draft-${code}`;
 }
 
-export function generateControlKey() {
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
-}
-
-export function controlKeyForRoom(room) {
-  const keyName = `courtvision-control-key:${cleanRoom(room)}`;
-  let key = localStorage.getItem(keyName);
-  if (!key) {
-    key = generateControlKey();
-    localStorage.setItem(keyName, key);
-  }
-  return key;
-}
-
 export function roomFromLocation() {
   const params = new URLSearchParams(location.search);
-  return cleanRoom(params.get("room") || localStorage.getItem("courtvision-room") || "draft-public");
+  const fromUrl = cleanRoom(params.get("room"));
+  const saved = cleanRoom(localStorage.getItem("courtvision-room"));
+  const room = fromUrl || saved || generateRoomName();
+  localStorage.setItem("courtvision-room", room);
+  if (!fromUrl) {
+    const next = new URL(location.href);
+    next.searchParams.set("room", room);
+    history.replaceState(null, "", next);
+  }
+  return room;
 }
 
 export function apiUrl(room) {
@@ -42,26 +36,29 @@ export function socketUrl(room) {
   return `${protocol}//${location.host}/ws/rooms/${encodeURIComponent(cleanRoom(room))}/socket`;
 }
 
-export async function getRoomInfo(room) {
-  const response = await fetch(apiUrl(room), { cache: "no-store" });
-  if (!response.ok) throw new Error(`Room request failed (${response.status})`);
-  return response.json();
-}
-
 export async function getState(room) {
-  const data = await getRoomInfo(room);
+  const response = await fetch(apiUrl(room), { cache: "no-store" });
+  if (!response.ok) throw new Error(`State request failed (${response.status})`);
+  const data = await response.json();
   return data.state;
 }
 
-export async function putState(room, controlKey, state) {
+export async function putState(room, state) {
   const response = await fetch(apiUrl(room), {
     method: "PUT",
-    headers: { "content-type": "application/json", "x-control-key": controlKey },
+    headers: { "content-type": "application/json" },
     body: JSON.stringify({ state }),
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || `Publish failed (${response.status})`);
-  return data;
+  if (!response.ok) throw new Error(data.error || `Update failed (${response.status})`);
+  return data.state;
+}
+
+export async function resetRoom(room) {
+  const response = await fetch(apiUrl(room) + "/reset", { method: "POST" });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || `Reset failed (${response.status})`);
+  return data.state;
 }
 
 export function connectRoom(room, handlers = {}) {
@@ -79,7 +76,7 @@ export function connectRoom(room, handlers = {}) {
       handlers.onStatus?.("live");
     });
 
-    ws.addEventListener("message", (event) => {
+    ws.addEventListener("message", event => {
       if (event.data === "pong") return;
       try {
         const data = JSON.parse(event.data);
@@ -102,7 +99,6 @@ export function connectRoom(room, handlers = {}) {
   };
 
   open();
-
   const ping = setInterval(() => {
     if (ws?.readyState === WebSocket.OPEN) {
       try { ws.send("ping"); } catch (_) {}
