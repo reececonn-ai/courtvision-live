@@ -989,6 +989,32 @@
     return baseTicker(id);
   };
 
-  // Expose a lightweight helper for QA.
-  window.cvCompetition={demoCompetitionData,ownerSummaries,calculateProbabilities,competitionTidbits};
+  async function competitionHealth(){
+    let server=null;
+    try{
+      const r=await fetch("/api/health",{cache:"no-store"});
+      if(r.ok)server=await r.json();
+    }catch(_){}
+    return {
+      server,
+      activeScreen:document.querySelector(".screen.active")?.id||null,
+      dataCacheAgeMs:cache.at?Math.max(0,Date.now()-cache.at):null,
+      recordsLoaded:Object.keys(cache.records||{}).length,
+      todayGames:(cache.games||[]).length,
+      recentFinals:(cache.recent||[]).length,
+      snapshots:(state.competitionSnapshots||[]).length,
+      autoUpdateEveryMs:AUTO_UPDATE_MS,
+      autoUpdateRunning
+    };
+  }
+
+  // Expose lightweight diagnostics for QA/support without adding UI clutter.
+  window.cvCompetition={
+    demoCompetitionData,
+    ownerSummaries,
+    calculateProbabilities,
+    competitionTidbits,
+    health:competitionHealth,
+    refresh:refreshCompetitionBoard
+  };
 })();
