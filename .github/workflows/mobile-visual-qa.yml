@@ -76,6 +76,22 @@ jobs:
                   "startingFive": rect("#revealScreen .starting-five-panel"),
                   "rightRail": rect("#revealScreen .right-rail"),
               }
+              styles = driver.execute_script("""
+                const sels=['body','.shell','.stage','#revealScreen','#revealScreen .reveal-grid','#revealScreen .team-main','#revealScreen .right-rail'];
+                const out={bodyClass:document.body.className};
+                for(const s of sels){
+                  const e=document.querySelector(s); if(!e){out[s]=null;continue}
+                  const cs=getComputedStyle(e), r=e.getBoundingClientRect();
+                  out[s]={display:cs.display,width:cs.width,minWidth:cs.minWidth,maxWidth:cs.maxWidth,
+                    height:cs.height,position:cs.position,transform:cs.transform,zoom:cs.zoom,
+                    flex:cs.flex,flexBasis:cs.flexBasis,alignSelf:cs.alignSelf,
+                    marginLeft:cs.marginLeft,marginRight:cs.marginRight,
+                    paddingLeft:cs.paddingLeft,paddingRight:cs.paddingRight,
+                    rect:{x:r.x,width:r.width,right:r.right}};
+                }
+                return out;
+              """)
+              print("REVEAL_STYLES="+json.dumps(styles, sort_keys=True))
               print("REVEAL_METRICS="+json.dumps(reveal, sort_keys=True))
               driver.save_screenshot("/tmp/reveal-390x844.png")
 
