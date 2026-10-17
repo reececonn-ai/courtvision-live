@@ -1419,139 +1419,192 @@ body[data-screen="competitionScreen"] .scanlines{
 }
 
 
+
+
 /* =========================================================
-   COMPETITION STRUCTURE PASS — compact slate + table priority
+   DAILY GAMES — SINGLE SOURCE OF TRUTH
+   One clean layout. No overlays, no nested mini-cards.
    ========================================================= */
 
-/* Full table now follows the title race, so give it stronger spacing. */
-.comp-table-panel{
-  margin-top:10px!important;
-  margin-bottom:10px!important;
+.comp-daily-grid{
+  grid-template-columns:minmax(0,1.45fr) minmax(360px,.55fr)!important;
+  align-items:start!important;
 }
 
-/* Today's slate should read like a scoreboard, not giant feature cards. */
 .comp-games{
+  display:grid!important;
   grid-template-columns:repeat(2,minmax(0,1fr))!important;
   gap:6px!important;
   padding:6px!important;
 }
 
-.comp-game{
-  min-height:104px!important;
-  height:auto!important;
-  grid-template-columns:minmax(0,1fr) 92px minmax(0,1fr)!important;
+#competitionGames .comp-game{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 118px minmax(0,1fr)!important;
   grid-template-areas:"away center home"!important;
-  align-items:center!important;
-  gap:10px!important;
-  padding:10px 12px!important;
+  align-items:stretch!important;
+  min-width:0!important;
+  min-height:132px!important;
+  height:auto!important;
+  gap:0!important;
+  padding:0!important;
+  overflow:hidden!important;
   background:#06101c!important;
-  border-left:4px solid #395878!important;
+  border:1px solid #20364f!important;
+  border-left:5px solid var(--comp-blue)!important;
+  box-shadow:none!important;
 }
 
-.comp-game.in{border-left-color:var(--comp-red)!important}
-.comp-game.final{border-left-color:var(--comp-blue)!important}
+#competitionGames .comp-game.in{
+  border-left-color:var(--comp-red)!important;
+}
 
-.comp-game.rivalry:before{
+#competitionGames .comp-game:before,
+#competitionGames .comp-game:after,
+#competitionGames .comp-game-side:before,
+#competitionGames .comp-game-side:after{
+  content:none!important;
   display:none!important;
 }
 
-.comp-game-side{
-  display:grid!important;
-  grid-template-columns:50px minmax(0,1fr)!important;
-  grid-template-rows:auto auto auto!important;
-  gap:1px 8px!important;
-  align-items:center!important;
+#competitionGames .comp-game-side{
   min-width:0!important;
+  width:100%!important;
+  height:100%!important;
+  display:grid!important;
+  grid-template-columns:60px minmax(0,1fr) 68px!important;
+  align-items:center!important;
+  gap:12px!important;
+  padding:16px 18px!important;
+  margin:0!important;
+  background:#081522!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  text-align:left!important;
 }
 
-.comp-game-side.away{grid-area:away!important}
-.comp-game-side.home{grid-area:home!important}
-
-.comp-game-side img{
-  grid-row:1/span 3!important;
-  width:46px!important;
-  height:46px!important;
+#competitionGames .comp-game-side.away{
+  grid-area:away!important;
 }
 
-.comp-game-side strong{
-  font-size:22px!important;
+#competitionGames .comp-game-side.home{
+  grid-area:home!important;
+  border-left:1px solid #20364f!important;
+}
+
+#competitionGames .comp-game-side img{
+  grid-row:auto!important;
+  width:54px!important;
+  height:54px!important;
+  object-fit:contain!important;
+  justify-self:start!important;
+}
+
+#competitionGames .comp-game-copy{
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  gap:3px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  text-align:left!important;
+}
+
+#competitionGames .comp-game-copy strong{
+  display:block!important;
+  max-width:100%!important;
+  color:#fff!important;
+  font-family:Impact,"Arial Narrow",Arial,sans-serif!important;
+  font-size:27px!important;
+  font-weight:400!important;
+  line-height:.92!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+#competitionGames .comp-game-owner{
+  display:block!important;
+  max-width:100%!important;
+  color:#67c6ff!important;
+  font:1000 10px/1 Arial,Helvetica,sans-serif!important;
+  letter-spacing:.04em!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+#competitionGames .comp-game-teamline{
+  display:block!important;
+  max-width:100%!important;
+  color:#e1eaf5!important;
+  font:900 9px/1 Arial,Helvetica,sans-serif!important;
+  letter-spacing:0!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+#competitionGames .comp-game-side > b{
+  display:block!important;
+  width:68px!important;
+  min-width:68px!important;
+  max-width:68px!important;
+  justify-self:end!important;
+  color:#fff!important;
+  font-family:Impact,"Arial Narrow",Arial,sans-serif!important;
+  font-size:37px!important;
+  font-weight:400!important;
   line-height:1!important;
+  letter-spacing:-.02em!important;
+  text-align:right!important;
 }
 
-.comp-game-owner{
-  font-size:10px!important;
-  line-height:1.1!important;
-}
-
-.comp-game-side b{
-  font-size:26px!important;
-  line-height:1!important;
-}
-
-.comp-game-meta,
-.comp-game-status{
+#competitionGames .comp-game-center{
   grid-area:center!important;
   position:static!important;
-  align-self:auto!important;
+  transform:none!important;
+  width:auto!important;
+  min-width:0!important;
+  height:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:6px!important;
+  padding:10px 8px!important;
+  background:#06101c!important;
+  border-left:1px solid #20364f!important;
+  border-right:1px solid #20364f!important;
   text-align:center!important;
+  pointer-events:none!important;
+  z-index:auto!important;
 }
 
-.comp-game-meta{
-  font-size:10px!important;
-  color:#c7d6e8!important;
-  margin-top:-15px!important;
+#competitionGames .comp-game-center span{
+  color:#fff!important;
+  font:1000 14px/1 Arial,Helvetica,sans-serif!important;
+  letter-spacing:.06em!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
 }
 
-.comp-game-status{
-  font-size:12px!important;
+#competitionGames .comp-game-center b{
   color:#ffd34d!important;
-  margin-top:20px!important;
+  font:1000 8px/1.15 Arial,Helvetica,sans-serif!important;
+  letter-spacing:.04em!important;
+  text-transform:uppercase!important;
+  white-space:nowrap!important;
 }
 
-/* Team chips: make standing position and record clear under each logo. */
-.comp-team-chip{
-  min-height:80px!important;
-  padding:6px 3px!important;
-}
-.comp-team-chip img{
-  width:34px!important;
-  height:34px!important;
-}
-.comp-team-chip span{
-  font-size:10px!important;
-  line-height:1!important;
-}
-.comp-team-chip b{
-  display:block!important;
-  margin-top:2px!important;
-  color:#d4e1f0!important;
-  font-size:9px!important;
-  line-height:1!important;
-  letter-spacing:.02em!important;
-}
-
-.comp-spot-team{
-  width:74px!important;
-  height:74px!important;
-  padding-bottom:17px!important;
-}
-.comp-spot-team img{
-  width:46px!important;
-  height:46px!important;
-}
-.comp-spot-team span{
-  left:3px!important;
-  right:3px!important;
-  bottom:3px!important;
-  text-align:center!important;
-  color:#d8e5f5!important;
-  font-size:8px!important;
-}
-
-/* Keep daily stories alongside the slate without forcing excessive card height. */
-.comp-daily-grid{
-  grid-template-columns:minmax(0,1.45fr) minmax(360px,.55fr)!important;
-  align-items:start!important;
+#competitionGames .comp-game-meta,
+#competitionGames .comp-game-status{
+  display:none!important;
 }
 
 @media(max-width:1250px){
@@ -1563,662 +1616,41 @@ body[data-screen="competitionScreen"] .scanlines{
 @media(max-width:820px){
   .comp-games{
     grid-template-columns:1fr!important;
-  }
-  .comp-game{
-    min-height:96px!important;
-    grid-template-columns:minmax(0,1fr) 78px minmax(0,1fr)!important;
-    gap:6px!important;
-    padding:8px!important;
-  }
-  .comp-game-side{
-    grid-template-columns:40px minmax(0,1fr)!important;
-    gap:1px 5px!important;
-  }
-  .comp-game-side img{
-    width:38px!important;
-    height:38px!important;
-  }
-  .comp-game-side strong{font-size:18px!important}
-  .comp-game-owner{font-size:9px!important}
-  .comp-game-side b{font-size:22px!important}
-  .comp-game-meta{font-size:9px!important}
-  .comp-game-status{font-size:10px!important}
-  .comp-team-chip{min-height:70px!important}
-  .comp-team-chip span{font-size:9px!important}
-  .comp-team-chip b{font-size:8px!important}
-}
-
-
-/* =========================================================
-   DAILY GAMES CLEAN SCOREBOARD — remove legacy wedge treatment
-   ========================================================= */
-
-.comp-game{
-  position:relative!important;
-  display:grid!important;
-  grid-template-columns:minmax(0,1fr) 120px minmax(0,1fr)!important;
-  grid-template-areas:"away center home"!important;
-  align-items:center!important;
-  min-height:112px!important;
-  padding:12px 14px!important;
-  gap:12px!important;
-  overflow:hidden!important;
-  background:#06101c!important;
-  border:1px solid #20364f!important;
-  border-left:4px solid #395878!important;
-}
-
-.comp-game:before,
-.comp-game:after,
-.comp-game-side:before,
-.comp-game-side:after{
-  content:none!important;
-  display:none!important;
-  background:none!important;
-}
-
-.comp-game.final{border-left-color:var(--comp-blue)!important}
-.comp-game.in{border-left-color:var(--comp-red)!important}
-
-.comp-game-side{
-  position:relative!important;
-  display:grid!important;
-  grid-template-columns:52px minmax(0,1fr) auto!important;
-  grid-template-rows:auto!important;
-  align-items:center!important;
-  gap:10px!important;
-  min-width:0!important;
-  padding:8px 10px!important;
-  background:#081522!important;
-  border:1px solid #1f354e!important;
-}
-
-.comp-game-side.away{grid-area:away!important}
-.comp-game-side.home{grid-area:home!important}
-
-.comp-game-side img{
-  grid-row:auto!important;
-  width:46px!important;
-  height:46px!important;
-  object-fit:contain!important;
-}
-
-.comp-game-copy{
-  min-width:0!important;
-  display:flex!important;
-  flex-direction:column!important;
-  gap:2px!important;
-}
-
-.comp-game-copy strong{
-  color:#fff!important;
-  font-family:Impact,"Arial Narrow",Arial,sans-serif!important;
-  font-size:24px!important;
-  font-weight:400!important;
-  line-height:.95!important;
-  white-space:nowrap!important;
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
-}
-
-.comp-game-owner{
-  color:#67c6ff!important;
-  font:1000 10px/1.05 Arial,Helvetica,sans-serif!important;
-  text-transform:uppercase!important;
-  letter-spacing:.05em!important;
-}
-
-.comp-game-teamline{
-  color:#d4e2f2!important;
-  font:900 10px/1.05 Arial,Helvetica,sans-serif!important;
-  letter-spacing:.04em!important;
-}
-
-.comp-game-side > b{
-  color:#fff!important;
-  font-family:Impact,"Arial Narrow",Arial,sans-serif!important;
-  font-size:34px!important;
-  font-weight:400!important;
-  line-height:1!important;
-  min-width:42px!important;
-  text-align:right!important;
-}
-
-.comp-game-center{
-  grid-area:center!important;
-  display:flex!important;
-  flex-direction:column!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:4px!important;
-  min-width:0!important;
-  text-align:center!important;
-}
-
-.comp-game-center span{
-  color:#fff!important;
-  font:1000 13px/1 Arial,Helvetica,sans-serif!important;
-  letter-spacing:.08em!important;
-  text-transform:uppercase!important;
-}
-
-.comp-game-center b{
-  color:#ffd34d!important;
-  font:1000 9px/1.15 Arial,Helvetica,sans-serif!important;
-  letter-spacing:.08em!important;
-  text-transform:uppercase!important;
-}
-
-.comp-game-meta,
-.comp-game-status{
-  display:none!important;
-}
-
-@media(max-width:820px){
-  .comp-game{
-    grid-template-columns:minmax(0,1fr) 82px minmax(0,1fr)!important;
-    min-height:102px!important;
-    padding:8px!important;
-    gap:6px!important;
-  }
-  .comp-game-side{
-    grid-template-columns:40px minmax(0,1fr) auto!important;
-    gap:6px!important;
-    padding:6px!important;
-  }
-  .comp-game-side img{
-    width:36px!important;
-    height:36px!important;
-  }
-  .comp-game-copy strong{font-size:18px!important}
-  .comp-game-owner{font-size:8px!important}
-  .comp-game-teamline{font-size:8px!important}
-  .comp-game-side > b{font-size:25px!important}
-  .comp-game-center span{font-size:10px!important}
-  .comp-game-center b{font-size:7px!important}
-}
-
-
-/* =========================================================
-   MATCHUP CARD SYMMETRY — home side matches away side exactly
-   ========================================================= */
-
-.comp-game-side.away,
-.comp-game-side.home{
-  grid-template-columns:52px minmax(0,1fr) auto!important;
-  text-align:left!important;
-}
-
-.comp-game-side.home img,
-.comp-game-side.home .comp-game-copy,
-.comp-game-side.home > b{
-  order:initial!important;
-}
-
-.comp-game-side.home .comp-game-copy{
-  align-items:flex-start!important;
-  text-align:left!important;
-}
-
-.comp-game-copy strong,
-.comp-game-owner,
-.comp-game-teamline{
-  white-space:nowrap!important;
-}
-
-.comp-game-teamline{
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
-}
-
-.comp-game-side > b{
-  min-width:48px!important;
-  text-align:right!important;
-  justify-self:end!important;
-}
-
-@media(max-width:820px){
-  .comp-game-side.away,
-  .comp-game-side.home{
-    grid-template-columns:40px minmax(0,1fr) auto!important;
-  }
-  .comp-game-side > b{
-    min-width:36px!important;
-  }
-}
-
-
-/* =========================================================
-   MATCHUP CARD WIDTH FIX — prevent RHS record wrapping
-   ========================================================= */
-
-.comp-game-side.away,
-.comp-game-side.home{
-  grid-template-columns:52px minmax(82px,1fr) 58px!important;
-  gap:8px!important;
-}
-
-.comp-game-copy{
-  min-width:82px!important;
-  overflow:visible!important;
-}
-
-.comp-game-teamline{
-  display:block!important;
-  white-space:nowrap!important;
-  overflow:visible!important;
-  text-overflow:clip!important;
-  font-size:9px!important;
-  letter-spacing:0!important;
-}
-
-.comp-game-side > b{
-  width:58px!important;
-  min-width:58px!important;
-  max-width:58px!important;
-  font-size:31px!important;
-  text-align:right!important;
-  justify-self:end!important;
-}
-
-@media(max-width:820px){
-  .comp-game-side.away,
-  .comp-game-side.home{
-    grid-template-columns:40px minmax(68px,1fr) 44px!important;
-    gap:5px!important;
-  }
-  .comp-game-copy{
-    min-width:68px!important;
-  }
-  .comp-game-teamline{
-    font-size:8px!important;
-  }
-  .comp-game-side > b{
-    width:44px!important;
-    min-width:44px!important;
-    max-width:44px!important;
-    font-size:25px!important;
-  }
-}
-
-
-/* =========================================================
-   DAILY GAMES — TRUE 50/50 TEAM PANELS
-   ========================================================= */
-
-.comp-game{
-  display:grid!important;
-  grid-template-columns:minmax(0,1fr) 104px minmax(0,1fr)!important;
-  grid-template-areas:"away center home"!important;
-  gap:8px!important;
-  min-height:116px!important;
-  padding:8px!important;
-  background:#06101c!important;
-}
-
-.comp-game-side{
-  width:100%!important;
-  min-width:0!important;
-  height:100%!important;
-  display:grid!important;
-  grid-template-columns:58px minmax(0,1fr) 66px!important;
-  align-items:center!important;
-  gap:10px!important;
-  padding:12px 14px!important;
-  background:#081522!important;
-  border:1px solid #24405e!important;
-}
-
-.comp-game-side.away,
-.comp-game-side.home{
-  text-align:left!important;
-}
-
-.comp-game-side img{
-  width:52px!important;
-  height:52px!important;
-  object-fit:contain!important;
-  justify-self:start!important;
-}
-
-.comp-game-copy{
-  min-width:0!important;
-  display:flex!important;
-  flex-direction:column!important;
-  align-items:flex-start!important;
-  justify-content:center!important;
-  gap:3px!important;
-  overflow:visible!important;
-}
-
-.comp-game-copy strong{
-  font-size:26px!important;
-  line-height:.95!important;
-}
-
-.comp-game-owner{
-  font-size:10px!important;
-  line-height:1!important;
-}
-
-.comp-game-teamline{
-  display:block!important;
-  white-space:nowrap!important;
-  overflow:visible!important;
-  text-overflow:clip!important;
-  font-size:10px!important;
-  line-height:1!important;
-}
-
-.comp-game-side > b{
-  width:auto!important;
-  min-width:0!important;
-  max-width:none!important;
-  justify-self:end!important;
-  text-align:right!important;
-  font-size:36px!important;
-  line-height:1!important;
-}
-
-.comp-game-center{
-  grid-area:center!important;
-  width:100%!important;
-  min-width:0!important;
-  display:flex!important;
-  flex-direction:column!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:6px!important;
-}
-
-.comp-game-center span{
-  font-size:14px!important;
-}
-
-.comp-game-center b{
-  font-size:9px!important;
-  white-space:nowrap!important;
-}
-
-@media(max-width:820px){
-  .comp-game{
-    grid-template-columns:minmax(0,1fr) 72px minmax(0,1fr)!important;
-    gap:5px!important;
-    min-height:104px!important;
-    padding:5px!important;
+    gap:4px!important;
+    padding:4px!important;
   }
 
-  .comp-game-side{
-    grid-template-columns:42px minmax(0,1fr) 46px!important;
-    gap:6px!important;
-    padding:8px!important;
-  }
-
-  .comp-game-side img{
-    width:38px!important;
-    height:38px!important;
-  }
-
-  .comp-game-copy strong{font-size:19px!important}
-  .comp-game-owner{font-size:8px!important}
-  .comp-game-teamline{font-size:8px!important}
-  .comp-game-side > b{font-size:27px!important}
-  .comp-game-center span{font-size:10px!important}
-  .comp-game-center b{font-size:7px!important}
-}
-
-
-/* =========================================================
-   VERIFIED MATCHUP LAYOUT — two true equal halves
-   Render-checked in Chromium before shipping.
-   ========================================================= */
-
-#competitionGames .comp-game{
-  position:relative!important;
-  display:grid!important;
-  grid-template-columns:1fr 1fr!important;
-  grid-template-areas:"away home"!important;
-  min-height:150px!important;
-  gap:0!important;
-  padding:0!important;
-  overflow:hidden!important;
-  background:#06101c!important;
-  border:1px solid #20364f!important;
-  border-left:5px solid var(--comp-blue)!important;
-}
-
-#competitionGames .comp-game-side{
-  width:100%!important;
-  min-width:0!important;
-  height:100%!important;
-  display:grid!important;
-  grid-template-columns:72px minmax(0,1fr) 78px!important;
-  align-items:center!important;
-  gap:14px!important;
-  margin:0!important;
-  padding:20px 74px 20px 24px!important;
-  background:#081522!important;
-  border:0!important;
-  box-shadow:none!important;
-}
-
-#competitionGames .comp-game-side.home{
-  padding:20px 24px 20px 74px!important;
-  border-left:1px solid #20364f!important;
-}
-
-#competitionGames .comp-game-side.away{grid-area:away!important}
-#competitionGames .comp-game-side.home{grid-area:home!important}
-
-#competitionGames .comp-game-side img{
-  width:64px!important;
-  height:64px!important;
-  object-fit:contain!important;
-  justify-self:start!important;
-  grid-row:auto!important;
-}
-
-#competitionGames .comp-game-copy{
-  min-width:0!important;
-  display:flex!important;
-  flex-direction:column!important;
-  align-items:flex-start!important;
-  justify-content:center!important;
-  gap:3px!important;
-  overflow:visible!important;
-  text-align:left!important;
-}
-
-#competitionGames .comp-game-copy strong{
-  display:block!important;
-  color:#fff!important;
-  font-family:Impact,"Arial Narrow",Arial,sans-serif!important;
-  font-size:30px!important;
-  font-weight:400!important;
-  line-height:.92!important;
-  white-space:nowrap!important;
-  overflow:visible!important;
-  text-overflow:clip!important;
-}
-
-#competitionGames .comp-game-owner{
-  display:block!important;
-  color:#67c6ff!important;
-  font:1000 11px/1 Arial,Helvetica,sans-serif!important;
-  text-transform:uppercase!important;
-  letter-spacing:.05em!important;
-  white-space:nowrap!important;
-}
-
-#competitionGames .comp-game-teamline{
-  display:block!important;
-  color:#e1eaf5!important;
-  font:900 10px/1 Arial,Helvetica,sans-serif!important;
-  letter-spacing:0!important;
-  white-space:nowrap!important;
-  overflow:visible!important;
-  text-overflow:clip!important;
-}
-
-#competitionGames .comp-game-side > b{
-  justify-self:end!important;
-  width:auto!important;
-  min-width:0!important;
-  max-width:none!important;
-  color:#fff!important;
-  font-family:Impact,"Arial Narrow",Arial,sans-serif!important;
-  font-size:42px!important;
-  font-weight:400!important;
-  line-height:1!important;
-  text-align:right!important;
-}
-
-#competitionGames .comp-game-center{
-  position:absolute!important;
-  left:50%!important;
-  top:50%!important;
-  transform:translate(-50%,-50%)!important;
-  z-index:4!important;
-  width:118px!important;
-  min-width:118px!important;
-  display:flex!important;
-  flex-direction:column!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:5px!important;
-  padding:10px 7px!important;
-  background:#06101c!important;
-  border:1px solid #29425f!important;
-  text-align:center!important;
-  pointer-events:none!important;
-}
-
-#competitionGames .comp-game-center span{
-  color:#fff!important;
-  font:1000 15px/1 Arial,Helvetica,sans-serif!important;
-  letter-spacing:.06em!important;
-  text-transform:uppercase!important;
-  white-space:nowrap!important;
-}
-
-#competitionGames .comp-game-center b{
-  color:#ffd34d!important;
-  font:1000 8px/1.15 Arial,Helvetica,sans-serif!important;
-  letter-spacing:.05em!important;
-  text-transform:uppercase!important;
-  white-space:nowrap!important;
-}
-
-#competitionGames .comp-game:before,
-#competitionGames .comp-game:after,
-#competitionGames .comp-game-side:before,
-#competitionGames .comp-game-side:after,
-#competitionGames .comp-game-meta,
-#competitionGames .comp-game-status{
-  content:none!important;
-  display:none!important;
-}
-
-@media(max-width:820px){
   #competitionGames .comp-game{
-    min-height:116px!important;
+    grid-template-columns:minmax(0,1fr) 78px minmax(0,1fr)!important;
+    min-height:108px!important;
   }
 
   #competitionGames .comp-game-side{
-    grid-template-columns:44px minmax(0,1fr) 48px!important;
+    grid-template-columns:40px minmax(0,1fr) 48px!important;
     gap:6px!important;
-    padding:12px 45px 12px 10px!important;
-  }
-
-  #competitionGames .comp-game-side.home{
-    padding:12px 10px 12px 45px!important;
+    padding:10px 8px!important;
   }
 
   #competitionGames .comp-game-side img{
-    width:40px!important;
-    height:40px!important;
+    width:36px!important;
+    height:36px!important;
   }
 
-  #competitionGames .comp-game-copy strong{font-size:20px!important}
+  #competitionGames .comp-game-copy strong{font-size:19px!important}
   #competitionGames .comp-game-owner{font-size:8px!important}
-  #competitionGames .comp-game-teamline{font-size:8px!important}
-  #competitionGames .comp-game-side > b{font-size:28px!important}
+  #competitionGames .comp-game-teamline{font-size:7px!important}
+
+  #competitionGames .comp-game-side > b{
+    width:48px!important;
+    min-width:48px!important;
+    max-width:48px!important;
+    font-size:27px!important;
+  }
 
   #competitionGames .comp-game-center{
-    width:76px!important;
-    min-width:76px!important;
     padding:7px 4px!important;
   }
 
   #competitionGames .comp-game-center span{font-size:10px!important}
   #competitionGames .comp-game-center b{font-size:6px!important}
-}
-
-
-/* =========================================================
-   MATCHUP FINAL SPACING — keep score out of team-copy lane
-   ========================================================= */
-
-#competitionGames .comp-game-side{
-  grid-template-columns:72px minmax(120px,1fr) 92px!important;
-  gap:16px!important;
-}
-
-#competitionGames .comp-game-copy{
-  min-width:120px!important;
-  padding-right:4px!important;
-}
-
-#competitionGames .comp-game-copy strong{
-  font-size:29px!important;
-  line-height:.92!important;
-}
-
-#competitionGames .comp-game-side > b{
-  width:92px!important;
-  min-width:92px!important;
-  max-width:92px!important;
-  justify-self:end!important;
-  text-align:right!important;
-  font-size:40px!important;
-  letter-spacing:-.02em!important;
-}
-
-#competitionGames .comp-game-side.away{
-  padding-right:86px!important;
-}
-
-#competitionGames .comp-game-side.home{
-  padding-left:86px!important;
-}
-
-@media(max-width:820px){
-  #competitionGames .comp-game-side{
-    grid-template-columns:44px minmax(76px,1fr) 54px!important;
-    gap:7px!important;
-  }
-
-  #competitionGames .comp-game-copy{
-    min-width:76px!important;
-    padding-right:2px!important;
-  }
-
-  #competitionGames .comp-game-copy strong{
-    font-size:19px!important;
-  }
-
-  #competitionGames .comp-game-side > b{
-    width:54px!important;
-    min-width:54px!important;
-    max-width:54px!important;
-    font-size:27px!important;
-  }
-
-  #competitionGames .comp-game-side.away{
-    padding-right:48px!important;
-  }
-
-  #competitionGames .comp-game-side.home{
-    padding-left:48px!important;
-  }
 }
