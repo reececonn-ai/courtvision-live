@@ -29,5 +29,17 @@ jobs:
           node --check public/control.js
           node --check public/watch.js
 
+      - name: Check restored inline CourtVision script
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+          const html = fs.readFileSync('public/index.html', 'utf8');
+          const scripts = [...html.matchAll(/<script(?![^>]*src)[^>]*>([\\s\\S]*?)<\\/script>/gi)];
+          if (!scripts.length) throw new Error('No inline script found');
+          scripts.forEach((m, i) => new vm.Script(m[1], { filename: 'index-inline-' + i + '.js' }));
+          console.log('Inline CourtVision JavaScript syntax OK');
+          NODE
+
       - name: Cloudflare dry run
         run: npx wrangler deploy --dry-run
