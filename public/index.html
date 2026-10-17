@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
+<link rel="stylesheet" href="/competition.css">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -3686,6 +3687,7 @@ body.tv-mode .wheel-screen .wheel-wrap{
       <button class="btn secondary" id="displayModeBtn" onclick="toggleDisplayMode()">65&quot; TV Mode</button>
       <button class="btn secondary" id="zoomBtn" onclick="cycleZoom()">Text: M</button>
       <button class="btn secondary" onclick="openDraftBoard()">Draft Board</button>
+      <button class="btn secondary" onclick="openCompetitionBoard()">Competition</button>
       <button class="btn secondary" onclick="undoLastAction()">Undo Last</button>
       <button class="btn secondary" onclick="togglePresentationMode()" id="presentationBtn">Presentation</button>
       <button class="btn gold" onclick="openBarrelMode()">Barrel Mode</button>
@@ -3971,6 +3973,43 @@ body.tv-mode .wheel-screen .wheel-wrap{
       </div>
     </section>
 
+    <section class="screen competition-screen" id="competitionScreen">
+      <div class="broadcast-top"><span class="live-dot">Competition Live</span><span>SYDNEY TIME · DAILY RIVALRY BOARD</span></div>
+      <div class="competition-shell">
+        <div class="comp-hero">
+          <div>
+            <div class="kicker">Post-draft competition</div>
+            <h2>Competition Board</h2>
+            <div class="comp-data-status" id="competitionDataStatus">Open after the draft to load live NBA results.</div>
+          </div>
+          <div class="comp-hero-right">
+            <span class="comp-mode-badge" id="competitionModeBadge">LIVE NBA DATA</span>
+            <div class="comp-updated" id="competitionUpdated">NOT LOADED</div>
+            <div class="comp-actions">
+              <button class="btn secondary" onclick="refreshCompetitionBoard(true)">Refresh</button>
+              <button class="btn secondary" onclick="clearTestMode()">Use Live Data</button>
+              <button class="btn" onclick="openDraftBoard()">Draft Board</button>
+            </div>
+          </div>
+        </div>
+
+        <section class="comp-panel comp-leader-panel">
+          <div class="comp-panel-head"><strong>Competition Ladder</strong><span>ACTUAL W–L · PROJECTED TITLE CHANCE</span></div>
+          <div class="comp-leaderboard" id="competitionLeaderboard"><div class="comp-empty">Competition data has not loaded yet.</div></div>
+        </section>
+
+        <section class="comp-panel comp-games-panel">
+          <div class="comp-panel-head"><strong>Today's Games</strong><span>AUSTRALIA/SYDNEY</span></div>
+          <div class="comp-games" id="competitionGames"><div class="comp-empty">Today's owned-team matchups will appear here.</div></div>
+        </section>
+
+        <section class="comp-panel comp-notes-panel">
+          <div class="comp-panel-head"><strong>Daily Noise</strong><span>STREAKS · RIVALRIES · FORM</span></div>
+          <div class="comp-tidbits" id="competitionTidbits"><div class="comp-empty">Daily competition notes will appear here.</div></div>
+        </section>
+      </div>
+    </section>
+
     <section class="screen recap-screen" id="recapScreen">
       <div class="broadcast-top"><span class="live-dot">Draft Complete</span><span>Final ownership recap</span></div>
       <div class="recap-shell">
@@ -3982,6 +4021,7 @@ body.tv-mode .wheel-screen .wheel-wrap{
         <div class="recap-grid" id="recapGrid"></div>
         <div class="recap-leftover" id="recapLeftover" style="display:none"></div>
         <div class="board-actions recap-actions">
+          <button class="btn" onclick="openCompetitionBoard()">Competition Board</button>
           <button class="btn secondary" onclick="openDraftBoard()">Draft Board</button>
           <button class="btn secondary" onclick="copyRecap()">Copy Summary</button>
           <button class="btn secondary" onclick="exportResults()">Export JSON</button>
@@ -4052,6 +4092,15 @@ body.tv-mode .wheel-screen .wheel-wrap{
         <button class="btn secondary" onclick="restoreAdminPassedTeam()">Restore Passed Team</button>
         <button class="btn secondary" onclick="reassignAdminTeam()">Reassign Team</button>
         <button class="btn secondary" onclick="editAdminBid()">Edit Bid</button>
+      </div>
+    </div>
+
+    <div class="section" style="margin-top:18px">
+      <h3>Competition testing</h3>
+      <div class="tiny" style="margin-bottom:8px">Loads a complete mock draft using your current player names, assigns all 30 NBA teams, and enables DEMO competition records/results so you can test the post-draft board before the real draft.</div>
+      <div class="admin-correction-actions">
+        <button class="btn" onclick="closeSettings();loadTestDraft()">Load Test Draft + Demo Competition</button>
+        <button class="btn secondary" onclick="openCompetitionBoard();closeSettings()">Open Competition Board</button>
       </div>
     </div>
 
@@ -5733,10 +5782,12 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
+<script src="/competition.js"></script>
 
 <nav class="mobile-nav" aria-label="Mobile draft navigation">
   <button type="button" onclick="showScreen('wheelScreen')">WHEEL</button>
   <button type="button" onclick="openDraftBoard()">BOARD</button>
+  <button type="button" onclick="openCompetitionBoard()">COMP</button>
   <button type="button" onclick="showScreen('homeScreen')">HOME</button>
   <button type="button" onclick="openSettings()">MORE</button>
 </nav>
