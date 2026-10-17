@@ -2218,3 +2218,74 @@ body.tv-mode[data-screen="statsForNerdsScreen"] .broadcast-ticker{
 .nerd-hero-kicker{
   background:color-mix(in srgb,var(--team1,#164b82) 72%,#081522)!important;
 }
+
+
+/* =========================================================
+   COMPETITION / NERD TICKERS — STICK TO VIEWPORT
+   ========================================================= */
+
+body[data-screen="competitionScreen"] .broadcast-ticker,
+body[data-screen="statsForNerdsScreen"] .broadcast-ticker{
+  position:fixed!important;
+  bottom:0!important;
+  z-index:900!important;
+  box-shadow:0 -10px 30px rgba(0,0,0,.28);
+}
+
+body[data-screen="competitionScreen"] .broadcast-ticker{
+  left:328px!important;
+  right:14px!important;
+}
+
+body[data-screen="statsForNerdsScreen"] .broadcast-ticker{
+  left:0!important;
+  right:0!important;
+}
+
+body[data-screen="competitionScreen"] .competition-shell,
+body[data-screen="statsForNerdsScreen"] .nerd-shell{
+  padding-bottom:110px!important;
+}
+
+body.tv-mode[data-screen="competitionScreen"] .broadcast-ticker{
+  left:var(--sidebar-fit)!important;
+  right:0!important;
+}
+
+body.tv-mode[data-screen="statsForNerdsScreen"] .broadcast-ticker{
+  left:0!important;
+  right:0!important;
+}
+
+.nerd-expectation-compact{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:5px!important;
+}
+.nerd-expectation-compact .nerd-list-row{
+  min-height:58px!important;
+  margin:0!important;
+  padding:8px 10px!important;
+}
+.nerd-expectation-compact .nerd-list-row strong{
+  font-size:12px!important;
+}
+.nerd-expectation-compact .nerd-list-row small{
+  font-size:8px!important;
+}
+.nerd-expectation-compact .nerd-list-row > b{
+  font-size:24px!important;
+}
+
+@media(max-width:1000px){
+  body[data-screen="competitionScreen"] .broadcast-ticker{
+    left:0!important;
+    right:0!important;
+  }
+}
+
+@media(max-width:820px){
+  .nerd-expectation-compact{
+    grid-template-columns:1fr!important;
+  }
+}
