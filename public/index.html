@@ -4030,18 +4030,21 @@ body.readable .team-main.decision-mode .decision-card{
   height:100%!important;
 }
 
-/* Broadcast-style fade between Team Profile and Decision View. */
-#revealScreen .team-main{
+/* Broadcast-style fade only for the changing Profile / Decision panel. */
+#revealScreen .profile-stage,
+#revealScreen .decision-stage{
   opacity:1;
   transform:translateY(0);
   transition:opacity 250ms ease,transform 250ms ease;
 }
-#revealScreen .team-main.view-fading{
+#revealScreen .profile-stage.view-fading,
+#revealScreen .decision-stage.view-fading{
   opacity:0;
   transform:translateY(3px);
 }
 @media(prefers-reduced-motion:reduce){
-  #revealScreen .team-main{transition:none!important}
+  #revealScreen .profile-stage,
+  #revealScreen .decision-stage{transition:none!important}
 }
 </style>
 </head>
@@ -6191,7 +6194,7 @@ function stopRevealAutoSlide(){
 }
 function stopRevealFade(){
   if(revealFadeTimer){clearTimeout(revealFadeTimer);revealFadeTimer=null}
-  document.querySelector("#revealScreen .team-main")?.classList.remove("view-fading");
+  document.querySelectorAll("#revealScreen .profile-stage,#revealScreen .decision-stage").forEach(el=>el.classList.remove("view-fading"));
 }
 function scheduleRevealAutoSlide(){
   stopRevealAutoSlide();
@@ -6227,12 +6230,20 @@ function switchRevealMode(mode,auto=true,animate=true){
     if(auto)scheduleRevealAutoSlide();
     return;
   }
-  main.classList.add("view-fading");
+  const outgoing=main.classList.contains("decision-mode")
+    ?document.getElementById("decisionStage")
+    :document.getElementById("profileStage");
+  if(outgoing)outgoing.classList.add("view-fading");
   revealFadeTimer=setTimeout(()=>{
     revealFadeTimer=null;
     if(document.querySelector(".screen.active")?.id!=="revealScreen"||!currentTeam)return;
+    if(outgoing)outgoing.classList.remove("view-fading");
     applyRevealMode(mode);
-    requestAnimationFrame(()=>requestAnimationFrame(()=>main.classList.remove("view-fading")));
+    const incoming=mode==="decision"?document.getElementById("decisionStage"):document.getElementById("profileStage");
+    if(incoming){
+      incoming.classList.add("view-fading");
+      requestAnimationFrame(()=>requestAnimationFrame(()=>incoming.classList.remove("view-fading")));
+    }
     if(auto)scheduleRevealAutoSlide();
   },REVEAL_FADE_MS);
 }
