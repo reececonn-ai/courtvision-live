@@ -1737,3 +1737,52 @@ body[data-screen="competitionScreen"] .scanlines{
   .comp-game-center span{font-size:10px!important}
   .comp-game-center b{font-size:7px!important}
 }
+
+
+/* =========================================================
+   MATCHUP CARD SYMMETRY — home side matches away side exactly
+   ========================================================= */
+
+.comp-game-side.away,
+.comp-game-side.home{
+  grid-template-columns:52px minmax(0,1fr) auto!important;
+  text-align:left!important;
+}
+
+.comp-game-side.home img,
+.comp-game-side.home .comp-game-copy,
+.comp-game-side.home > b{
+  order:initial!important;
+}
+
+.comp-game-side.home .comp-game-copy{
+  align-items:flex-start!important;
+  text-align:left!important;
+}
+
+.comp-game-copy strong,
+.comp-game-owner,
+.comp-game-teamline{
+  white-space:nowrap!important;
+}
+
+.comp-game-teamline{
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+.comp-game-side > b{
+  min-width:48px!important;
+  text-align:right!important;
+  justify-self:end!important;
+}
+
+@media(max-width:820px){
+  .comp-game-side.away,
+  .comp-game-side.home{
+    grid-template-columns:40px minmax(0,1fr) auto!important;
+  }
+  .comp-game-side > b{
+    min-width:36px!important;
+  }
+}
