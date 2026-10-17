@@ -305,3 +305,9 @@
   .comp-tidbit p{font-size:8px}
   .ticker-track{animation-duration:72s!important}
 }
+
+
+@media(max-width:820px){
+  .mobile-nav{grid-template-columns:repeat(5,1fr)!important}
+  .mobile-nav button{font-size:8px!important;padding-left:2px!important;padding-right:2px!important}
+}
