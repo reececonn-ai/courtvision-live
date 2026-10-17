@@ -332,7 +332,7 @@
         '</div>'+
       '</article>';
     }).join("");
-    const badge=$("competitionModeBadge");if(badge){badge.textContent=demo?"DEMO SEASON":"LIVE NBA DATA";badge.classList.toggle("demo",demo)}
+    const badge=$("competitionModeBadge");if(badge){badge.textContent=demo?"DEMO DATA":"LIVE NBA DATA";badge.classList.toggle("demo",demo)}
   }
 
   function gameStatusText(g){
