@@ -42,10 +42,10 @@ export class DraftRoom {
     this.stateCache = null;
   }
 
-  async state() {
+  async state(room = "draft") {
     if (this.stateCache) return this.stateCache;
     const stored = await this.ctx.storage.get("state");
-    this.stateCache = stored || defaultState("draft");
+    this.stateCache = stored || defaultState(room);
     return this.stateCache;
   }
 
@@ -70,6 +70,7 @@ export class DraftRoom {
 
   async fetch(request) {
     const url = new URL(request.url);
+    const room = request.headers.get("x-courtvision-room") || "draft";
 
     if (url.pathname.endsWith("/socket")) {
       if (request.headers.get("Upgrade") !== "websocket") {
@@ -78,13 +79,13 @@ export class DraftRoom {
       const pair = new WebSocketPair();
       const [client, server] = Object.values(pair);
       this.ctx.acceptWebSocket(server);
-      const current = await this.state();
+      const current = await this.state(room);
       server.send(JSON.stringify({ type: "state", state: current }));
       return new Response(null, { status: 101, webSocket: client });
     }
 
     if (request.method === "GET") {
-      return json({ ok: true, state: await this.state() });
+      return json({ ok: true, state: await this.state(room) });
     }
 
     if (request.method === "PUT") {
@@ -102,11 +103,11 @@ export class DraftRoom {
         return json({ ok: false, error: "Expected { state: {...} }" }, 400);
       }
 
-      const current = await this.state();
+      const current = await this.state(room);
       const next = {
         ...current,
         ...body.state,
-        room: current.room || body.state.room || "draft",
+        room,
       };
       return json({ ok: true, state: await this.save(next) });
     }
@@ -117,7 +118,6 @@ export class DraftRoom {
       if (!required || supplied !== required) {
         return json({ ok: false, error: "Unauthorized commissioner request" }, 401);
       }
-      const room = (await this.state()).room || "draft";
       const fresh = defaultState(room);
       fresh.version = 0;
       return json({ ok: true, state: await this.save(fresh) });
@@ -126,9 +126,9 @@ export class DraftRoom {
     return json({ ok: false, error: "Method not allowed" }, 405);
   }
 
-  async webSocketMessage(_socket, message) {
+  async webSocketMessage(socket, message) {
     if (message === "ping") {
-      try { _socket.send("pong"); } catch (_) {}
+      try { socket.send("pong"); } catch (_) {}
     }
   }
 
