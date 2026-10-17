@@ -352,7 +352,7 @@
     if(!games.length){el.innerHTML='<div class="comp-empty">No NBA games on today\'s Sydney slate. Check back tomorrow — the table still updates from completed games.</div>';return}
     const teamLine=name=>{
       const r=records[name]||{w:0,l:0,rank:null};
-      return "#"+(r.rank||"—")+" · "+r.w+"-"+r.l;
+      return "#"+(r.rank||"—")+"\u00a0·\u00a0"+r.w+"-"+r.l;
     };
     el.innerHTML=games.map(g=>{
       const ao=teamOwner(g.away),ho=teamOwner(g.home),rivalry=ao&&ho&&ao!==ho;
