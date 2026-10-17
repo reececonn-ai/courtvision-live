@@ -4105,6 +4105,26 @@ body.readable .decision-card.context .li-meta{
   #wheelScreen .wheel-halo{inset:-6px!important}
   #wheelScreen .wheel-caption{display:none!important}
 }
+
+/* Short-laptop safety: preserve readable reveal content and allow the bid console to scroll above the ticker. */
+@media(min-width:821px) and (max-height:900px){
+  body.readable #revealScreen{
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain;
+  }
+  body.readable #revealScreen .reveal-grid{
+    height:auto!important;
+    min-height:100%!important;
+    overflow:visible!important;
+    padding-bottom:calc(var(--tick) + 34px)!important;
+  }
+  body.readable #revealScreen .team-main,
+  body.readable #revealScreen .right-rail{
+    max-height:none!important;
+    overflow:visible!important;
+  }
+}
 </style>
 </head>
 <body>
