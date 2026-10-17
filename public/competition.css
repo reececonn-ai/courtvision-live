@@ -2198,3 +2198,23 @@ body.tv-mode[data-screen="statsForNerdsScreen"] .broadcast-ticker{
   .nerd-portfolio header b{font-size:24px}
   .nerd-portfolio-metrics b{font-size:20px}
 }
+
+
+/* Push team identity harder on the Nerd hero without sacrificing contrast. */
+.nerd-hero{
+  border-top:5px solid var(--team1,#315171)!important;
+  background:
+    linear-gradient(110deg,
+      color-mix(in srgb,var(--team1,#315171) 16%,#040e1c) 0 58%,
+      color-mix(in srgb,var(--team2,#fff) 10%,#082648) 58% 100%
+    )!important;
+}
+.nerd-hero-number{
+  background:
+    radial-gradient(circle at center,
+      color-mix(in srgb,var(--team1,#367fd0) 22%,transparent),
+      transparent 70%)!important;
+}
+.nerd-hero-kicker{
+  background:color-mix(in srgb,var(--team1,#164b82) 72%,#081522)!important;
+}
