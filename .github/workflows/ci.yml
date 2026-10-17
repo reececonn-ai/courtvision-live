@@ -35,9 +35,21 @@ jobs:
           const fs = require('fs');
           const vm = require('vm');
           const html = fs.readFileSync('public/index.html', 'utf8');
-          const scripts = [...html.matchAll(/<script(?![^>]*src)[^>]*>([\\s\\S]*?)<\\/script>/gi)];
+          const scripts = [];
+          let pos = 0;
+          while (true) {
+            const start = html.indexOf('<script', pos);
+            if (start < 0) break;
+            const tagEnd = html.indexOf('>', start);
+            if (tagEnd < 0) break;
+            const tag = html.slice(start, tagEnd + 1);
+            const end = html.indexOf('</script>', tagEnd + 1);
+            if (end < 0) throw new Error('Unclosed script tag');
+            if (!/\\bsrc\\s*=/.test(tag)) scripts.push(html.slice(tagEnd + 1, end));
+            pos = end + 9;
+          }
           if (!scripts.length) throw new Error('No inline script found');
-          scripts.forEach((m, i) => new vm.Script(m[1], { filename: 'index-inline-' + i + '.js' }));
+          scripts.forEach((code, i) => new vm.Script(code, { filename: 'index-inline-' + i + '.js' }));
           console.log('Inline CourtVision JavaScript syntax OK');
           NODE
 
