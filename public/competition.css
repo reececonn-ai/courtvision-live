@@ -232,7 +232,7 @@
 }
 
 /* Slow the bottom team ticker down. */
-.ticker-track{animation-duration:82s!important}
+body .broadcast-ticker .ticker-track{animation-duration:82s!important}
 
 @media(max-width:1050px){
   .competition-shell{
@@ -303,7 +303,7 @@
   .comp-game-side b{font-size:16px}
   .comp-tidbit{grid-template-columns:70px minmax(0,1fr);padding:6px}
   .comp-tidbit p{font-size:8px}
-  .ticker-track{animation-duration:72s!important}
+  body .broadcast-ticker .ticker-track{animation-duration:72s!important}
 }
 
 
