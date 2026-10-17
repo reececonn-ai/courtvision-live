@@ -1587,3 +1587,153 @@ body[data-screen="competitionScreen"] .scanlines{
   .comp-team-chip span{font-size:9px!important}
   .comp-team-chip b{font-size:8px!important}
 }
+
+
+/* =========================================================
+   DAILY GAMES CLEAN SCOREBOARD — remove legacy wedge treatment
+   ========================================================= */
+
+.comp-game{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 120px minmax(0,1fr)!important;
+  grid-template-areas:"away center home"!important;
+  align-items:center!important;
+  min-height:112px!important;
+  padding:12px 14px!important;
+  gap:12px!important;
+  overflow:hidden!important;
+  background:#06101c!important;
+  border:1px solid #20364f!important;
+  border-left:4px solid #395878!important;
+}
+
+.comp-game:before,
+.comp-game:after,
+.comp-game-side:before,
+.comp-game-side:after{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+}
+
+.comp-game.final{border-left-color:var(--comp-blue)!important}
+.comp-game.in{border-left-color:var(--comp-red)!important}
+
+.comp-game-side{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:52px minmax(0,1fr) auto!important;
+  grid-template-rows:auto!important;
+  align-items:center!important;
+  gap:10px!important;
+  min-width:0!important;
+  padding:8px 10px!important;
+  background:#081522!important;
+  border:1px solid #1f354e!important;
+}
+
+.comp-game-side.away{grid-area:away!important}
+.comp-game-side.home{grid-area:home!important}
+
+.comp-game-side img{
+  grid-row:auto!important;
+  width:46px!important;
+  height:46px!important;
+  object-fit:contain!important;
+}
+
+.comp-game-copy{
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:2px!important;
+}
+
+.comp-game-copy strong{
+  color:#fff!important;
+  font-family:Impact,"Arial Narrow",Arial,sans-serif!important;
+  font-size:24px!important;
+  font-weight:400!important;
+  line-height:.95!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+.comp-game-owner{
+  color:#67c6ff!important;
+  font:1000 10px/1.05 Arial,Helvetica,sans-serif!important;
+  text-transform:uppercase!important;
+  letter-spacing:.05em!important;
+}
+
+.comp-game-teamline{
+  color:#d4e2f2!important;
+  font:900 10px/1.05 Arial,Helvetica,sans-serif!important;
+  letter-spacing:.04em!important;
+}
+
+.comp-game-side > b{
+  color:#fff!important;
+  font-family:Impact,"Arial Narrow",Arial,sans-serif!important;
+  font-size:34px!important;
+  font-weight:400!important;
+  line-height:1!important;
+  min-width:42px!important;
+  text-align:right!important;
+}
+
+.comp-game-center{
+  grid-area:center!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  min-width:0!important;
+  text-align:center!important;
+}
+
+.comp-game-center span{
+  color:#fff!important;
+  font:1000 13px/1 Arial,Helvetica,sans-serif!important;
+  letter-spacing:.08em!important;
+  text-transform:uppercase!important;
+}
+
+.comp-game-center b{
+  color:#ffd34d!important;
+  font:1000 9px/1.15 Arial,Helvetica,sans-serif!important;
+  letter-spacing:.08em!important;
+  text-transform:uppercase!important;
+}
+
+.comp-game-meta,
+.comp-game-status{
+  display:none!important;
+}
+
+@media(max-width:820px){
+  .comp-game{
+    grid-template-columns:minmax(0,1fr) 82px minmax(0,1fr)!important;
+    min-height:102px!important;
+    padding:8px!important;
+    gap:6px!important;
+  }
+  .comp-game-side{
+    grid-template-columns:40px minmax(0,1fr) auto!important;
+    gap:6px!important;
+    padding:6px!important;
+  }
+  .comp-game-side img{
+    width:36px!important;
+    height:36px!important;
+  }
+  .comp-game-copy strong{font-size:18px!important}
+  .comp-game-owner{font-size:8px!important}
+  .comp-game-teamline{font-size:8px!important}
+  .comp-game-side > b{font-size:25px!important}
+  .comp-game-center span{font-size:10px!important}
+  .comp-game-center b{font-size:7px!important}
+}
