@@ -4029,6 +4029,20 @@ body.readable .team-main.decision-mode .decision-grid{
 body.readable .team-main.decision-mode .decision-card{
   height:100%!important;
 }
+
+/* Broadcast-style fade between Team Profile and Decision View. */
+#revealScreen .team-main{
+  opacity:1;
+  transform:translateY(0);
+  transition:opacity 250ms ease,transform 250ms ease;
+}
+#revealScreen .team-main.view-fading{
+  opacity:0;
+  transform:translateY(3px);
+}
+@media(prefers-reduced-motion:reduce){
+  #revealScreen .team-main{transition:none!important}
+}
 </style>
 </head>
 <body>
@@ -5495,7 +5509,7 @@ function enterDraft(){hypeSting();flash();showScreen("wheelScreen")}
 function flash(){const f=document.getElementById("flash");f.classList.remove("go");void f.offsetWidth;f.classList.add("go")}
 function shake(){const s=document.getElementById("shell");s.classList.remove("shake");void s.offsetWidth;s.classList.add("shake")}
 function showScreen(id){
-  if(id!=="revealScreen")stopRevealAutoSlide();
+  if(id!=="revealScreen"){stopRevealAutoSlide();stopRevealFade();}
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   const target=document.getElementById(id);target.classList.add("active");
   document.body.dataset.screen=id;
@@ -5505,7 +5519,7 @@ function showScreen(id){
 }
 
 function showScreenLocal(id){
-  if(id!=="revealScreen")stopRevealAutoSlide();
+  if(id!=="revealScreen"){stopRevealAutoSlide();stopRevealFade();}
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   const target=document.getElementById(id);if(!target)return;
   target.classList.add("active");
@@ -6167,10 +6181,16 @@ function renderDecisionView(name){
   renderDecisionIntel(name);
 }
 let revealAutoTimer=null;
+let revealFadeTimer=null;
 const REVEAL_AUTO_MS=10000;
+const REVEAL_FADE_MS=250;
 
 function stopRevealAutoSlide(){
   if(revealAutoTimer){clearTimeout(revealAutoTimer);revealAutoTimer=null}
+}
+function stopRevealFade(){
+  if(revealFadeTimer){clearTimeout(revealFadeTimer);revealFadeTimer=null}
+  document.querySelector("#revealScreen .team-main")?.classList.remove("view-fading");
 }
 function scheduleRevealAutoSlide(){
   stopRevealAutoSlide();
@@ -6184,23 +6204,44 @@ function scheduleRevealAutoSlide(){
     else showDecisionView();
   },REVEAL_AUTO_MS);
 }
-function showDecisionView(auto=true){
+function applyRevealMode(mode){
   const main=document.querySelector("#revealScreen .team-main");
   if(!main||!currentTeam)return;
-  renderDecisionView(currentTeam);
-  main.classList.add("decision-mode");
-  setTicker([...teamTickerItems(currentTeam),...draftTickerItems(),...LEAGUE_TICKER.map(x=>({...x,kind:""}))],teamByName(currentTeam)?.[1]||"TEAM");
-  if(auto)scheduleRevealAutoSlide();
+  if(mode==="decision"){
+    renderDecisionView(currentTeam);
+    main.classList.add("decision-mode");
+    setTicker([...teamTickerItems(currentTeam),...draftTickerItems(),...LEAGUE_TICKER.map(x=>({...x,kind:""}))],teamByName(currentTeam)?.[1]||"TEAM");
+  }else{
+    main.classList.remove("decision-mode");
+    updateTickerForScreen("revealScreen");
+  }
 }
-function showProfileView(auto=true){
-  document.querySelector("#revealScreen .team-main")?.classList.remove("decision-mode");
-  if(auto)scheduleRevealAutoSlide();
+function switchRevealMode(mode,auto=true,animate=true){
+  const main=document.querySelector("#revealScreen .team-main");
+  if(!main||!currentTeam)return;
+  stopRevealFade();
+  const reduced=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  if(!animate||reduced){
+    applyRevealMode(mode);
+    if(auto)scheduleRevealAutoSlide();
+    return;
+  }
+  main.classList.add("view-fading");
+  revealFadeTimer=setTimeout(()=>{
+    revealFadeTimer=null;
+    if(document.querySelector(".screen.active")?.id!=="revealScreen"||!currentTeam)return;
+    applyRevealMode(mode);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>main.classList.remove("view-fading")));
+    if(auto)scheduleRevealAutoSlide();
+  },REVEAL_FADE_MS);
 }
+function showDecisionView(auto=true,animate=true){switchRevealMode("decision",auto,animate)}
+function showProfileView(auto=true,animate=true){switchRevealMode("profile",auto,animate)}
 let teamPreviewActive=false,teamPreviewPreviousCurrent=null,teamPreviewReturnScreen="draftBoardScreen";
 
 function showReveal(name,options={}){
   const preview=!!options.preview;
-  showProfileView(false);
+  showProfileView(false,false);
 
   const reveal=document.getElementById("revealScreen");
   reveal?.classList.toggle("team-preview-mode",preview);
