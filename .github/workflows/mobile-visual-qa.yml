@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "public/index.html"
+      - "public/competition.js"
+      - "public/competition.css"
       - ".github/workflows/mobile-visual-qa.yml"
   workflow_dispatch:
 
@@ -252,6 +254,41 @@ jobs:
               if preview_close["active"] != "draftBoardScreen" or preview_close["onTheBoard"] is not None:
                   raise SystemExit("Team preview did not return safely to Draft Board")
 
+              # Full post-draft Competition Board in deterministic demo mode.
+              driver.execute_script("loadTestDraft(true)")
+              time.sleep(0.8)
+              comp = {
+                  "viewport": driver.execute_script("return {w:innerWidth,h:innerHeight,scrollWidth:document.documentElement.scrollWidth};"),
+                  "screen": rect("#competitionScreen"),
+                  "shell": rect("#competitionScreen .competition-shell"),
+                  "players": driver.execute_script("return document.querySelectorAll('#competitionLeaderboard .comp-player-card').length"),
+                  "teamChips": driver.execute_script("return document.querySelectorAll('#competitionLeaderboard .comp-team-chip').length"),
+                  "games": driver.execute_script("return document.querySelectorAll('#competitionGames .comp-game').length"),
+                  "tidbits": driver.execute_script("return document.querySelectorAll('#competitionTidbits .comp-tidbit').length"),
+                  "assigned": driver.execute_script("return Object.keys(state.assignments||{}).length"),
+                  "mode": driver.execute_script("return document.querySelector('#competitionModeBadge')?.textContent?.trim()"),
+                  "probText": driver.execute_script("return document.querySelector('#competitionLeaderboard')?.textContent||''"),
+                  "tickerDuration": driver.execute_script("return getComputedStyle(document.querySelector('#tickerTrack')).animationDuration"),
+              }
+              print("COMPETITION_METRICS="+json.dumps(comp, sort_keys=True))
+              driver.save_screenshot("/tmp/competition-390x844.png")
+              if comp["assigned"] != 30 or comp["teamChips"] != 30:
+                  raise SystemExit("Test draft did not populate all 30 owned teams")
+              if comp["players"] != 6:
+                  raise SystemExit("Competition Board did not render six player entries")
+              if comp["games"] < 1 or comp["tidbits"] < 1:
+                  raise SystemExit("Competition demo did not populate games and daily tidbits")
+              if comp["mode"] != "DEMO DATA":
+                  raise SystemExit("Test Competition Board is not clearly labelled DEMO DATA")
+              if "NaN" in comp["probText"]:
+                  raise SystemExit("Competition probabilities contain NaN")
+              if comp["viewport"]["scrollWidth"] > comp["viewport"]["w"] + 2:
+                  raise SystemExit("Competition Board horizontally overflows the phone")
+              if not comp["screen"] or comp["screen"]["width"] > comp["viewport"]["w"] + 2:
+                  raise SystemExit("Competition Board screen is wider than the phone")
+              if comp["tickerDuration"] in ("34s","42s"):
+                  raise SystemExit("Ticker speed regression: old fast duration still active")
+
               if reveal["viewport"]["scrollWidth"] > reveal["viewport"]["w"] + 2:
                   raise SystemExit("Horizontal overflow remains on reveal")
               if reveal["grid"] and reveal["grid"]["width"] > reveal["viewport"]["w"] + 2:
@@ -277,4 +314,5 @@ jobs:
             /tmp/wheel-390x844.png
             /tmp/board-390x844.png
             /tmp/team-preview-390x844.png
+            /tmp/competition-390x844.png
           if-no-files-found: warn
