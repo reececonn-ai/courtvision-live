@@ -199,10 +199,19 @@
 
 
   async function fetchTodayScoreboardLite(){
-    const key=compactDate(new Date());
-    const data=await fetchJSON("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates="+key,8000,"no-store");
-    const today=sydneyKey(new Date());
-    return parseScoreboard(data).filter(g=>sydneyKey(g.date)===today).sort((a,b)=>a.date-b.date);
+    const now=new Date();
+    const keys=[compactDate(addDays(now,-1)),compactDate(now)];
+    const all=[];
+    await Promise.all([...new Set(keys)].map(async key=>{
+      try{
+        const data=await fetchJSON("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates="+key,8000,"no-store");
+        all.push(...parseScoreboard(data));
+      }catch(e){}
+    }));
+    const today=sydneyKey(now);
+    return [...new Map(all.map(g=>[g.id,g])).values()]
+      .filter(g=>sydneyKey(g.date)===today)
+      .sort((a,b)=>a.date-b.date);
   }
 
   function gameStateSignature(games){
