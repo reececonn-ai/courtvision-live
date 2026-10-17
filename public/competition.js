@@ -345,20 +345,23 @@
     return timeSydney(g.date);
   }
 
-  function renderGames(games){
+  function renderGames(games,records={}){
     const el=$("competitionGames");if(!el)return;
     const dateEl=$("competitionSlateDate");
     if(dateEl)dateEl.textContent=daySydney(new Date()).toUpperCase()+" · SYDNEY";
     if(!games.length){el.innerHTML='<div class="comp-empty">No NBA games on today\'s Sydney slate. Check back tomorrow — the table still updates from completed games.</div>';return}
+    const teamLine=name=>{
+      const r=records[name]||{w:0,l:0,rank:null};
+      return "#"+(r.rank||"—")+" · "+r.w+"-"+r.l;
+    };
     el.innerHTML=games.map(g=>{
       const ao=teamOwner(g.away),ho=teamOwner(g.home),rivalry=ao&&ho&&ao!==ho;
       const scores=g.status!=="SCHEDULED";
       const meta=g.status==="SCHEDULED"?timeSydney(g.date):(g.status==="IN"?(g.detail||"LIVE"):"FINAL");
       return '<article class="comp-game '+g.status.toLowerCase()+(rivalry?' rivalry':'')+'">'+
-        '<div class="comp-game-side away"><img src="'+teamLogo(g.away)+'" alt=""><strong>'+esc(shortTeam(g.away))+'</strong><span class="comp-game-owner">'+esc(ao||"UNOWNED")+'</span>'+(scores?'<b>'+g.awayScore+'</b>':'')+'</div>'+
-        '<div class="comp-game-meta">'+esc(meta)+'</div>'+
-        '<div class="comp-game-status">'+(rivalry?'OWNER VS OWNER':'TODAY')+'</div>'+
-        '<div class="comp-game-side home"><img src="'+teamLogo(g.home)+'" alt=""><strong>'+esc(shortTeam(g.home))+'</strong><span class="comp-game-owner">'+esc(ho||"UNOWNED")+'</span>'+(scores?'<b>'+g.homeScore+'</b>':'')+'</div>'+
+        '<div class="comp-game-side away"><img src="'+teamLogo(g.away)+'" alt=""><div class="comp-game-copy"><strong>'+esc(shortTeam(g.away))+'</strong><span class="comp-game-owner">'+esc(ao||"UNOWNED")+'</span><span class="comp-game-teamline">'+esc(teamLine(g.away))+'</span></div>'+(scores?'<b>'+g.awayScore+'</b>':'')+'</div>'+
+        '<div class="comp-game-center"><span>'+esc(meta)+'</span><b>'+(rivalry?'OWNER VS OWNER':'TODAY')+'</b></div>'+
+        '<div class="comp-game-side home"><img src="'+teamLogo(g.home)+'" alt=""><div class="comp-game-copy"><strong>'+esc(shortTeam(g.home))+'</strong><span class="comp-game-owner">'+esc(ho||"UNOWNED")+'</span><span class="comp-game-teamline">'+esc(teamLine(g.home))+'</span></div>'+(scores?'<b>'+g.homeScore+'</b>':'')+'</div>'+
       '</article>';
     }).join("");
   }
@@ -421,7 +424,7 @@
       const data=await getCompetitionData(force);if(token!==refreshToken)return;
       let rows=calculateProbabilities(ownerSummaries(data.records||{}));
       renderLeaderboard(rows,data.demo,data.games||[]);
-      renderGames(data.games||[]);
+      renderGames(data.games||[],data.records||{});
       const bits=competitionTidbits(rows,data.games||[],data.recent||[]);
       renderTidbits(bits);
       const stamp=$("competitionUpdated");
