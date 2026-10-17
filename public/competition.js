@@ -64,6 +64,9 @@
       w=Math.max(2,Math.min(played-2,w));
       records[t[0]]={w,l:played-w,source:"demo"};
     });
+    [...Object.entries(records)]
+      .sort((a,b)=>((b[1].w/(b[1].w+b[1].l||1))-(a[1].w/(a[1].w+a[1].l||1)))||b[1].w-a[1].w)
+      .forEach(([name],i)=>{records[name].rank=i+1});
 
     const now=new Date(),games=[];
     const pairs=[[13,12],[1,8],[20,6],[9,21],[27,19],[14,10],[26,17]];
@@ -111,11 +114,12 @@
         const n=Number(s?.value??s?.displayValue);return Number.isFinite(n)?n:null;
       };
       let w=stat("wins"),l=stat("losses");
+      const rank=stat("playoffseed")??stat("rank")??stat("seed");
       if(w==null||l==null){
         const summary=String(e.note?.description||e.summary||e.records?.[0]?.summary||"");
         const m=summary.match(/(\d+)\s*[-–]\s*(\d+)/);if(m){w=+m[1];l=+m[2]}
       }
-      if(Number.isFinite(w)&&Number.isFinite(l))records[name]={w,l,source:"ESPN"};
+      if(Number.isFinite(w)&&Number.isFinite(l))records[name]={w,l,rank:Number.isFinite(rank)?rank:null,source:"ESPN"};
     }
     return records;
   }
@@ -201,7 +205,7 @@
         pr=Math.max(.08,Math.min(.92,Number.isFinite(pr)?pr:.5));
         const exp=r.w+pr*remaining;
         w+=r.w;l+=r.l;projected+=exp;variance+=remaining*pr*(1-pr);
-        return {name,w:r.w,l:r.l,line,expected:exp};
+        return {name,w:r.w,l:r.l,rank:r.rank||null,line,expected:exp};
       });
       return {name:p.name,w,l,teams:teamRows,projected,variance,probability:0};
     });
@@ -283,7 +287,7 @@
     if(!rows.length){el.innerHTML='<div class="comp-loading">NO COMPETITION DATA YET</div>';return}
     const leader=rows[0],second=rows[1];
     const gap=second?leader.w-second.w:leader.w;
-    const teamIcons=leader.teams.map(t=>'<button class="comp-spot-team" onclick="previewTeamFromCompetition(\''+esc(t.name).replace(/'/g,"&#39;")+'\')" title="'+esc(t.name)+'"><img src="'+teamLogo(t.name)+'" alt=""><span>'+t.w+"-"+t.l+'</span></button>').join("");
+    const teamIcons=leader.teams.map(t=>'<button class="comp-spot-team" onclick="previewTeamFromCompetition(\''+esc(t.name).replace(/'/g,"&#39;")+'\')" title="'+esc(t.name)+'"><img src="'+teamLogo(t.name)+'" alt=""><span>#'+(t.rank||"—")+' · '+t.w+"-"+t.l+'</span></button>').join("");
     const raceCopy=gap>0
       ?leader.name+" is "+gap+" win"+(gap===1?"":"s")+" clear on actual results."
       :leader.name+" has the tiebreaking edge on projected finish.";
@@ -320,7 +324,7 @@
     renderSpotlight(rows);
     renderRace(rows);
     el.innerHTML=rows.map((r,i)=>{
-      const teams=r.teams.map(t=>'<button class="comp-team-chip" onclick="previewTeamFromCompetition(\''+esc(t.name).replace(/'/g,"&#39;")+'\')"><img src="'+teamLogo(t.name)+'" alt=""><span>'+esc(shortTeam(t.name))+'</span><b>'+t.w+"-"+t.l+'</b></button>').join("");
+      const teams=r.teams.map(t=>'<button class="comp-team-chip" onclick="previewTeamFromCompetition(\''+esc(t.name).replace(/'/g,"&#39;")+'\')"><img src="'+teamLogo(t.name)+'" alt=""><span>'+esc(shortTeam(t.name))+'</span><b>#'+(t.rank||"—")+' · '+t.w+"-"+t.l+'</b></button>').join("");
       const d=today[r.name]||{w:0,l:0,games:0};
       const daily=d.games?(d.w+"-"+d.l+" TODAY"):"NO FINALS TODAY";
       return '<article class="comp-player-card '+(i===0?'leader':'')+'">'+
@@ -349,11 +353,11 @@
     el.innerHTML=games.map(g=>{
       const ao=teamOwner(g.away),ho=teamOwner(g.home),rivalry=ao&&ho&&ao!==ho;
       const scores=g.status!=="SCHEDULED";
-      const meta=rivalry?"OWNER VS OWNER":"OWNED TEAM ACTION";
+      const meta=g.status==="SCHEDULED"?timeSydney(g.date):(g.status==="IN"?(g.detail||"LIVE"):"FINAL");
       return '<article class="comp-game '+g.status.toLowerCase()+(rivalry?' rivalry':'')+'">'+
         '<div class="comp-game-side away"><img src="'+teamLogo(g.away)+'" alt=""><strong>'+esc(shortTeam(g.away))+'</strong><span class="comp-game-owner">'+esc(ao||"UNOWNED")+'</span>'+(scores?'<b>'+g.awayScore+'</b>':'')+'</div>'+
-        '<div class="comp-game-meta">'+meta+'</div>'+
-        '<div class="comp-game-status">'+esc(gameStatusText(g))+'</div>'+
+        '<div class="comp-game-meta">'+esc(meta)+'</div>'+
+        '<div class="comp-game-status">'+(rivalry?'OWNER VS OWNER':'TODAY')+'</div>'+
         '<div class="comp-game-side home"><img src="'+teamLogo(g.home)+'" alt=""><strong>'+esc(shortTeam(g.home))+'</strong><span class="comp-game-owner">'+esc(ho||"UNOWNED")+'</span>'+(scores?'<b>'+g.homeScore+'</b>':'')+'</div>'+
       '</article>';
     }).join("");
