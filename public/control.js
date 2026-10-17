@@ -1,16 +1,21 @@
-import { cleanRoom, getState, putState, connectRoom } from "./shared.js";
+import { cleanRoom, generateRoomName, getRoomInfo, putState, connectRoom } from "./shared.js";
 
 const $ = (id) => document.getElementById(id);
 const refs = {
-  room: $("roomInput"), pin: $("pinInput"), screen: $("screenInput"), team: $("teamInput"),
+  room: $("roomInput"), pin: $("pinInput"), pinHelp: $("pinHelp"),
+  screen: $("screenInput"), team: $("teamInput"),
   lastWins: $("lastWinsInput"), line: $("lineInput"), bid: $("bidInput"), message: $("messageInput"),
   players: $("playersInput"), status: $("connStatus"), error: $("error"), preview: $("preview"),
   watch: $("watchLink"), publishBtn: $("publishBtn")
 };
 
-let room = cleanRoom(refs.room.value);
+const savedRoom = cleanRoom(localStorage.getItem("courtvision-control-room"));
+refs.room.value = savedRoom.length >= 6 ? savedRoom : generateRoomName();
+
+let room = refs.room.value;
 let stopSocket = null;
 let current = null;
+let claimed = false;
 
 function numberOrNull(value) {
   const raw = String(value ?? "").trim();
@@ -35,6 +40,12 @@ function render(state) {
     </div>`;
 }
 
+function updatePinHelp() {
+  refs.pinHelp.textContent = claimed
+    ? "This room is protected. Enter the same commissioner PIN whenever you return."
+    : "New room: your first successful publish will save this PIN as the commissioner PIN.";
+}
+
 function status(value) {
   refs.status.textContent = value.toUpperCase();
   refs.status.classList.toggle("live", value === "live");
@@ -42,14 +53,21 @@ function status(value) {
 
 async function connect() {
   room = cleanRoom(refs.room.value);
-  refs.room.value = room;
+  if (room.length < 6) {
+    room = generateRoomName();
+    refs.room.value = room;
+  }
+  localStorage.setItem("courtvision-control-room", room);
   localStorage.setItem("courtvision-room", room);
   refs.watch.href = `/watch.html?room=${encodeURIComponent(room)}`;
   stopSocket?.();
   refs.error.textContent = "";
 
   try {
-    render(await getState(room));
+    const info = await getRoomInfo(room);
+    claimed = Boolean(info.claimed);
+    updatePinHelp();
+    render(info.state);
   } catch (error) {
     refs.error.textContent = error.message;
   }
@@ -75,8 +93,10 @@ function parsePlayers() {
 async function publish(extra = {}) {
   refs.error.textContent = "";
   const pin = refs.pin.value.trim();
-  if (!pin) {
-    refs.error.textContent = "Enter the commissioner PIN first.";
+
+  if (pin.length < 6) {
+    refs.error.textContent = "Choose a commissioner PIN with at least 6 characters.";
+    refs.pin.focus();
     return false;
   }
 
@@ -97,8 +117,13 @@ async function publish(extra = {}) {
 
   try {
     refs.publishBtn.disabled = true;
-    const saved = await putState(room, pin, state);
-    render(saved);
+    const result = await putState(room, pin, state);
+    claimed = true;
+    updatePinHelp();
+    render(result.state);
+    if (result.claimedNow) {
+      refs.error.textContent = "Commissioner PIN saved for this room. Keep it somewhere safe.";
+    }
     return true;
   } catch (error) {
     refs.error.textContent = error.message;
@@ -116,14 +141,20 @@ async function demoSpin() {
   const choice = teams[Math.floor(Math.random() * teams.length)];
   refs.screen.value = "wheel";
   refs.team.value = "";
-  const started = await publish({ wheel: { spinning: true, selectedTeam: null, spinId: crypto.randomUUID() }, currentTeam: null });
+  const started = await publish({
+    wheel: { spinning: true, selectedTeam: null, spinId: crypto.randomUUID() },
+    currentTeam: null
+  });
   if (!started) return;
+
   setTimeout(async () => {
     refs.screen.value = "team";
     refs.team.value = choice[0];
     refs.lastWins.value = choice[1];
     refs.line.value = choice[2];
-    await publish({ wheel: { spinning: false, selectedTeam: choice[0], spinId: crypto.randomUUID() } });
+    await publish({
+      wheel: { spinning: false, selectedTeam: choice[0], spinId: crypto.randomUUID() }
+    });
   }, 1800);
 }
 
@@ -134,4 +165,5 @@ refs.room.addEventListener("change", connect);
 
 refs.pin.value = sessionStorage.getItem("courtvision-pin") || "";
 refs.pin.addEventListener("input", () => sessionStorage.setItem("courtvision-pin", refs.pin.value));
+
 connect();
