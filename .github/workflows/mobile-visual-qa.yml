@@ -152,6 +152,20 @@ jobs:
               if abs(spin_after["rotation"] - spin_result["before"]) < 0.05:
                   raise SystemExit("Remote spin did not animate the wheel")
 
+              follow = driver.execute_script("""
+                const snap=cvSharedSnapshot();
+                snap.origin='remote-mobile-qa-follow';
+                snap.rev=Date.now()+200000;
+                snap.draft.liveSpin=null;
+                snap.draft.onTheBoard=null;
+                snap.draft.lastScreen='wheelScreen';
+                cvApplySnapshot(snap);
+                return {active:document.querySelector('.screen.active')?.id, spinning};
+              """)
+              print("FOLLOW_TO_WHEEL="+json.dumps(follow, sort_keys=True))
+              if follow["active"] != "wheelScreen" or follow["spinning"]:
+                  raise SystemExit("Remote assignment/pass state did not settle on wheel")
+
               if reveal["viewport"]["scrollWidth"] > reveal["viewport"]["w"] + 2:
                   raise SystemExit("Horizontal overflow remains on reveal")
               if reveal["grid"] and reveal["grid"]["width"] > reveal["viewport"]["w"] + 2:
