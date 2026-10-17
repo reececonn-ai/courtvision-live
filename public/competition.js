@@ -469,6 +469,14 @@
 
   function shortTeam(name){return teamMeta(name)?.[1]||name}
   function teamLogo(name){const t=teamMeta(name);return t?logoUrl(t[1]):""}
+  function teamColors(name){
+    const t=teamMeta(name);
+    return {primary:t?.[2]||"#2d78c7",secondary:t?.[3]||"#ffffff"};
+  }
+  function teamStyle(name){
+    const c=teamColors(name);
+    return "--team1:"+c.primary+";--team2:"+c.secondary+";";
+  }
 
   function ownerTodayLine(name,games){
     const d=todaysOwnerResults(games||[])[name];
@@ -487,6 +495,8 @@
     const raceCopy=gap>0
       ?leader.name+" is "+gap+" win"+(gap===1?"":"s")+" clear on actual results."
       :leader.name+" has the tiebreaking edge on projected finish.";
+    const leadColor=leader.teams?.[0]?.name?teamStyle(leader.teams[0].name):"";
+    el.setAttribute("style",leadColor);
     el.innerHTML='<div class="comp-spotlight-inner">'+
       '<div>'+
         '<div class="comp-spotlight-label">CURRENT COMPETITION LEADER</div>'+
@@ -520,7 +530,7 @@
     renderSpotlight(rows);
     renderRace(rows);
     el.innerHTML=rows.map((r,i)=>{
-      const teams=r.teams.map(t=>'<button class="comp-team-chip" onclick="previewTeamFromCompetition(\''+esc(t.name).replace(/'/g,"&#39;")+'\')"><img src="'+teamLogo(t.name)+'" alt=""><span>'+esc(shortTeam(t.name))+'</span><b>#'+(t.rank||"—")+' · '+t.w+"-"+t.l+'</b></button>').join("");
+      const teams=r.teams.map(t=>'<button class="comp-team-chip" style="'+teamStyle(t.name)+'" onclick="previewTeamFromCompetition(\''+esc(t.name).replace(/'/g,"&#39;")+'\')"><img src="'+teamLogo(t.name)+'" alt=""><span>'+esc(shortTeam(t.name))+'</span><b>#'+(t.rank||"—")+' · '+t.w+"-"+t.l+'</b></button>').join("");
       const d=today[r.name]||{w:0,l:0,games:0};
       const daily=d.games?(d.w+"-"+d.l+" TODAY"):"NO FINALS TODAY";
       return '<article class="comp-player-card '+(i===0?'leader':'')+'">'+
@@ -551,7 +561,7 @@
       return "#"+(r.rank||"—")+"\u00a0·\u00a0"+r.w+"-"+r.l;
     };
     const side=(name,owner,score,sideClass,scores)=>
-      '<div class="comp-game-side '+sideClass+'">'+
+      '<div class="comp-game-side '+sideClass+'" style="'+teamStyle(name)+'">'+
         '<img src="'+teamLogo(name)+'" alt="">'+
         '<div class="comp-game-copy">'+
           '<strong>'+esc(shortTeam(name))+'</strong>'+
@@ -681,6 +691,78 @@
           '<footer><span>Carry: <b>'+esc(best?shortTeam(best.name):"—")+'</b></span><span>Weakest: <b>'+esc(worst?shortTeam(worst.name):"—")+'</b></span></footer>'+
         '</article>';
       }).join("");
+    }
+
+    const expectation=$("nerdExpectation");
+    const pickValue=$("nerdPickValue");
+    const portfolios=$("nerdPortfolios");
+    const matrix=$("nerdRivalryMatrix");
+
+    const teamValueRows=rows.flatMap(r=>r.teams.map(t=>{
+      const played=t.w+t.l;
+      const pace=played?82*(t.w/played):0;
+      const line=Number.isFinite(t.line)?t.line:41;
+      const delta=pace-line;
+      return {...t,owner:r.name,pace,line,delta};
+    }));
+
+    if(expectation){
+      expectation.innerHTML=[...teamValueRows].sort((a,b)=>b.delta-a.delta).map((t,i)=>
+        '<div class="nerd-list-row team-accent '+(t.delta<0?'negative':'')+'" style="'+teamStyle(t.name)+'">'+
+          '<div><strong>'+esc(shortTeam(t.name))+' · '+esc(t.owner)+'</strong><small>'+t.pace.toFixed(1)+' win pace vs '+t.line.toFixed(1)+' preseason line</small></div>'+
+          '<b>'+(t.delta>=0?'+':'')+t.delta.toFixed(1)+'</b>'+
+        '</div>'
+      ).join("");
+    }
+
+    if(pickValue){
+      const best=[...teamValueRows].sort((a,b)=>b.delta-a.delta).slice(0,5);
+      const worst=[...teamValueRows].sort((a,b)=>a.delta-b.delta).slice(0,5);
+      pickValue.innerHTML=[
+        ...best.map((t,i)=>'<div class="nerd-list-row team-accent" style="'+teamStyle(t.name)+'"><div><strong>STEAL #'+(i+1)+' · '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · outperforming expectation</small></div><b>+'+t.delta.toFixed(1)+'</b></div>'),
+        ...worst.map((t,i)=>'<div class="nerd-list-row team-accent negative" style="'+teamStyle(t.name)+'"><div><strong>BUST #'+(i+1)+' · '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · below expectation</small></div><b>'+t.delta.toFixed(1)+'</b></div>')
+      ].join("");
+    }
+
+    if(portfolios){
+      portfolios.innerHTML=rows.map(r=>{
+        const teams=teamValueRows.filter(t=>t.owner===r.name);
+        const avgPct=teams.length?teams.reduce((s,t)=>s+pct(t.w,t.l),0)/teams.length:0;
+        const over=teams.filter(t=>t.delta>0).length;
+        const above500=teams.filter(t=>t.w>t.l).length;
+        const best=[...teams].sort((a,b)=>b.delta-a.delta)[0];
+        const dependency=r.w&&best?Math.round(best.w/r.w*100):0;
+        const strips=teams.map(t=>'<i title="'+esc(t.name)+'" style="background:'+teamColors(t.name).primary+'"></i>').join("");
+        return '<article class="nerd-portfolio">'+
+          '<header><strong>'+esc(r.name)+'</strong><b>'+r.probability.toFixed(1)+'%</b></header>'+
+          '<div class="nerd-team-strip">'+strips+'</div>'+
+          '<div class="nerd-portfolio-metrics">'+
+            '<span><small>AVG WIN %</small><b>'+Math.round(avgPct*100)+'%</b></span>'+
+            '<span><small>ABOVE .500</small><b>'+above500+'/5</b></span>'+
+            '<span><small>OVER LINE</small><b>'+over+'/5</b></span>'+
+            '<span><small>TOP-TEAM DEPENDENCY</small><b>'+dependency+'%</b></span>'+
+          '</div>'+
+          '<footer>Best value: <b>'+esc(best?shortTeam(best.name):"—")+'</b> '+(best?(best.delta>=0?'+':'')+best.delta.toFixed(1):'')+'</footer>'+
+        '</article>';
+      }).join("");
+    }
+
+    if(matrix){
+      const names=rows.map(r=>r.name);
+      const h2h=ownerHeadToHead(recent,180);
+      const map={};
+      h2h.forEach(x=>{map[x.a+"||"+x.b]=x});
+      const cell=(a,b)=>{
+        if(a===b)return '<td class="self">—</td>';
+        const key=[a,b].sort().join("||"),x=map[key];
+        if(!x)return '<td>0-0</td>';
+        const aw=a===x.a?x.aw:x.bw,bw=a===x.a?x.bw:x.aw;
+        const cls=aw>bw?"win":aw<bw?"loss":"tie";
+        return '<td class="'+cls+'">'+aw+'-'+bw+'</td>';
+      };
+      matrix.innerHTML='<table class="nerd-matrix"><thead><tr><th>OWNER</th>'+names.map(n=>'<th>'+esc(n)+'</th>').join("")+'</tr></thead><tbody>'+
+        names.map(a=>'<tr><th>'+esc(a)+'</th>'+names.map(b=>cell(a,b)).join("")+'</tr>').join("")+
+      '</tbody></table>';
     }
 
     const rival=$("nerdRivalries");
