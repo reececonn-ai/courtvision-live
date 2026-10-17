@@ -57,7 +57,7 @@ jobs:
                   active:q('.screen.active')?.id,
                   bodyScreen:document.body.dataset.screen,
                   sidebar:getComputedStyle(q('.sidebar')).display,
-                  viewport:{w:innerWidth,h:innerHeight,scrollWidth:document.documentElement.scrollWidth},
+                  viewport:{w:innerWidth,clientW:document.documentElement.clientWidth,h:innerHeight,scrollWidth:document.documentElement.scrollWidth},
                   screen:r(q('#competitionScreen')),
                   shell:r(q('#competitionScreen .competition-shell')),
                   ticker:r(t),
@@ -78,9 +78,9 @@ jobs:
                   raise SystemExit("Competition sidebar visible")
               if comp["viewport"]["scrollWidth"] > comp["viewport"]["w"]+2:
                   raise SystemExit("Competition horizontal overflow")
-              if not comp["screen"] or comp["screen"]["width"] < comp["viewport"]["w"]-2:
+              if not comp["screen"] or comp["screen"]["width"] < comp["viewport"]["clientW"]-2:
                   raise SystemExit("Competition not full width")
-              if not comp["shell"] or comp["shell"]["width"] < comp["viewport"]["w"]-34:
+              if not comp["shell"] or comp["shell"]["width"] < comp["viewport"]["clientW"]-34:
                   raise SystemExit("Competition shell wastes too much horizontal space")
               if comp["tickerPosition"]!="fixed" or not comp["ticker"]:
                   raise SystemExit("Competition ticker is not fixed")
@@ -100,7 +100,7 @@ jobs:
                   active:q('.screen.active')?.id,
                   bodyScreen:document.body.dataset.screen,
                   sidebar:getComputedStyle(q('.sidebar')).display,
-                  viewport:{w:innerWidth,h:innerHeight,scrollWidth:document.documentElement.scrollWidth},
+                  viewport:{w:innerWidth,clientW:document.documentElement.clientWidth,h:innerHeight,scrollWidth:document.documentElement.scrollWidth},
                   screen:rr('#statsForNerdsScreen'),
                   shell:rr('#statsForNerdsScreen .nerd-shell'),
                   ticker:rr('#broadcastTicker'),
@@ -122,7 +122,7 @@ jobs:
                   raise SystemExit("Stats sidebar visible")
               if nerd["viewport"]["scrollWidth"] > nerd["viewport"]["w"]+2:
                   raise SystemExit("Stats horizontal overflow")
-              if not nerd["screen"] or nerd["screen"]["width"] < nerd["viewport"]["w"]-2:
+              if not nerd["screen"] or nerd["screen"]["width"] < nerd["viewport"]["clientW"]-2:
                   raise SystemExit("Stats not full width")
               if nerd["tickerPosition"]!="fixed" or nerd["ticker"]["x"]>2 or nerd["ticker"]["width"]<nerd["viewport"]["w"]-4:
                   raise SystemExit("Stats ticker is not fixed edge-to-edge")
