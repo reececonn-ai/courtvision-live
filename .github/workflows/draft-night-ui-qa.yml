@@ -116,9 +116,23 @@ jobs:
               shot("profile-dallas-"+label)
               assert_no_h_overflow(label+" profile")
               if profile["bid"] and profile["ticker"] and profile["bid"]["bottom"] > profile["ticker"]["top"]+4:
-                  raise SystemExit(label+": bid panel hidden behind ticker")
+                  scrollable=js("""
+                    const s=document.querySelector('#revealScreen');
+                    const cs=getComputedStyle(s);
+                    return {overflowY:cs.overflowY,scrollHeight:s.scrollHeight,clientHeight:s.clientHeight};
+                  """)
+                  print("REVEAL_SCROLL",json.dumps(scrollable,sort_keys=True))
+                  if scrollable["overflowY"] not in ("auto","scroll") or scrollable["scrollHeight"] <= scrollable["clientHeight"]+5:
+                      raise SystemExit(label+": bid panel hidden behind ticker and reveal is not safely scrollable")
+                  js("document.querySelector('#revealScreen').scrollTop=document.querySelector('#revealScreen').scrollHeight")
+                  time.sleep(.15)
+                  bid_after=rect("#revealScreen .bid-panel")
+                  ticker_after=rect("#broadcastTicker")
+                  if bid_after and ticker_after and bid_after["bottom"] > ticker_after["top"]+4:
+                      raise SystemExit(label+": scrolling cannot expose bottom of bid panel above ticker")
+                  js("document.querySelector('#revealScreen').scrollTop=0")
               if profile["main"] and profile["ticker"] and profile["main"]["bottom"] > profile["ticker"]["top"]+25:
-                  print("WARN main extends below ticker; reveal may be scrollable")
+                  print("INFO reveal content continues below fold on short laptop")
 
               # Decision view: check clipping and steady surrounding geometry.
               starters_before=profile["starters"]
