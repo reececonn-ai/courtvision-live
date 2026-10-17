@@ -2289,3 +2289,48 @@ body.tv-mode[data-screen="statsForNerdsScreen"] .broadcast-ticker{
     grid-template-columns:1fr!important;
   }
 }
+
+
+/* =========================================================
+   COMPETITION — TRUE FULL-WIDTH DESTINATION
+   ========================================================= */
+
+body[data-screen="competitionScreen"] .competition-shell{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding-left:12px!important;
+  padding-right:12px!important;
+}
+
+body[data-screen="competitionScreen"] .comp-topbar{
+  padding-left:4px!important;
+  padding-right:4px!important;
+}
+
+body[data-screen="competitionScreen"] .broadcast-ticker{
+  left:0!important;
+  right:0!important;
+  width:100vw!important;
+}
+
+body.tv-mode[data-screen="competitionScreen"] .broadcast-ticker{
+  left:0!important;
+  right:0!important;
+  width:100vw!important;
+}
+
+@media(min-width:1500px){
+  body[data-screen="competitionScreen"] .competition-shell{
+    padding-left:16px!important;
+    padding-right:16px!important;
+  }
+
+  body[data-screen="competitionScreen"] .comp-lead-grid{
+    grid-template-columns:minmax(0,1.42fr) minmax(470px,.58fr)!important;
+  }
+
+  body[data-screen="competitionScreen"] .comp-daily-grid{
+    grid-template-columns:minmax(0,1.52fr) minmax(390px,.48fr)!important;
+  }
+}
