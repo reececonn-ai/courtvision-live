@@ -717,6 +717,10 @@ body .broadcast-ticker .ticker-track{
 
 /* Phone */
 @media(max-width:820px){
+  /* Keep the ticker directly above the iPhone safe-area-aware nav. */
+  body .broadcast-ticker{
+    bottom:calc(58px + env(safe-area-inset-bottom))!important;
+  }
   body[data-screen="competitionScreen"] .mobile-nav{
     display:grid!important;
   }
