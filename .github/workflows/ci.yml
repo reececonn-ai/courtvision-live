@@ -28,6 +28,7 @@ jobs:
           node --check public/app.js
           node --check public/control.js
           node --check public/watch.js
+          node --check public/competition.js
 
       - name: Check restored inline CourtVision script
         run: |
