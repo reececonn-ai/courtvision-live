@@ -250,25 +250,152 @@
     return out;
   }
 
+  function ownerRecentStats(recent,limit=10){
+    const out={};
+    state.players.forEach(p=>out[p.name]={w:0,l:0,games:0,closeW:0,closeL:0,blowoutW:0,blowoutL:0,pf:0,pa:0});
+    for(const p of state.players){
+      const owned=new Set(p.teams||[]);
+      let seen=0;
+      for(const g of recent){
+        if(seen>=limit)break;
+        let mine=null,opp=null,won=null;
+        if(owned.has(g.home)){mine=g.homeScore;opp=g.awayScore;won=g.homeWinner}
+        else if(owned.has(g.away)){mine=g.awayScore;opp=g.homeScore;won=g.awayWinner}
+        if(mine==null)continue;
+        seen++;
+        const s=out[p.name];s.games++;s.pf+=mine;s.pa+=opp;
+        if(won)s.w++;else s.l++;
+        const margin=Math.abs(mine-opp);
+        if(margin<=5){if(won)s.closeW++;else s.closeL++}
+        if(margin>=15){if(won)s.blowoutW++;else s.blowoutL++}
+      }
+    }
+    return out;
+  }
+
+  function ownerHeadToHead(recent,limit=80){
+    const map={};
+    let seen=0;
+    for(const g of recent){
+      if(seen++>=limit)break;
+      const a=teamOwner(g.away),h=teamOwner(g.home);
+      if(!a||!h||a===h)continue;
+      const key=[a,h].sort().join("||");
+      if(!map[key])map[key]={a:[a,h].sort()[0],b:[a,h].sort()[1],aw:0,bw:0,games:0};
+      const row=map[key];row.games++;
+      const winner=g.awayWinner?a:g.homeWinner?h:null;
+      if(winner===row.a)row.aw++;
+      else if(winner===row.b)row.bw++;
+    }
+    return Object.values(map);
+  }
+
   function competitionTidbits(rows,games,recent){
-    const bits=[],today=todaysOwnerResults(games),streaks=ownerStreaks(recent);
+    const bits=[],today=todaysOwnerResults(games),streaks=ownerStreaks(recent),form=ownerRecentStats(recent,10);
+    const add=(score,tag,text)=>bits.push({score,tag,text});
+
     for(const r of rows){
       const d=today[r.name];
-      if(d?.games)bits.push({score:d.w-d.l,tag:"TODAY",text:r.name+" went "+d.w+"-"+d.l+" today and now owns a combined "+r.w+"-"+r.l+" record."});
+      if(d?.games){
+        const diff=d.w-d.l;
+        add(5+Math.abs(diff),"TODAY",r.name+" went "+d.w+"-"+d.l+" today and now owns a combined "+r.w+"-"+r.l+" record.");
+        if(d.games>=3&&d.w===d.games)add(10,"PERFECT DAY",r.name+" swept the slate "+d.w+"-0 today. Every one of their completed games was a win.");
+        if(d.games>=3&&d.l===d.games)add(10,"ROUGH DAY",r.name+" went 0-"+d.l+" today. Every one of their completed games was a loss.");
+      }
+
       const st=streaks[r.name];
-      if(st&&st.n>=3)bits.push({score:st.type==="W"?st.n:-st.n,tag:st.type==="W"?"HOT":"COLD",text:r.name+"'s teams have "+(st.type==="W"?"won ":"lost ")+"their last "+st.n+" completed games."});
+      if(st&&st.n>=3)add(6+st.n,st.type==="W"?"HOT":"COLD",r.name+"'s teams have "+(st.type==="W"?"won ":"lost ")+"their last "+st.n+" completed games.");
+
+      const f=form[r.name];
+      if(f?.games>=6){
+        if(f.w>=8)add(8,"FORM",r.name+" is "+f.w+"-"+f.l+" across their last "+f.games+" completed team games.");
+        if(f.l>=8)add(8,"FORM",r.name+" is "+f.w+"-"+f.l+" across their last "+f.games+" completed team games.");
+        if(f.closeW+f.closeL>=3&&f.closeW>=3)add(7,"CLUTCH",r.name+" is "+f.closeW+"-"+f.closeL+" in games decided by 5 points or fewer across their recent sample.");
+        if(f.blowoutL>=3)add(7,"PAIN",r.name+"'s teams have suffered "+f.blowoutL+" losses by 15+ points in their recent sample.");
+        if(f.games>=5){
+          const margin=f.pf-f.pa;
+          if(Math.abs(margin)>=45)add(6,"MARGIN",r.name+"'s teams are "+(margin>0?"+":"")+margin+" in scoring margin across their last "+f.games+" completed games.");
+        }
+      }
+
       const action=games.filter(g=>teamOwner(g.home)===r.name||teamOwner(g.away)===r.name).length;
-      if(action>=3)bits.push({score:1,tag:"BUSY NIGHT",text:r.name+" has "+action+" teams in action on today's Sydney slate."});
+      if(action>=3)add(4,"BUSY NIGHT",r.name+" has "+action+" teams in action on today's Sydney slate.");
+
+      if(r.teams?.length){
+        const best=[...r.teams].sort((a,b)=>b.w-a.w||a.l-b.l)[0];
+        const worst=[...r.teams].sort((a,b)=>(a.w/(a.w+a.l||1))-(b.w/(b.w+b.l||1)))[0];
+        if(best&&r.w>0&&best.w/r.w>=.30)add(5,"TEAM CARRY",shortTeam(best.name)+" accounts for "+Math.round(best.w/r.w*100)+"% of "+r.name+"'s total wins.");
+        if(worst&&(worst.w+worst.l)>=4&&worst.w<worst.l)add(4,"WEAK LINK",shortTeam(worst.name)+" is "+worst.w+"-"+worst.l+" and is currently "+r.name+"'s only clear drag if the rest of the group is stronger.");
+      }
     }
+
     for(const g of games){
       const a=teamOwner(g.away),h=teamOwner(g.home);
-      if(a&&h&&a!==h)bits.push({score:4,tag:"HEAD-TO-HEAD",text:a+" vs "+h+": "+shortTeam(g.away)+" plays "+shortTeam(g.home)+" today."});
+      if(a&&h&&a!==h)add(7,"RIVALRY",a+" vs "+h+": "+shortTeam(g.away)+" plays "+shortTeam(g.home)+" today.");
     }
+
+    for(const h2h of ownerHeadToHead(recent)){
+      if(h2h.games>=4&&h2h.aw!==h2h.bw){
+        const leader=h2h.aw>h2h.bw?h2h.a:h2h.b;
+        const trail=h2h.aw>h2h.bw?h2h.b:h2h.a;
+        const lw=Math.max(h2h.aw,h2h.bw),tw=Math.min(h2h.aw,h2h.bw);
+        add(6,"RIVALRY",leader+" leads "+trail+" "+lw+"-"+tw+" in recent direct owner-v-owner games.");
+      }
+    }
+
     if(rows.length){
-      const leader=[...rows].sort((a,b)=>b.w-a.w)[0];
-      bits.push({score:5,tag:"LEADER",text:leader.name+" leads the competition with "+leader.w+" combined team wins and a "+leader.probability.toFixed(1)+"% projected title chance."});
+      const sorted=[...rows].sort((a,b)=>b.w-a.w||b.projected-a.projected);
+      const leader=sorted[0],last=sorted[sorted.length-1];
+      add(9,"LEADER",leader.name+" leads the competition with "+leader.w+" combined team wins and a "+leader.probability.toFixed(1)+"% projected title chance.");
+      if(sorted.length>=4){
+        const gap=leader.w-sorted[3].w;
+        if(gap<=3)add(8,"TIGHT RACE","Only "+gap+" win"+(gap===1?"":"s")+" separate 1st and 4th in the competition.");
+      }
+      if(last&&leader.w-last.w>=8)add(5,"GAP",leader.name+" currently has a "+(leader.w-last.w)+"-win cushion over "+last.name+" in the actual standings.");
+      const probs=[...rows].sort((a,b)=>b.probability-a.probability);
+      if(probs.length>=2&&probs[0].probability-probs[1].probability<5)add(7,"PHOTO FINISH",probs[0].name+" and "+probs[1].name+" are separated by only "+(probs[0].probability-probs[1].probability).toFixed(1)+" percentage points in title probability.");
     }
-    return bits.sort((a,b)=>Math.abs(b.score)-Math.abs(a.score)).slice(0,8);
+
+    const dedup=[];
+    const seen=new Set();
+    for(const x of bits.sort((a,b)=>b.score-a.score)){
+      const key=x.tag+"|"+x.text;
+      if(seen.has(key))continue;
+      seen.add(key);dedup.push(x);
+    }
+    return dedup.slice(0,10);
+  }
+
+  function storyHeadline(x){
+    const map={
+      "LEADER":"THEY WAKE UP ON TOP",
+      "RIVALRY":"BRAGGING RIGHTS",
+      "HOT":"THE HEATER CONTINUES",
+      "COLD":"SOMEONE CHECK ON THEM",
+      "BUSY NIGHT":"REMOTE CONTROL NIGHT",
+      "TODAY":"TODAY'S DAMAGE",
+      "PERFECT DAY":"CLEAN SWEEP",
+      "ROUGH DAY":"NO GOOD NEWS",
+      "FORM":"FORM GUIDE",
+      "CLUTCH":"ICE IN THE VEINS",
+      "PAIN":"THAT LEFT A MARK",
+      "MARGIN":"SCOREBOARD PRESSURE",
+      "TEAM CARRY":"PUTTING THE TEAM ON HIS BACK",
+      "WEAK LINK":"THE WEAK LINK",
+      "TIGHT RACE":"NOBODY CAN BREATHE",
+      "GAP":"DAYLIGHT",
+      "PHOTO FINISH":"TOO CLOSE TO CALL"
+    };
+    return map[x.tag]||"STAT OF THE DAY";
+  }
+
+  function renderTidbits(bits){
+    const el=$("competitionTidbits");if(!el)return;
+    el.innerHTML=bits.length?bits.map(x=>
+      '<article class="comp-tidbit"><label>'+esc(x.tag)+'</label><div class="comp-story-copy"><strong class="comp-story-headline">'+esc(storyHeadline(x))+'</strong><p>'+esc(x.text)+'</p></div></article>'
+    ).join("")
+      :'<div class="comp-empty">Nothing dramatic yet. That will not last.</div>';
+    window.cvCompetitionTicker=bits.map(x=>({tag:x.tag,text:x.text,kind:["COLD","ROUGH DAY","PAIN"].includes(x.tag)?"alert":"draft"}));
   }
 
   function shortTeam(name){return teamMeta(name)?.[1]||name}
