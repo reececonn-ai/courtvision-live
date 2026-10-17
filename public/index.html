@@ -3654,13 +3654,13 @@ body.tv-mode .wheel-screen .wheel-wrap{
 
 /* Mobile screen isolation: screen-specific mobile layouts must not keep inactive pages in flow. */
 @media(max-width:820px){
-  #homeScreen:not(.active),
-  #wheelScreen:not(.active),
-  #revealScreen:not(.active),
-  #draftBoardScreen:not(.active),
-  #barrelScreen:not(.active),
-  #competitionScreen:not(.active),
-  #recapScreen:not(.active){
+  body #homeScreen.screen:not(.active),
+  body #wheelScreen.screen:not(.active),
+  body #revealScreen.screen:not(.active),
+  body #draftBoardScreen.screen:not(.active),
+  body #barrelScreen.screen:not(.active),
+  body #competitionScreen.screen:not(.active),
+  body #recapScreen.screen:not(.active){
     display:none!important;
   }
 }
