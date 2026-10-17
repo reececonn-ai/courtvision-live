@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp16">
+<link rel="stylesheet" href="/competition.css?v=comp17">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -4100,22 +4100,6 @@ body.tv-mode .wheel-screen .wheel-wrap{
           <div class="nerd-owner-grid" id="nerdOwners"><div class="comp-empty">Crunching owner stats…</div></div>
         </section>
 
-        <section class="nerd-two-col nerd-feature-grid">
-          <article class="nerd-section">
-            <div class="nerd-section-head"><span>OVER / UNDER EXPECTATION</span><small>ACTUAL PACE VS PRESEASON WIN LINE</small></div>
-            <div class="nerd-list" id="nerdExpectation"><div class="comp-empty">Calculating pace vs expectation…</div></div>
-          </article>
-          <article class="nerd-section">
-            <div class="nerd-section-head"><span>DRAFT PICK VALUE</span><small>STEALS · BUSTS · PERFORMANCE VS EXPECTATION</small></div>
-            <div class="nerd-list" id="nerdPickValue"><div class="comp-empty">Ranking draft value…</div></div>
-          </article>
-        </section>
-
-        <section class="nerd-section">
-          <div class="nerd-section-head"><span>OWNER PORTFOLIOS</span><small>HOW EACH FIVE-TEAM COLLECTION IS BUILT</small></div>
-          <div class="nerd-portfolio-grid" id="nerdPortfolios"><div class="comp-empty">Profiling portfolios…</div></div>
-        </section>
-
         <section class="nerd-section">
           <div class="nerd-section-head"><span>THE RIVALRY MATRIX</span><small>EVERY OWNER VS EVERY OWNER</small></div>
           <div class="nerd-matrix-wrap" id="nerdRivalryMatrix"><div class="comp-empty">Building the grudge table…</div></div>
@@ -4130,6 +4114,22 @@ body.tv-mode .wheel-screen .wheel-wrap{
             <div class="nerd-section-head"><span>TEAM IMPACT</span><small>WHO IS CARRYING · WHO IS HURTING</small></div>
             <div class="nerd-list" id="nerdTeamImpact"><div class="comp-empty">Ranking team impact…</div></div>
           </article>
+        </section>
+
+        <section class="nerd-two-col nerd-feature-grid">
+          <article class="nerd-section nerd-expectation-section">
+            <div class="nerd-section-head"><span>OVER / UNDER EXPECTATION</span><small>TOP RISERS · BIGGEST FALLERS</small></div>
+            <div class="nerd-list nerd-expectation-compact" id="nerdExpectation"><div class="comp-empty">Calculating pace vs expectation…</div></div>
+          </article>
+          <article class="nerd-section">
+            <div class="nerd-section-head"><span>DRAFT PICK VALUE</span><small>STEALS · BUSTS · PERFORMANCE VS EXPECTATION</small></div>
+            <div class="nerd-list" id="nerdPickValue"><div class="comp-empty">Ranking draft value…</div></div>
+          </article>
+        </section>
+
+        <section class="nerd-section">
+          <div class="nerd-section-head"><span>OWNER PORTFOLIOS</span><small>HOW EACH FIVE-TEAM COLLECTION IS BUILT</small></div>
+          <div class="nerd-portfolio-grid" id="nerdPortfolios"><div class="comp-empty">Profiling portfolios…</div></div>
         </section>
 
         <section class="nerd-two-col">
@@ -5918,7 +5918,7 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp10"></script>
+<script src="/competition.js?v=comp11"></script>
 
 <nav class="mobile-nav" aria-label="Mobile draft navigation">
   <button type="button" onclick="showScreen('wheelScreen')">WHEEL</button>
