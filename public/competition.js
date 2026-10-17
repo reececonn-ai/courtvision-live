@@ -7,6 +7,9 @@
   const CACHE_MS=15*60*1000;
   let cache={at:0,records:null,games:null,recent:null,demo:false};
   let refreshToken=0;
+  let autoUpdateTimer=null;
+  let autoUpdateRunning=false;
+  const AUTO_UPDATE_MS=2*60*1000;
 
   const $=id=>document.getElementById(id);
   const esc=s=>typeof escapeHtml==="function"?escapeHtml(String(s??"")):String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -192,6 +195,63 @@
       games:dedupe.filter(g=>sydneyKey(g.date)===todayKey).sort((a,b)=>a.date-b.date),
       recent:dedupe.filter(g=>g.status==="FINAL"&&sydneyKey(g.date)<=todayKey).sort((a,b)=>b.date-a.date)
     };
+  }
+
+
+  async function fetchTodayScoreboardLite(){
+    const key=compactDate(new Date());
+    const data=await fetchJSON("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates="+key,8000,"no-store");
+    const today=sydneyKey(new Date());
+    return parseScoreboard(data).filter(g=>sydneyKey(g.date)===today).sort((a,b)=>a.date-b.date);
+  }
+
+  function gameStateSignature(games){
+    return (games||[]).map(g=>[g.id,g.status,g.homeScore,g.awayScore,g.detail||""].join(":")).join("|");
+  }
+
+  async function autoUpdateTick(){
+    if(autoUpdateRunning||document.hidden)return;
+    const active=document.querySelector(".screen.active")?.id;
+    if(active!=="competitionScreen"&&active!=="statsForNerdsScreen")return;
+    if(isTestDraft())return;
+    autoUpdateRunning=true;
+    try{
+      const before=cache.games||[];
+      const beforeById=new Map(before.map(g=>[g.id,g]));
+      const latest=await fetchTodayScoreboardLite();
+      const changed=gameStateSignature(latest)!==gameStateSignature(before);
+      if(!changed)return;
+
+      const finalTransition=latest.some(g=>{
+        const old=beforeById.get(g.id);
+        return g.status==="FINAL"&&old?.status!=="FINAL";
+      });
+
+      cache.games=latest;
+      if(active==="competitionScreen"){
+        renderGames(latest,cache.records||{});
+        const status=$("competitionDataStatus");
+        if(status&&!finalTransition)status.textContent="Auto-updated live scores · full refresh runs when a game goes final";
+      }
+
+      if(finalTransition){
+        cache.at=0;
+        if(active==="competitionScreen")await refreshCompetitionBoard(true);
+        else await refreshStatsForNerds(true);
+      }
+    }catch(e){
+      console.warn("Competition auto-update check failed",e);
+    }finally{
+      autoUpdateRunning=false;
+    }
+  }
+
+  function ensureAutoUpdate(){
+    if(autoUpdateTimer)return;
+    autoUpdateTimer=setInterval(autoUpdateTick,AUTO_UPDATE_MS);
+    document.addEventListener("visibilitychange",()=>{
+      if(!document.hidden)autoUpdateTick();
+    });
   }
 
   function ownerSummaries(records){
@@ -573,7 +633,7 @@
   }
 
   function renderStatsForNerds(rows,games,recent,demo){
-    const status=$("nerdStatus");if(status)status.textContent=(demo?"DEMO DATA · ":"")+"Deep stats from current records, recent results and saved daily snapshots.";
+    const status=$("nerdStatus");if(status)status.textContent=(demo?"DEMO DATA · ":"")+"Deep stats from current records, recent results and saved daily snapshots · auto-checking every 2 minutes.";
 
     const form=ownerRecentStats(recent,10);
     const heroBits=competitionTidbits(rows,games,recent);
@@ -672,6 +732,7 @@
 
   function openStatsForNerds(){
     showScreenLocal("statsForNerdsScreen");
+    ensureAutoUpdate();
     refreshStatsForNerds(false);
   }
   window.openStatsForNerds=openStatsForNerds;
@@ -719,7 +780,7 @@
       renderTidbits(bits);
       const stamp=$("competitionUpdated");
       if(stamp)stamp.textContent=(data.demo?"DEMO · ":"UPDATED ")+new Intl.DateTimeFormat("en-AU",{timeZone:TZ,day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}).format(new Date());
-      if(status)status.textContent=data.demo?"Test draft · seeded competition results for troubleshooting":"Live NBA records/results · times shown in Sydney";
+      if(status)status.textContent=data.demo?"Test draft · seeded competition results for troubleshooting":"Live NBA records/results · auto-checking every 2 minutes";
       if(document.querySelector(".screen.active")?.id==="competitionScreen"){
         setTicker(window.cvCompetitionTicker?.length?window.cvCompetitionTicker:[{tag:"COMPETITION",text:"Daily rivalry board",kind:"draft"}],"COMP BOARD");
       }
@@ -731,6 +792,7 @@
 
   function openCompetitionBoard(){
     showScreenLocal("competitionScreen");
+    ensureAutoUpdate();
     refreshCompetitionBoard(false);
   }
   window.openCompetitionBoard=openCompetitionBoard;
