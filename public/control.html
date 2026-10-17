@@ -17,12 +17,23 @@
       <section class="panel">
         <div class="eyebrow">LIVE ROOM</div>
         <h2>Commissioner</h2>
-        <div class="field"><label>Room</label><input id="roomInput" value="nba2026" autocomplete="off"></div>
-        <div class="field"><label>Commissioner PIN</label><input id="pinInput" type="password" autocomplete="current-password" placeholder="Cloudflare secret"></div>
+
+        <div class="field">
+          <label>Your draft room</label>
+          <input id="roomInput" autocomplete="off">
+        </div>
+
+        <div class="field">
+          <label>Choose / enter commissioner PIN</label>
+          <input id="pinInput" type="password" autocomplete="current-password" minlength="6" placeholder="6+ characters">
+          <div class="help" id="pinHelp">The first successful publish claims this room with your PIN. After that, use the same PIN.</div>
+        </div>
+
         <div class="button-row">
           <button id="connectBtn" class="btn secondary" type="button">CONNECT</button>
-          <a id="watchLink" class="btn secondary" target="_blank" rel="noopener">OPEN WATCH</a>
+          <a id="watchLink" class="btn secondary" target="_blank" rel="noopener">OPEN SPECTATOR VIEW</a>
         </div>
+
         <hr style="border:0;border-top:1px solid #263c59;margin:16px 0">
 
         <div class="field">
@@ -59,8 +70,9 @@
           <button id="publishBtn" class="btn primary" type="button">PUBLISH LIVE</button>
           <button id="spinDemoBtn" class="btn secondary" type="button">DEMO SPIN</button>
         </div>
+
         <div id="error" class="error" role="alert"></div>
-        <p class="help">This is the live-sync test console. The full CourtVision wheel and bid workflow will replace these temporary fields while keeping the same backend.</p>
+        <p class="help">No Cloudflare secret setup is required. Your commissioner PIN belongs to this draft room only and is not shown to spectators.</p>
       </section>
 
       <section class="panel">
