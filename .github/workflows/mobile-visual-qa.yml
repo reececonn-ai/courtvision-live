@@ -286,6 +286,8 @@ jobs:
                   raise SystemExit("Competition Board horizontally overflows the phone")
               if not comp["screen"] or comp["screen"]["width"] > comp["viewport"]["w"] + 2:
                   raise SystemExit("Competition Board screen is wider than the phone")
+              if comp["screen"]["y"] > 180:
+                  raise SystemExit("Competition Board is pushed below inactive mobile screens")
               if comp["tickerDuration"] in ("34s","42s"):
                   raise SystemExit("Ticker speed regression: old fast duration still active")
 
