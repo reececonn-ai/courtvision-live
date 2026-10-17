@@ -4519,6 +4519,21 @@ function cvPlayRemoteSpin(spin){
   frame();
 }
 
+function cvMergeCompetitionSnapshots(localList,remoteList){
+  const map=new Map();
+  for(const s of [...(localList||[]),...(remoteList||[])]){
+    if(!s||!s.key)continue;
+    const k=String(s.key)+"|"+(s.demo?"demo":"live");
+    const prev=map.get(k);
+    const prevAt=Date.parse(prev?.at||0)||0;
+    const nextAt=Date.parse(s.at||0)||0;
+    if(!prev||nextAt>=prevAt)map.set(k,JSON.parse(JSON.stringify(s)));
+  }
+  return [...map.values()]
+    .sort((a,b)=>(Date.parse(a.at||0)||0)-(Date.parse(b.at||0)||0))
+    .slice(-120);
+}
+
 function cvApplySnapshot(snapshot){
   if(!snapshot||snapshot.schema!==CV_SYNC_SCHEMA||!snapshot.draft)return;
   if(snapshot.origin===CV_SYNC_CLIENT)return;
@@ -4541,7 +4556,10 @@ function cvApplySnapshot(snapshot){
     state.barrelCurrent=d.barrelCurrent||null;
     state.onTheBoard=d.onTheBoard||null;
     state.liveSpin=d.liveSpin?JSON.parse(JSON.stringify(d.liveSpin)):null;
-    state.competitionSnapshots=Array.isArray(d.competitionSnapshots)?JSON.parse(JSON.stringify(d.competitionSnapshots)):state.competitionSnapshots||[];
+    state.competitionSnapshots=cvMergeCompetitionSnapshots(
+      state.competitionSnapshots||[],
+      Array.isArray(d.competitionSnapshots)?d.competitionSnapshots:[]
+    );
     currentTeam=state.onTheBoard||null;
     reconcileState();
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(_){}
