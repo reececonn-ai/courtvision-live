@@ -49,12 +49,34 @@
     const n=parseFloat(state.teamContent?.[name]?.wins);
     return Number.isFinite(n)?n:null;
   }
-  function normalSample(){
-    let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();
+  function hashSeed(text){
+    let h=2166136261;
+    for(const ch of String(text)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}
+    return h>>>0;
+  }
+  function seededRng(seed){
+    let a=(seed>>>0)||0x9e3779b9;
+    return ()=>{
+      a|=0;a=a+0x6D2B79F5|0;
+      let t=Math.imul(a^a>>>15,1|a);
+      t=t+Math.imul(t^t>>>7,61|t)^t;
+      return ((t^t>>>14)>>>0)/4294967296;
+    };
+  }
+  function normalSample(rng=Math.random){
+    let u=0,v=0;while(!u)u=rng();while(!v)v=rng();
     return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
   }
   function seededNoise(seed){
     const x=Math.sin(seed*12.9898+78.233)*43758.5453;return x-Math.floor(x);
+  }
+
+  async function fetchNbaJson(localPath,directUrl,timeout=8000){
+    try{return await fetchJSON(localPath,timeout,"no-store")}
+    catch(localError){
+      try{return await fetchJSON(directUrl,timeout,"no-store")}
+      catch(directError){throw directError||localError}
+    }
   }
 
   function demoCompetitionData(){
@@ -142,7 +164,8 @@
 
   async function fetchRecords(){
     try{
-      const data=await fetchJSON("https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?season="+SEASON_YEAR,9000,"no-store");
+      const direct="https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?season="+SEASON_YEAR;
+      const data=await fetchNbaJson("/api/nba/standings?season="+SEASON_YEAR,direct,9000);
       const out=parseStandings(data);
       if(Object.keys(out).length>=24)return out;
     }catch(e){}
@@ -185,7 +208,8 @@
     const all=[];
     await runPool([...new Set(keys)],async key=>{
       try{
-        const data=await fetchJSON("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates="+key,8000,"no-store");
+        const direct="https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates="+key;
+        const data=await fetchNbaJson("/api/nba/scoreboard?dates="+encodeURIComponent(key),direct,8000);
         all.push(...parseScoreboard(data));
       }catch(e){}
     },4);
@@ -204,7 +228,8 @@
     const all=[];
     await Promise.all([...new Set(keys)].map(async key=>{
       try{
-        const data=await fetchJSON("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates="+key,8000,"no-store");
+        const direct="https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates="+key;
+        const data=await fetchNbaJson("/api/nba/scoreboard?dates="+encodeURIComponent(key),direct,8000);
         all.push(...parseScoreboard(data));
       }catch(e){}
     }));
@@ -282,9 +307,11 @@
 
   function calculateProbabilities(rows,sims=5000){
     if(!rows.length)return rows;
+    const seedText=rows.map(r=>r.name+":"+r.w+"-"+r.l+":"+r.projected.toFixed(4)+":"+r.variance.toFixed(4)).join("|");
+    const rng=seededRng(hashSeed(seedText));
     const wins=Array(rows.length).fill(0);
     for(let s=0;s<sims;s++){
-      const totals=rows.map(r=>r.projected+normalSample()*Math.sqrt(Math.max(.01,r.variance)));
+      const totals=rows.map(r=>r.projected+normalSample(rng)*Math.sqrt(Math.max(.01,r.variance)));
       const top=Math.max(...totals),idx=[];totals.forEach((x,i)=>{if(Math.abs(x-top)<.0001)idx.push(i)});
       idx.forEach(i=>wins[i]+=1/idx.length);
     }
@@ -624,14 +651,14 @@
     const g=w+l;return g?w/g:0;
   }
 
-  function nerdRecordBook(rows,recent){
+  function nerdRecordBook(rows,recent,demo=false){
     const form=ownerRecentStats(recent,10),streaks=ownerStreaks(recent);
     const allTeams=rows.flatMap(r=>r.teams.map(t=>({...t,owner:r.name,pct:pct(t.w,t.l)})));
     const bestTeam=[...allTeams].sort((a,b)=>b.pct-a.pct||b.w-a.w)[0];
     const worstTeam=[...allTeams].filter(t=>t.w+t.l>0).sort((a,b)=>a.pct-b.pct||a.w-b.w)[0];
     const bestForm=[...rows].map(r=>({name:r.name,...(form[r.name]||{})})).sort((a,b)=>(b.w-b.l)-(a.w-a.l)||b.w-a.w)[0];
     const hottest=[...rows].map(r=>({name:r.name,...(streaks[r.name]||{n:0,type:""})})).sort((a,b)=>b.n-a.n)[0];
-    const hist=state.competitionSnapshots||[];
+    const hist=(state.competitionSnapshots||[]).filter(s=>!!s.demo===!!demo);
     let highProb=null,biggestLead=null;
     for(const s of hist){
       const sr=[...(s.rows||[])].sort((a,b)=>a.rank-b.rank);
@@ -671,7 +698,7 @@
 
     const recordBook=$("nerdRecordBook");
     if(recordBook){
-      recordBook.innerHTML=nerdRecordBook(rows,recent).map(x=>
+      recordBook.innerHTML=nerdRecordBook(rows,recent,demo).map(x=>
         '<article class="nerd-record"><label>'+esc(x.label)+'</label><strong>'+esc(x.value)+'</strong><span>'+esc(x.sub)+'</span></article>'
       ).join("");
     }
