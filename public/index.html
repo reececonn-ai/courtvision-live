@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp20">
+<link rel="stylesheet" href="/competition.css?v=comp21">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -4024,6 +4024,28 @@ body.tv-mode .wheel-screen .wheel-wrap{
           </article>
         </section>
 
+        <section class="comp-intel-grid">
+          <article class="comp-intel-panel">
+            <div class="comp-section-head">
+              <div><span class="comp-section-kicker">SINCE YESTERDAY</span><strong>WHAT CHANGED</strong></div>
+              <small>RANK · RECORD · TITLE %</small>
+            </div>
+            <div class="comp-movement" id="competitionMovement">
+              <div class="comp-empty">Season memory is loading.</div>
+            </div>
+          </article>
+
+          <article class="comp-intel-panel">
+            <div class="comp-section-head">
+              <div><span class="comp-section-kicker">SWING WATCH</span><strong>GAMES THAT CAN MOVE THE RACE</strong></div>
+              <small>ESTIMATED TITLE-PROBABILITY SWING</small>
+            </div>
+            <div class="comp-impact" id="competitionImpact">
+              <div class="comp-empty">Calculating today's leverage games.</div>
+            </div>
+          </article>
+        </section>
+
         <section class="comp-table-panel">
           <div class="comp-section-head">
             <div><span class="comp-section-kicker">EVERY TEAM · EVERY OWNER</span><strong>THE FULL TABLE</strong></div>
@@ -4088,6 +4110,11 @@ body.tv-mode .wheel-screen .wheel-wrap{
             <small id="nerdHeroLabel">LIVE</small>
             <b id="nerdHeroValue">—</b>
           </div>
+        </section>
+
+        <section class="nerd-section nerd-memory-section">
+          <div class="nerd-section-head"><span>SINCE YESTERDAY</span><small>THE BIGGEST MOVERS IN THE COMPETITION</small></div>
+          <div class="nerd-memory-grid" id="nerdSinceYesterday"><div class="comp-empty">Loading season movement…</div></div>
         </section>
 
         <section class="nerd-section nerd-records">
@@ -5953,7 +5980,7 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp14"></script>
+<script src="/competition.js?v=comp15"></script>
 
 <nav class="mobile-nav" aria-label="Mobile draft navigation">
   <button type="button" onclick="showScreen('wheelScreen')">WHEEL</button>
