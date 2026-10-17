@@ -7,81 +7,95 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<div class="app-shell">
-  <header class="topbar">
-    <div class="brand">COURTVISION<small>COMMISSIONER CONTROL</small></div>
-    <div id="connStatus" class="status-pill">OFFLINE</div>
-  </header>
-  <main class="main">
-    <div class="control-grid">
-      <section class="panel">
-        <div class="eyebrow">LIVE DRAFT</div>
-        <h2>Commissioner</h2>
-
-        <div class="field">
-          <label>Your draft room</label>
-          <input id="roomInput" autocomplete="off" readonly>
-        </div>
-
-        <div class="button-row">
-          <a id="watchLink" class="btn secondary" target="_blank" rel="noopener">OPEN SPECTATOR VIEW</a>
-          <button id="newRoomBtn" class="btn secondary" type="button">NEW ROOM</button>
-        </div>
-
-        <hr style="border:0;border-top:1px solid #263c59;margin:16px 0">
-
-        <div class="field">
-          <label>Broadcast screen</label>
-          <select id="screenInput">
-            <option value="lobby">Lobby</option>
-            <option value="wheel">Wheel</option>
-            <option value="team">Team Reveal</option>
-            <option value="bidding">Bidding</option>
-            <option value="barrel">Barrel</option>
-            <option value="recap">Recap</option>
-          </select>
-        </div>
-
-        <div class="field"><label>Current team</label><input id="teamInput" placeholder="e.g. Cleveland Cavaliers"></div>
-        <div class="field"><label>Last season wins</label><input id="lastWinsInput" inputmode="decimal" placeholder="52"></div>
-        <div class="field"><label>This season win line</label><input id="lineInput" inputmode="decimal" placeholder="47.5"></div>
-        <div class="field"><label>Current bid</label><input id="bidInput" inputmode="decimal" placeholder="7"></div>
-        <div class="field"><label>Broadcast message</label><input id="messageInput" placeholder="What spectators should know"></div>
-
-        <div class="field">
-          <label>Players JSON</label>
-          <textarea id="playersInput">[
-  {"name":"Player 1","remaining":50,"teams":[]},
-  {"name":"Player 2","remaining":50,"teams":[]},
-  {"name":"Player 3","remaining":50,"teams":[]},
-  {"name":"Player 4","remaining":50,"teams":[]},
-  {"name":"Player 5","remaining":50,"teams":[]},
-  {"name":"Player 6","remaining":50,"teams":[]}
-]</textarea>
-        </div>
-
-        <div class="button-row">
-          <button id="publishBtn" class="btn primary" type="button">PUBLISH LIVE</button>
-          <button id="spinDemoBtn" class="btn secondary" type="button">DEMO SPIN</button>
-        </div>
-
-        <div id="error" class="error" role="alert"></div>
-        <p class="help">Commissioner access is handled automatically on this laptop. There is no PIN to remember.</p>
-      </section>
-
-      <section class="panel">
-        <div class="eyebrow">SPECTATOR PREVIEW</div>
-        <h2>What viewers see</h2>
-        <div id="preview" class="preview-card">
-          <div>
-            <div class="preview-label">Waiting for room</div>
-            <div class="preview-team">COURTVISION</div>
-          </div>
-        </div>
-      </section>
+<div class="app-shell broadcast-shell">
+  <header class="topbar broadcast-topbar">
+    <div class="brand">COURTVISION<small>NBA TEAM DRAFT · LIVE</small></div>
+    <div class="commissioner-tools">
+      <span class="commissioner-badge">COMMISSIONER</span>
+      <button id="controlsBtn" class="top-control-btn" type="button">CONTROLS</button>
+      <div id="connStatus" class="status-pill">CONNECTING</div>
     </div>
+  </header>
+
+  <main class="watch-main mirror-main">
+    <section id="stage" class="watch-stage mirror-stage" aria-live="polite">
+      <div class="watch-lobby">
+        <div class="eyebrow">NBA TEAM DRAFT</div>
+        <h1>COURTVISION</h1>
+        <p>Connecting to the live draft…</p>
+      </div>
+    </section>
   </main>
 </div>
+
+<div id="localOverlay" class="local-overlay-host" hidden></div>
+<div id="drawerScrim" class="drawer-scrim" hidden></div>
+
+<aside id="controlDrawer" class="control-drawer" aria-label="Commissioner controls" aria-hidden="true">
+  <div class="drawer-head">
+    <div>
+      <div class="eyebrow">COMMISSIONER</div>
+      <h2>Draft controls</h2>
+    </div>
+    <button id="closeControlsBtn" class="drawer-close" type="button">×</button>
+  </div>
+
+  <div class="control-callout">
+    <strong>What you see behind this drawer is the live spectator screen.</strong>
+    Close the drawer at any time to see exactly what everyone else sees.
+  </div>
+
+  <div class="field">
+    <label>Live spectator link</label>
+    <div class="copy-row">
+      <input id="watchUrl" readonly>
+      <button id="copyLinkBtn" class="btn secondary compact" type="button">COPY</button>
+    </div>
+  </div>
+
+  <button id="returnEveryoneBtn" class="btn primary full-btn" type="button">RETURN EVERYONE TO LIVE DRAFT</button>
+  <p class="help">If someone is browsing a team on their device, this instantly closes it and brings everyone back to the shared screen.</p>
+
+  <hr class="drawer-rule">
+
+  <div class="field">
+    <label>Shared screen</label>
+    <select id="screenInput">
+      <option value="lobby">Main Draft Board</option>
+      <option value="wheel">Wheel</option>
+      <option value="team">Team Reveal</option>
+      <option value="bidding">Bidding</option>
+      <option value="barrel">Barrel</option>
+      <option value="recap">Recap</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Current team</label>
+    <select id="teamInput"></select>
+  </div>
+
+  <div class="two-field">
+    <div class="field"><label>Last wins</label><input id="lastWinsInput" inputmode="decimal"></div>
+    <div class="field"><label>Win line</label><input id="lineInput" inputmode="decimal"></div>
+  </div>
+
+  <div class="field"><label>Current bid</label><input id="bidInput" inputmode="decimal" placeholder="e.g. 7"></div>
+  <div class="field"><label>Message</label><input id="messageInput" placeholder="Optional live message"></div>
+
+  <details class="player-setup">
+    <summary>Player names & budgets</summary>
+    <div id="playerRows"></div>
+  </details>
+
+  <div class="drawer-actions">
+    <button id="publishBtn" class="btn primary full-btn" type="button">UPDATE LIVE SCREEN</button>
+    <button id="spinDemoBtn" class="btn secondary full-btn" type="button">TEST LIVE SPIN</button>
+  </div>
+
+  <div id="error" class="error" role="alert"></div>
+</aside>
+
 <script type="module" src="/control.js"></script>
 </body>
 </html>
