@@ -3988,39 +3988,76 @@ body.tv-mode .wheel-screen .wheel-wrap{
     </section>
 
     <section class="screen competition-screen" id="competitionScreen">
-      <div class="broadcast-top"><span class="live-dot">Competition Live</span><span>SYDNEY TIME · DAILY RIVALRY BOARD</span></div>
       <div class="competition-shell">
-        <div class="comp-hero">
-          <div>
-            <div class="kicker">Post-draft competition</div>
-            <h2>Competition Board</h2>
-            <div class="comp-data-status" id="competitionDataStatus">Open after the draft to load live NBA results.</div>
-          </div>
-          <div class="comp-hero-right">
-            <span class="comp-mode-badge" id="competitionModeBadge">LIVE NBA DATA</span>
-            <div class="comp-updated" id="competitionUpdated">NOT LOADED</div>
-            <div class="comp-actions">
-              <button class="btn secondary" onclick="refreshCompetitionBoard(true)">Refresh</button>
-              <button class="btn secondary" onclick="clearTestMode()">Use Live Data</button>
-              <button class="btn" onclick="openDraftBoard()">Draft Board</button>
+        <header class="comp-topbar">
+          <div class="comp-brand-lockup">
+            <div class="comp-eyebrow">COURTVISION DAILY · AUSTRALIA/SYDNEY</div>
+            <div class="comp-title-row">
+              <h2>THE COMPETITION</h2>
+              <span class="comp-mode-badge" id="competitionModeBadge">LIVE NBA DATA</span>
             </div>
+            <div class="comp-data-status" id="competitionDataStatus">Loading the race, today's games and daily stories…</div>
           </div>
-        </div>
+          <div class="comp-top-actions">
+            <div class="comp-updated" id="competitionUpdated">NOT LOADED</div>
+            <button class="comp-icon-btn" onclick="refreshCompetitionBoard(true)">REFRESH</button>
+            <button class="comp-icon-btn" onclick="clearTestMode()">LIVE DATA</button>
+            <button class="comp-icon-btn primary" onclick="openDraftBoard()">DRAFT BOARD</button>
+          </div>
+        </header>
 
-        <section class="comp-panel comp-leader-panel">
-          <div class="comp-panel-head"><strong>Competition Ladder</strong><span>ACTUAL W–L · PROJECTED TITLE CHANCE</span></div>
-          <div class="comp-leaderboard" id="competitionLeaderboard"><div class="comp-empty">Competition data has not loaded yet.</div></div>
+        <section class="comp-lead-grid">
+          <article class="comp-spotlight" id="competitionSpotlight">
+            <div class="comp-loading">BUILDING THE RACE…</div>
+          </article>
+
+          <article class="comp-race-panel">
+            <div class="comp-section-head">
+              <div><span class="comp-section-kicker">RIGHT NOW</span><strong>THE TITLE RACE</strong></div>
+              <small>PROJECTED CHANCE TO WIN</small>
+            </div>
+            <div class="comp-race" id="competitionRace">
+              <div class="comp-empty">Title probabilities will appear here.</div>
+            </div>
+          </article>
         </section>
 
-        <section class="comp-panel comp-games-panel">
-          <div class="comp-panel-head"><strong>Today's Games</strong><span>AUSTRALIA/SYDNEY</span></div>
-          <div class="comp-games" id="competitionGames"><div class="comp-empty">Today's owned-team matchups will appear here.</div></div>
+        <section class="comp-daily-grid">
+          <article class="comp-slate-panel">
+            <div class="comp-section-head">
+              <div><span class="comp-section-kicker">TODAY</span><strong>GAMES THAT MATTER</strong></div>
+              <small id="competitionSlateDate">SYDNEY TIME</small>
+            </div>
+            <div class="comp-games" id="competitionGames">
+              <div class="comp-empty">Today's owned-team matchups will appear here.</div>
+            </div>
+          </article>
+
+          <article class="comp-stories-panel">
+            <div class="comp-section-head">
+              <div><span class="comp-section-kicker">THE MORNING PAPER</span><strong>WHAT YOU NEED TO KNOW</strong></div>
+              <small>STREAKS · RIVALRIES · PAIN</small>
+            </div>
+            <div class="comp-tidbits" id="competitionTidbits">
+              <div class="comp-empty">Daily competition stories will appear here.</div>
+            </div>
+          </article>
         </section>
 
-        <section class="comp-panel comp-notes-panel">
-          <div class="comp-panel-head"><strong>Daily Noise</strong><span>STREAKS · RIVALRIES · FORM</span></div>
-          <div class="comp-tidbits" id="competitionTidbits"><div class="comp-empty">Daily competition notes will appear here.</div></div>
+        <section class="comp-table-panel">
+          <div class="comp-section-head">
+            <div><span class="comp-section-kicker">EVERY TEAM · EVERY OWNER</span><strong>THE FULL TABLE</strong></div>
+            <small>ACTUAL W–L · PROJECTED FINISH · TITLE CHANCE</small>
+          </div>
+          <div class="comp-leaderboard" id="competitionLeaderboard">
+            <div class="comp-empty">Competition data has not loaded yet.</div>
+          </div>
         </section>
+
+        <footer class="comp-method">
+          <strong>HOW THE % WORKS</strong>
+          <span>Actual wins are locked in. Remaining games are simulated from each team's current record and preseason market line. It is a CourtVision projection — not a betting market.</span>
+        </footer>
       </div>
     </section>
 
