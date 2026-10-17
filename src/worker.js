@@ -40,21 +40,10 @@ function randomSalt() {
   return btoa(String.fromCharCode(...bytes));
 }
 
-async function pinDigest(pin, salt) {
-  const material = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(pin),
-    "PBKDF2",
-    false,
-    ["deriveBits"]
-  );
-  const saltBytes = Uint8Array.from(atob(salt), c => c.charCodeAt(0));
-  const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt: saltBytes, iterations: 120000 },
-    material,
-    256
-  );
-  return Array.from(new Uint8Array(bits), b => b.toString(16).padStart(2, "0")).join("");
+async function controlDigest(key, salt) {
+  const input = new TextEncoder().encode(`${salt}:${key}`);
+  const digest = await crypto.subtle.digest("SHA-256", input);
+  return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
 }
 
 export class DraftRoom {
@@ -75,23 +64,19 @@ export class DraftRoom {
     return (await this.ctx.storage.get("commissionerAuth")) || null;
   }
 
-  async claimOrVerify(pin) {
-    const supplied = String(pin || "");
-    if (supplied.length < 6) {
-      return { ok: false, status: 400, error: "Commissioner PIN must be at least 6 characters." };
+  async claimOrVerifyKey(key) {
+    const supplied = String(key || "");
+    if (supplied.length < 32) {
+      return { ok: false, status: 401, error: "Commissioner key missing." };
     }
 
     const auth = await this.authInfo();
 
-    // Optional recovery path if a legacy Cloudflare CONTROL_PIN secret already exists.
-    if (this.env.CONTROL_PIN && supplied === this.env.CONTROL_PIN) {
-      return { ok: true, claimedNow: false, recovery: true };
-    }
-
     if (!auth) {
       const salt = randomSalt();
-      const digest = await pinDigest(supplied, salt);
+      const digest = await controlDigest(supplied, salt);
       await this.ctx.storage.put("commissionerAuth", {
+        type: "auto-key",
         salt,
         digest,
         createdAt: new Date().toISOString(),
@@ -99,10 +84,19 @@ export class DraftRoom {
       return { ok: true, claimedNow: true };
     }
 
-    const digest = await pinDigest(supplied, auth.salt);
-    if (digest !== auth.digest) {
-      return { ok: false, status: 401, error: "Incorrect commissioner PIN." };
+    if (auth.type !== "auto-key") {
+      return {
+        ok: false,
+        status: 409,
+        error: "This room was created with the older PIN system. Create a new draft room to use automatic commissioner access."
+      };
     }
+
+    const digest = await controlDigest(supplied, auth.salt);
+    if (digest !== auth.digest) {
+      return { ok: false, status: 401, error: "This browser does not own commissioner access for this room." };
+    }
+
     return { ok: true, claimedNow: false };
   }
 
@@ -143,12 +137,12 @@ export class DraftRoom {
 
     if (request.method === "GET") {
       const auth = await this.authInfo();
-      return json({ ok: true, claimed: Boolean(auth), state: await this.state(room) });
+      return json({ ok: true, claimed: Boolean(auth), authType: auth?.type || null, state: await this.state(room) });
     }
 
     if (request.method === "PUT") {
-      const supplied = request.headers.get("x-control-pin") || "";
-      const auth = await this.claimOrVerify(supplied);
+      const supplied = request.headers.get("x-control-key") || "";
+      const auth = await this.claimOrVerifyKey(supplied);
       if (!auth.ok) return json({ ok: false, error: auth.error }, auth.status);
 
       let body;
@@ -170,8 +164,8 @@ export class DraftRoom {
     }
 
     if (request.method === "POST" && url.pathname.endsWith("/reset")) {
-      const supplied = request.headers.get("x-control-pin") || "";
-      const auth = await this.claimOrVerify(supplied);
+      const supplied = request.headers.get("x-control-key") || "";
+      const auth = await this.claimOrVerifyKey(supplied);
       if (!auth.ok) return json({ ok: false, error: auth.error }, auth.status);
 
       const fresh = defaultState(room);
