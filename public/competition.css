@@ -1417,3 +1417,173 @@ body[data-screen="competitionScreen"] .scanlines{
   .comp-team-chip b{font-size:8px!important}
   .comp-method{font-size:10px!important}
 }
+
+
+/* =========================================================
+   COMPETITION STRUCTURE PASS — compact slate + table priority
+   ========================================================= */
+
+/* Full table now follows the title race, so give it stronger spacing. */
+.comp-table-panel{
+  margin-top:10px!important;
+  margin-bottom:10px!important;
+}
+
+/* Today's slate should read like a scoreboard, not giant feature cards. */
+.comp-games{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:6px!important;
+  padding:6px!important;
+}
+
+.comp-game{
+  min-height:104px!important;
+  height:auto!important;
+  grid-template-columns:minmax(0,1fr) 92px minmax(0,1fr)!important;
+  grid-template-areas:"away center home"!important;
+  align-items:center!important;
+  gap:10px!important;
+  padding:10px 12px!important;
+  background:#06101c!important;
+  border-left:4px solid #395878!important;
+}
+
+.comp-game.in{border-left-color:var(--comp-red)!important}
+.comp-game.final{border-left-color:var(--comp-blue)!important}
+
+.comp-game.rivalry:before{
+  display:none!important;
+}
+
+.comp-game-side{
+  display:grid!important;
+  grid-template-columns:50px minmax(0,1fr)!important;
+  grid-template-rows:auto auto auto!important;
+  gap:1px 8px!important;
+  align-items:center!important;
+  min-width:0!important;
+}
+
+.comp-game-side.away{grid-area:away!important}
+.comp-game-side.home{grid-area:home!important}
+
+.comp-game-side img{
+  grid-row:1/span 3!important;
+  width:46px!important;
+  height:46px!important;
+}
+
+.comp-game-side strong{
+  font-size:22px!important;
+  line-height:1!important;
+}
+
+.comp-game-owner{
+  font-size:10px!important;
+  line-height:1.1!important;
+}
+
+.comp-game-side b{
+  font-size:26px!important;
+  line-height:1!important;
+}
+
+.comp-game-meta,
+.comp-game-status{
+  grid-area:center!important;
+  position:static!important;
+  align-self:auto!important;
+  text-align:center!important;
+}
+
+.comp-game-meta{
+  font-size:10px!important;
+  color:#c7d6e8!important;
+  margin-top:-15px!important;
+}
+
+.comp-game-status{
+  font-size:12px!important;
+  color:#ffd34d!important;
+  margin-top:20px!important;
+}
+
+/* Team chips: make standing position and record clear under each logo. */
+.comp-team-chip{
+  min-height:80px!important;
+  padding:6px 3px!important;
+}
+.comp-team-chip img{
+  width:34px!important;
+  height:34px!important;
+}
+.comp-team-chip span{
+  font-size:10px!important;
+  line-height:1!important;
+}
+.comp-team-chip b{
+  display:block!important;
+  margin-top:2px!important;
+  color:#d4e1f0!important;
+  font-size:9px!important;
+  line-height:1!important;
+  letter-spacing:.02em!important;
+}
+
+.comp-spot-team{
+  width:74px!important;
+  height:74px!important;
+  padding-bottom:17px!important;
+}
+.comp-spot-team img{
+  width:46px!important;
+  height:46px!important;
+}
+.comp-spot-team span{
+  left:3px!important;
+  right:3px!important;
+  bottom:3px!important;
+  text-align:center!important;
+  color:#d8e5f5!important;
+  font-size:8px!important;
+}
+
+/* Keep daily stories alongside the slate without forcing excessive card height. */
+.comp-daily-grid{
+  grid-template-columns:minmax(0,1.45fr) minmax(360px,.55fr)!important;
+  align-items:start!important;
+}
+
+@media(max-width:1250px){
+  .comp-daily-grid{
+    grid-template-columns:1fr!important;
+  }
+}
+
+@media(max-width:820px){
+  .comp-games{
+    grid-template-columns:1fr!important;
+  }
+  .comp-game{
+    min-height:96px!important;
+    grid-template-columns:minmax(0,1fr) 78px minmax(0,1fr)!important;
+    gap:6px!important;
+    padding:8px!important;
+  }
+  .comp-game-side{
+    grid-template-columns:40px minmax(0,1fr)!important;
+    gap:1px 5px!important;
+  }
+  .comp-game-side img{
+    width:38px!important;
+    height:38px!important;
+  }
+  .comp-game-side strong{font-size:18px!important}
+  .comp-game-owner{font-size:9px!important}
+  .comp-game-side b{font-size:22px!important}
+  .comp-game-meta{font-size:9px!important}
+  .comp-game-status{font-size:10px!important}
+  .comp-team-chip{min-height:70px!important}
+  .comp-team-chip span{font-size:9px!important}
+  .comp-team-chip b{font-size:8px!important}
+}
