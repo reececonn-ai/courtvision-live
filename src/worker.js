@@ -24,6 +24,49 @@ function validRoomName(name) {
   return /^[a-z0-9][a-z0-9-]{5,39}$/.test(name);
 }
 
+
+function nbaCacheTtl(kind, value) {
+  if (kind === "standings") return 300;
+  if (kind === "scoreboard") {
+    const m = String(value || "").match(/^(\d{4})(\d{2})(\d{2})$/);
+    if (!m) return 90;
+    const requested = Date.UTC(+m[1], +m[2] - 1, +m[3]);
+    const ageDays = Math.floor((Date.now() - requested) / 86400000);
+    return ageDays >= 2 ? 86400 : 90;
+  }
+  return 120;
+}
+
+async function cachedNbaResponse(request, upstreamUrl, ttl, ctx) {
+  const cache = caches.default;
+  const cacheKey = new Request(request.url, { method: "GET" });
+  const hit = await cache.match(cacheKey);
+  if (hit) {
+    const headers = new Headers(hit.headers);
+    headers.set("x-courtvision-cache", "HIT");
+    return new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers });
+  }
+
+  const upstream = await fetch(upstreamUrl, {
+    headers: { "accept": "application/json" },
+    cf: { cacheTtl: 0, cacheEverything: false },
+  });
+  if (!upstream.ok) {
+    return json({ ok: false, error: "NBA upstream unavailable", status: upstream.status }, 502);
+  }
+
+  const body = await upstream.text();
+  const headers = new Headers({
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": `public, max-age=${ttl}`,
+    "x-courtvision-cache": "MISS",
+    "x-courtvision-upstream-fetched-at": new Date().toISOString(),
+  });
+  const response = new Response(body, { status: 200, headers });
+  ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  return response;
+}
+
 function defaultState(room) {
   return {
     version: 1,
@@ -154,11 +197,31 @@ export class DraftRoom {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/health") {
-      return json({ ok: true, service: "courtvision-live", now: new Date().toISOString() });
+      return json({
+        ok: true,
+        service: "courtvision-live",
+        now: new Date().toISOString(),
+        nbaProxy: true,
+        nbaCacheSeconds: { standings: 300, liveScoreboard: 90, historicalScoreboard: 86400 },
+      });
+    }
+
+    if (url.pathname === "/api/nba/standings") {
+      const season = String(url.searchParams.get("season") || "2027");
+      if (!/^\d{4}$/.test(season)) return json({ ok: false, error: "Invalid season" }, 400);
+      const upstream = "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?season=" + encodeURIComponent(season);
+      return cachedNbaResponse(request, upstream, nbaCacheTtl("standings", season), ctx);
+    }
+
+    if (url.pathname === "/api/nba/scoreboard") {
+      const dates = String(url.searchParams.get("dates") || "");
+      if (!/^\d{8}$/.test(dates)) return json({ ok: false, error: "Invalid dates" }, 400);
+      const upstream = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=" + encodeURIComponent(dates);
+      return cachedNbaResponse(request, upstream, nbaCacheTtl("scoreboard", dates), ctx);
     }
 
     if (url.pathname === "/draft" || url.pathname === "/friends") {
