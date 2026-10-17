@@ -1,4 +1,4 @@
-name: Competition Desktop Visual QA
+name: Competition + Nerd Stats Visual QA
 
 on:
   push:
@@ -22,7 +22,8 @@ jobs:
       - run: |
           python -m http.server 8000 --directory public >/tmp/cv-http.log 2>&1 &
           sleep 2
-      - name: Check full-screen competition page
+
+      - name: Check Competition and Stats for Nerds
         run: |
           cat >/tmp/competition_desktop.py <<'PY'
           import json,time
@@ -34,56 +35,136 @@ jobs:
           o.add_argument("--no-sandbox")
           o.add_argument("--disable-dev-shm-usage")
           d=webdriver.Chrome(options=o)
-          d.set_window_size(1440,900)
-          try:
+
+          def rect(sel):
+              return d.execute_script("""
+                const e=document.querySelector(arguments[0]); if(!e)return null;
+                const r=e.getBoundingClientRect();
+                return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};
+              """,sel)
+
+          def audit(width,height,label):
+              d.set_window_size(width,height)
               d.get("http://127.0.0.1:8000/?room=competitionqa")
-              time.sleep(1.5)
+              time.sleep(1.2)
               d.execute_script("loadTestDraft(true)")
-              time.sleep(1.0)
-              data=d.execute_script("""
-                const q=s=>document.querySelector(s);
-                const r=s=>{const e=q(s);if(!e)return null;const x=e.getBoundingClientRect();return {x:x.x,y:x.y,width:x.width,height:x.height,right:x.right,bottom:x.bottom}};
+              time.sleep(.8)
+
+              comp=d.execute_script("""
+                const q=s=>document.querySelector(s), r=e=>{const x=e?.getBoundingClientRect();return x?{x:x.x,y:x.y,width:x.width,height:x.height,right:x.right,bottom:x.bottom}:null};
+                const t=q('#broadcastTicker'),tr=t?.getBoundingClientRect(),ts=t?getComputedStyle(t):null;
                 return {
-                  viewport:{w:innerWidth,h:innerHeight,scrollWidth:document.documentElement.scrollWidth},
                   active:q('.screen.active')?.id,
                   bodyScreen:document.body.dataset.screen,
-                  sidebarDisplay:getComputedStyle(q('.sidebar')).display,
-                  stage:r('.stage'),
-                  screen:r('#competitionScreen'),
-                  shell:r('#competitionScreen .competition-shell'),
-                  spotlight:r('#competitionSpotlight'),
-                  race:r('#competitionRace'),
+                  sidebar:getComputedStyle(q('.sidebar')).display,
+                  viewport:{w:innerWidth,h:innerHeight,scrollWidth:document.documentElement.scrollWidth},
+                  screen:r(q('#competitionScreen')),
+                  shell:r(q('#competitionScreen .competition-shell')),
+                  ticker:r(t),
+                  tickerPosition:ts?.position,
                   games:document.querySelectorAll('#competitionGames .comp-game').length,
                   stories:document.querySelectorAll('#competitionTidbits .comp-tidbit').length,
                   cards:document.querySelectorAll('#competitionLeaderboard .comp-player-card').length,
-                  title:q('.comp-title-row h2')?.textContent?.trim(),
+                  chips:document.querySelectorAll('#competitionLeaderboard .comp-team-chip').length,
                   mode:q('#competitionModeBadge')?.textContent?.trim()
                 };
               """)
-              print("DESKTOP_COMPETITION="+json.dumps(data,sort_keys=True))
-              d.save_screenshot("/tmp/competition-1440x900.png")
-              if data["active"]!="competitionScreen" or data["bodyScreen"]!="competitionScreen":
-                  raise SystemExit("Competition screen is not active")
-              if data["sidebarDisplay"]!="none":
-                  raise SystemExit("Draft sidebar is still visible on Competition")
-              if not data["screen"] or data["screen"]["width"] < data["viewport"]["w"] - 20:
-                  raise SystemExit("Competition does not use the full desktop width")
-              if data["viewport"]["scrollWidth"] > data["viewport"]["w"]+2:
-                  raise SystemExit("Competition horizontally overflows desktop")
-              if not data["spotlight"] or data["spotlight"]["height"] < 250:
-                  raise SystemExit("Leader spotlight is not visually dominant")
-              if data["games"] < 1 or data["stories"] < 1 or data["cards"] != 6:
-                  raise SystemExit("Competition daily content did not populate")
-              if data["title"]!="THE COMPETITION" or data["mode"]!="DEMO DATA":
-                  raise SystemExit("Competition headline/demo state incorrect")
+              print("COMP_"+label+"="+json.dumps(comp,sort_keys=True))
+              d.save_screenshot("/tmp/competition-"+label+".png")
+
+              if comp["active"]!="competitionScreen" or comp["bodyScreen"]!="competitionScreen":
+                  raise SystemExit("Competition not active")
+              if comp["sidebar"]!="none":
+                  raise SystemExit("Competition sidebar visible")
+              if comp["viewport"]["scrollWidth"] > comp["viewport"]["w"]+2:
+                  raise SystemExit("Competition horizontal overflow")
+              if not comp["screen"] or comp["screen"]["width"] < comp["viewport"]["w"]-2:
+                  raise SystemExit("Competition not full width")
+              if not comp["shell"] or comp["shell"]["width"] < comp["viewport"]["w"]-34:
+                  raise SystemExit("Competition shell wastes too much horizontal space")
+              if comp["tickerPosition"]!="fixed" or not comp["ticker"]:
+                  raise SystemExit("Competition ticker is not fixed")
+              if comp["ticker"]["x"] > 2 or comp["ticker"]["width"] < comp["viewport"]["w"]-4:
+                  raise SystemExit("Competition ticker is not edge-to-edge")
+              if comp["games"]<1 or comp["stories"]<1 or comp["cards"]!=6 or comp["chips"]!=30:
+                  raise SystemExit("Competition content incomplete")
+              if comp["mode"]!="DEMO DATA":
+                  raise SystemExit("Competition demo badge missing")
+
+              d.execute_script("openStatsForNerds()")
+              time.sleep(.6)
+              nerd=d.execute_script("""
+                const q=s=>document.querySelector(s), rr=s=>{const e=q(s),x=e?.getBoundingClientRect();return x?{x:x.x,y:x.y,width:x.width,height:x.height,right:x.right,bottom:x.bottom}:null};
+                const t=q('#broadcastTicker'),ts=t?getComputedStyle(t):null;
+                return {
+                  active:q('.screen.active')?.id,
+                  bodyScreen:document.body.dataset.screen,
+                  sidebar:getComputedStyle(q('.sidebar')).display,
+                  viewport:{w:innerWidth,h:innerHeight,scrollWidth:document.documentElement.scrollWidth},
+                  screen:rr('#statsForNerdsScreen'),
+                  shell:rr('#statsForNerdsScreen .nerd-shell'),
+                  ticker:rr('#broadcastTicker'),
+                  tickerPosition:ts?.position,
+                  owners:document.querySelectorAll('#nerdOwners .nerd-owner-card').length,
+                  expectationRows:document.querySelectorAll('#nerdExpectation .nerd-list-row').length,
+                  matrixRows:document.querySelectorAll('#nerdRivalryMatrix tbody tr').length,
+                  ownerY:rr('#nerdOwners')?.y,
+                  matrixY:rr('#nerdRivalryMatrix')?.y,
+                  expectationY:rr('#nerdExpectation')?.y
+                };
+              """)
+              print("NERD_"+label+"="+json.dumps(nerd,sort_keys=True))
+              d.save_screenshot("/tmp/nerds-"+label+".png")
+
+              if nerd["active"]!="statsForNerdsScreen" or nerd["bodyScreen"]!="statsForNerdsScreen":
+                  raise SystemExit("Stats for Nerds not active")
+              if nerd["sidebar"]!="none":
+                  raise SystemExit("Stats sidebar visible")
+              if nerd["viewport"]["scrollWidth"] > nerd["viewport"]["w"]+2:
+                  raise SystemExit("Stats horizontal overflow")
+              if not nerd["screen"] or nerd["screen"]["width"] < nerd["viewport"]["w"]-2:
+                  raise SystemExit("Stats not full width")
+              if nerd["tickerPosition"]!="fixed" or nerd["ticker"]["x"]>2 or nerd["ticker"]["width"]<nerd["viewport"]["w"]-4:
+                  raise SystemExit("Stats ticker is not fixed edge-to-edge")
+              if nerd["owners"]!=6:
+                  raise SystemExit("Owner deep dives missing")
+              if nerd["expectationRows"]>6:
+                  raise SystemExit("Over/Under expectation is no longer condensed")
+              if nerd["matrixRows"]!=6:
+                  raise SystemExit("Rivalry matrix incomplete")
+              if not (nerd["ownerY"] < nerd["matrixY"] < nerd["expectationY"]):
+                  raise SystemExit("Rivalry content is not prioritized after Owner Deep Dives")
+
+              # Remote ordinary data updates must not move this browser off Stats for Nerds.
+              isolated=d.execute_script("""
+                const snap=cvSharedSnapshot();
+                snap.origin='qa-other-viewer';
+                snap.rev=Date.now()+500000;
+                snap.draft.lastAction='Remote data update';
+                snap.draft.liveSpin=null;
+                snap.draft.onTheBoard=null;
+                cvApplySnapshot(snap);
+                return document.querySelector('.screen.active')?.id;
+              """)
+              if isolated!="statsForNerdsScreen":
+                  raise SystemExit("Remote data update changed local page navigation")
+
+          try:
+              audit(1366,768,"1366x768")
+              audit(1600,1000,"1600x1000")
           finally:
               d.quit()
           PY
           python /tmp/competition_desktop.py
-      - name: Upload desktop screenshot
+
+      - name: Upload QA screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: competition-desktop-qa
-          path: /tmp/competition-1440x900.png
+          name: competition-nerd-desktop-qa
+          path: |
+            /tmp/competition-1366x768.png
+            /tmp/competition-1600x1000.png
+            /tmp/nerds-1366x768.png
+            /tmp/nerds-1600x1000.png
           if-no-files-found: warn
