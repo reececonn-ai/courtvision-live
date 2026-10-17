@@ -3220,6 +3220,29 @@ body.readable.paused:after{font-size:clamp(80px,9vw,300px)}
   }
 }
 
+
+/* Mobile reveal must stack its broadcast header above the content.
+   The legacy reveal screen is a row flex container on desktop. */
+@media (max-width:820px){
+  #revealScreen.reveal,
+  body.readable #revealScreen.reveal,
+  body.tv-mode #revealScreen.reveal{
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+  }
+
+  #revealScreen > .broadcast-top{
+    flex:0 0 auto!important;
+    width:100%!important;
+  }
+
+  #revealScreen > .reveal-grid{
+    flex:0 0 auto!important;
+    width:100%!important;
+  }
+}
+
 </style>
 </head>
 <body>
