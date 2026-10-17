@@ -1,0 +1,281 @@
+name: Draft Night Comprehensive UI QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "public/index.html"
+      - "public/competition.css"
+      - "public/competition.js"
+      - ".github/workflows/draft-night-ui-qa.yml"
+  workflow_dispatch:
+
+jobs:
+  draft-night-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install selenium pillow
+      - run: |
+          python -m http.server 8000 --directory public >/tmp/cv-http.log 2>&1 &
+          sleep 2
+
+      - name: Audit draft-night screens
+        run: |
+          cat >/tmp/draft_night_ui.py <<'PY'
+          import json,time,os
+          from selenium import webdriver
+          from selenium.webdriver.chrome.options import Options
+
+          o=Options()
+          o.add_argument("--headless=new")
+          o.add_argument("--no-sandbox")
+          o.add_argument("--disable-dev-shm-usage")
+          o.add_argument("--force-device-scale-factor=1")
+          d=webdriver.Chrome(options=o)
+
+          def js(script,*args):
+              return d.execute_script(script,*args)
+
+          def rect(sel):
+              return js("""
+                const e=document.querySelector(arguments[0]); if(!e)return null;
+                const r=e.getBoundingClientRect();
+                return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};
+              """,sel)
+
+          def viewport():
+              return js("return {w:innerWidth,h:innerHeight,clientW:document.documentElement.clientWidth,scrollW:document.documentElement.scrollWidth,scrollH:document.documentElement.scrollHeight};")
+
+          def assert_no_h_overflow(label):
+              v=viewport()
+              if v["scrollW"]>v["clientW"]+3:
+                  raise SystemExit(f"{label}: horizontal overflow {v}")
+
+          def shot(name):
+              path="/tmp/"+name+".png"
+              d.save_screenshot(path)
+              return path
+
+          def setup(width,height,room):
+              d.set_window_size(width,height)
+              d.get(f"http://127.0.0.1:8000/?room={room}")
+              time.sleep(.8)
+              js("localStorage.setItem('nbaDraftLayout','readable'); applyLayout('readable');")
+              time.sleep(.2)
+
+          def audit_desktop(width,height,label):
+              setup(width,height,"draftnightqa-"+label)
+              print("\n===",label,"===")
+
+              # WHEEL / TOP BOARD
+              js("enterDraft()")
+              time.sleep(.5)
+              wheel={
+                "viewport":viewport(),
+                "screen":rect("#wheelScreen"),
+                "board":rect("#wheelScreen .wheel-team-board"),
+                "grid":rect("#wheelTeamGrid"),
+                "tile":rect("#wheelTeamGrid .wheel-team-tile"),
+                "wheel":rect("#wheelScreen .wheel-wrap"),
+                "caption":rect("#wheelScreen .wheel-caption"),
+                "ticker":rect("#broadcastTicker"),
+                "teams":js("return document.querySelectorAll('#wheelTeamGrid .wheel-team-tile').length"),
+              }
+              print("WHEEL",json.dumps(wheel,sort_keys=True))
+              shot("wheel-"+label)
+              assert_no_h_overflow(label+" wheel")
+              if wheel["teams"]!=30: raise SystemExit(label+": wheel board does not show 30 teams")
+              if not wheel["board"] or not wheel["wheel"] or not wheel["ticker"]: raise SystemExit(label+": wheel essentials missing")
+              if wheel["board"]["bottom"] >= wheel["wheel"]["top"]-4:
+                  raise SystemExit(label+": top board overlaps bottom wheel")
+              if wheel["wheel"]["bottom"] >= wheel["ticker"]["top"]+4:
+                  raise SystemExit(label+": wheel overlaps ticker")
+              if wheel["tile"]["height"] < 48:
+                  raise SystemExit(label+": team tiles too small")
+
+              # LIVE TEAM REVEAL - DALLAS specifically
+              js("showReveal('Dallas Mavericks')")
+              time.sleep(.8)
+              profile={
+                "viewport":viewport(),
+                "screen":rect("#revealScreen"),
+                "grid":rect("#revealScreen .reveal-grid"),
+                "main":rect("#revealScreen .team-main"),
+                "masthead":rect("#revealScreen .team-masthead"),
+                "starters":rect("#revealScreen .starting-five-panel"),
+                "profile":rect("#profileStage"),
+                "right":rect("#revealScreen .right-rail"),
+                "bid":rect("#revealScreen .bid-panel"),
+                "ticker":rect("#broadcastTicker"),
+              }
+              print("PROFILE",json.dumps(profile,sort_keys=True))
+              shot("profile-dallas-"+label)
+              assert_no_h_overflow(label+" profile")
+              if profile["bid"] and profile["ticker"] and profile["bid"]["bottom"] > profile["ticker"]["top"]+4:
+                  raise SystemExit(label+": bid panel hidden behind ticker")
+              if profile["main"] and profile["ticker"] and profile["main"]["bottom"] > profile["ticker"]["top"]+25:
+                  print("WARN main extends below ticker; reveal may be scrollable")
+
+              # Decision view: check clipping and steady surrounding geometry.
+              starters_before=profile["starters"]
+              mast_before=profile["masthead"]
+              js("showDecisionView(false,false)")
+              time.sleep(.35)
+              decision={
+                "stage":rect("#decisionStage"),
+                "availabilityCard":rect("#decisionStage .decision-card.context"),
+                "availabilityList":rect("#decisionAvailabilityList"),
+                "availabilityText":js("return document.querySelector('#decisionAvailabilityList')?.innerText||''"),
+                "availabilityItems":js("return document.querySelectorAll('#decisionAvailabilityList li').length"),
+                "availabilityOverflow":js("""
+                  const e=document.querySelector('#decisionStage .decision-card.context');
+                  return e ? {scroll:e.scrollHeight,client:e.clientHeight,overflow:getComputedStyle(e).overflow} : null;
+                """),
+                "starters":rect("#revealScreen .starting-five-panel"),
+                "masthead":rect("#revealScreen .team-masthead"),
+                "bid":rect("#revealScreen .bid-panel"),
+                "ticker":rect("#broadcastTicker"),
+              }
+              print("DECISION",json.dumps(decision,sort_keys=True))
+              shot("decision-dallas-"+label)
+              assert_no_h_overflow(label+" decision")
+              if decision["availabilityItems"]<1: raise SystemExit(label+": Dallas availability missing")
+              if decision["availabilityCard"] and decision["availabilityList"] and decision["availabilityList"]["bottom"] > decision["availabilityCard"]["bottom"]+2:
+                  raise SystemExit(label+": Dallas availability list clips outside card")
+              if starters_before and decision["starters"] and abs(starters_before["height"]-decision["starters"]["height"])>4:
+                  raise SystemExit(label+": Decision View changes starting-five height")
+              if mast_before and decision["masthead"] and abs(mast_before["height"]-decision["masthead"]["height"])>4:
+                  raise SystemExit(label+": Decision View changes masthead height")
+
+              # Fade should only affect profile/decision stages, never whole team-main.
+              fade=js("""
+                const main=document.querySelector('#revealScreen .team-main');
+                showProfileView(false,true);
+                return {
+                  mainHasFade:main.classList.contains('view-fading'),
+                  profileHasFade:document.querySelector('#profileStage').classList.contains('view-fading'),
+                  decisionHasFade:document.querySelector('#decisionStage').classList.contains('view-fading')
+                };
+              """)
+              print("FADE_SCOPE",json.dumps(fade,sort_keys=True))
+              if fade["mainHasFade"]: raise SystemExit(label+": fade still targets whole team-main")
+              time.sleep(.7)
+
+              # Draft board
+              js("openDraftBoard()")
+              time.sleep(.45)
+              board={
+                "screen":rect("#draftBoardScreen"),
+                "shell":rect("#draftBoardScreen .board-shell"),
+                "players":rect("#boardPlayerSummary"),
+                "pulse":rect("#draftPulse"),
+                "grid":rect("#draftBoardGrid"),
+                "team":rect("#draftBoardGrid .board-team"),
+                "ticker":rect("#broadcastTicker"),
+                "teams":js("return document.querySelectorAll('#draftBoardGrid .board-team').length")
+              }
+              print("BOARD",json.dumps(board,sort_keys=True))
+              shot("draft-board-"+label)
+              assert_no_h_overflow(label+" draft board")
+              if board["teams"]!=30: raise SystemExit(label+": Draft Board missing teams")
+              if board["grid"] and board["ticker"] and board["grid"]["bottom"] > board["ticker"]["top"]+5:
+                  print("WARN draft board extends beneath ticker; expected only if screen scrolls")
+
+              # Settings
+              js("openSettings()")
+              time.sleep(.25)
+              settings={
+                "modal":rect("#settingsModal .modal-card"),
+                "viewport":viewport()
+              }
+              print("SETTINGS",json.dumps(settings,sort_keys=True))
+              shot("settings-"+label)
+              if settings["modal"] and settings["modal"]["height"] > settings["viewport"]["h"]*.94:
+                  raise SystemExit(label+": settings modal taller than safe viewport")
+              js("closeSettings()")
+              time.sleep(.15)
+
+              # Barrel screen
+              js("openBarrelMode()")
+              time.sleep(.35)
+              barrel={
+                "screen":rect("#barrelScreen"),
+                "shell":rect("#barrelScreen .barrel-shell"),
+                "ticker":rect("#broadcastTicker")
+              }
+              print("BARREL",json.dumps(barrel,sort_keys=True))
+              shot("barrel-"+label)
+              assert_no_h_overflow(label+" barrel")
+
+              # Post-draft
+              js("loadTestDraft(true)")
+              time.sleep(.8)
+              comp={
+                "screen":rect("#competitionScreen"),
+                "ticker":rect("#broadcastTicker"),
+                "cards":js("return document.querySelectorAll('#competitionLeaderboard .comp-player-card').length")
+              }
+              print("COMP",json.dumps(comp,sort_keys=True))
+              shot("competition-"+label)
+              assert_no_h_overflow(label+" competition")
+              if comp["cards"]!=6: raise SystemExit(label+": competition missing owner cards")
+
+              js("openStatsForNerds()")
+              time.sleep(.5)
+              nerd={
+                "screen":rect("#statsForNerdsScreen"),
+                "ticker":rect("#broadcastTicker"),
+                "owners":js("return document.querySelectorAll('#nerdOwners .nerd-owner-card').length")
+              }
+              print("NERD",json.dumps(nerd,sort_keys=True))
+              shot("nerds-"+label)
+              assert_no_h_overflow(label+" nerds")
+              if nerd["owners"]!=6: raise SystemExit(label+": nerd owner cards missing")
+
+          def audit_phone(width,height,label):
+              setup(width,height,"draftnightqa-"+label)
+              js("enterDraft()")
+              time.sleep(.4)
+              wheel={"v":viewport(),"board":rect("#wheelScreen .wheel-team-board"),"wheel":rect("#wheelScreen .wheel-wrap"),"ticker":rect("#broadcastTicker")}
+              print("PHONE_WHEEL",label,json.dumps(wheel,sort_keys=True))
+              shot("phone-wheel-"+label)
+              assert_no_h_overflow(label+" phone wheel")
+
+              js("showReveal('Dallas Mavericks')")
+              time.sleep(.6)
+              shot("phone-profile-"+label)
+              assert_no_h_overflow(label+" phone profile")
+              js("showDecisionView(false,false)")
+              time.sleep(.25)
+              decision={"card":rect("#decisionStage .decision-card.context"),"list":rect("#decisionAvailabilityList"),"v":viewport()}
+              print("PHONE_DECISION",label,json.dumps(decision,sort_keys=True))
+              shot("phone-decision-"+label)
+              assert_no_h_overflow(label+" phone decision")
+
+              js("openDraftBoard()")
+              time.sleep(.35)
+              shot("phone-board-"+label)
+              assert_no_h_overflow(label+" phone board")
+
+          try:
+              audit_desktop(1366,768,"1366x768")
+              audit_desktop(1600,900,"1600x900")
+              audit_desktop(1920,1080,"1920x1080")
+              audit_phone(390,844,"390x844")
+              audit_phone(430,932,"430x932")
+          finally:
+              d.quit()
+          PY
+          python /tmp/draft_night_ui.py
+
+      - name: Upload comprehensive screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: draft-night-ui-qa
+          path: /tmp/*.png
+          if-no-files-found: warn
