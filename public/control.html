@@ -80,7 +80,10 @@
     <div class="field"><label>Win line</label><input id="lineInput" inputmode="decimal"></div>
   </div>
 
-  <div class="field"><label>Current bid</label><input id="bidInput" inputmode="decimal" placeholder="e.g. 7"></div>
+  <div class="two-field">
+    <div class="field"><label>Current bid</label><input id="bidInput" inputmode="decimal" placeholder="e.g. 7"></div>
+    <div class="field"><label>Winning bidder</label><select id="bidderInput"></select></div>
+  </div>
   <div class="field"><label>Message</label><input id="messageInput" placeholder="Optional live message"></div>
 
   <details class="player-setup">
@@ -89,8 +92,10 @@
   </details>
 
   <div class="drawer-actions">
-    <button id="publishBtn" class="btn primary full-btn" type="button">UPDATE LIVE SCREEN</button>
-    <button id="spinDemoBtn" class="btn secondary full-btn" type="button">TEST LIVE SPIN</button>
+    <button id="spinDemoBtn" class="btn primary full-btn" type="button">SPIN WHEEL</button>
+    <button id="assignBtn" class="btn secondary full-btn" type="button">ASSIGN TEAM</button>
+    <button id="passBtn" class="btn secondary full-btn" type="button">PASS TO BARREL</button>
+    <button id="publishBtn" class="btn secondary full-btn" type="button">UPDATE LIVE SCREEN</button>
   </div>
 
   <div id="error" class="error" role="alert"></div>
