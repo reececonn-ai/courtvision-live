@@ -3,18 +3,49 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>CourtVision Live</title>
+  <title>CourtVision NBA Team Draft</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body class="landing">
-  <main class="landing-card">
-    <div class="eyebrow">COURTVISION · LIVE NBA TEAM DRAFT</div>
-    <h1>One draft.<br>Every screen.</h1>
-    <p>The commissioner runs the draft. Spectators follow live from a laptop or phone.</p>
-    <div class="landing-actions">
-      <a class="primary-link" href="/watch.html">WATCH DRAFT</a>
-      <a class="secondary-link" href="/control.html">COMMISSIONER</a>
+<body>
+<div class="app-shell broadcast-shell">
+  <header class="topbar broadcast-topbar">
+    <div class="brand">COURTVISION<small>NBA TEAM DRAFT · LIVE</small></div>
+    <div class="shared-tools">
+      <button id="copyLinkBtn" class="top-control-btn" type="button">COPY LINK</button>
+      <div id="connStatus" class="status-pill">CONNECTING</div>
     </div>
+  </header>
+
+  <main class="watch-main mirror-main">
+    <section id="stage" class="watch-stage mirror-stage" aria-live="polite">
+      <div class="watch-lobby">
+        <div class="eyebrow">NBA TEAM DRAFT</div>
+        <h1>COURTVISION</h1>
+        <p>Connecting to the live draft…</p>
+      </div>
+    </section>
   </main>
+</div>
+
+<div id="sharedDock" class="shared-dock" hidden>
+  <div class="shared-dock-inner">
+    <div id="dockTeam" class="dock-team"></div>
+    <div class="dock-field">
+      <label>WINNING BIDDER</label>
+      <select id="bidderInput"></select>
+    </div>
+    <div class="dock-field dock-bid">
+      <label>BID</label>
+      <input id="bidInput" inputmode="decimal" placeholder="$">
+    </div>
+    <button id="assignBtn" class="btn primary dock-btn" type="button">ASSIGN</button>
+    <button id="passBtn" class="btn secondary dock-btn" type="button">PASS</button>
+    <button id="backBtn" class="btn secondary dock-btn" type="button">BACK TO WHEEL</button>
+  </div>
+</div>
+
+<div id="toast" class="shared-toast" hidden></div>
+
+<script type="module" src="/app.js"></script>
 </body>
 </html>
