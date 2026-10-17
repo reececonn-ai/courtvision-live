@@ -3981,6 +3981,54 @@ body.tv-mode .wheel-screen .wheel-wrap{
     margin:8px auto 0!important;
   }
 }
+
+/* Reveal auto-slide uses a stable surrounding layout.
+   Decision View no longer compresses the lineup/masthead. */
+body.readable .team-main.decision-mode .starter-card img,
+body.readable .team-main.decision-mode .starter-card > div[style]{
+  height:clamp(110px,17vh,420px)!important;
+  display:block!important;
+}
+body.readable .team-main.decision-mode .starter-stats{
+  display:block!important;
+}
+body.readable .team-main.decision-mode .starter-card .pos{
+  display:inline-block!important;
+}
+body.readable .team-main.decision-mode .starter-copy{
+  padding:calc(var(--gap)*.8) var(--pad) var(--pad)!important;
+}
+body.readable .team-main.decision-mode .masthead-sub{
+  display:block!important;
+}
+body.readable.zoom-l .team-main.decision-mode .starter-card img,
+body.readable.zoom-l .team-main.decision-mode .starter-card > div[style]{
+  height:clamp(104px,15.5vh,380px)!important;
+}
+body.readable.zoom-xl .team-main.decision-mode .starter-card img,
+body.readable.zoom-xl .team-main.decision-mode .starter-card > div[style]{
+  display:block!important;
+  height:clamp(96px,13.5vh,340px)!important;
+}
+body.readable.zoom-xl .team-main.decision-mode .starter-stats{
+  display:block!important;
+}
+body.readable.zoom-xl .team-main.decision-mode .starter-card .pos{
+  display:inline-block!important;
+}
+
+/* Let Decision View use the available lower-left space instead of ending early. */
+body.readable .team-main.decision-mode .decision-stage{
+  display:flex!important;
+  flex-direction:column!important;
+  flex:1 1 auto!important;
+}
+body.readable .team-main.decision-mode .decision-grid{
+  flex:1 1 auto!important;
+}
+body.readable .team-main.decision-mode .decision-card{
+  height:100%!important;
+}
 </style>
 </head>
 <body>
@@ -5447,6 +5495,7 @@ function enterDraft(){hypeSting();flash();showScreen("wheelScreen")}
 function flash(){const f=document.getElementById("flash");f.classList.remove("go");void f.offsetWidth;f.classList.add("go")}
 function shake(){const s=document.getElementById("shell");s.classList.remove("shake");void s.offsetWidth;s.classList.add("shake")}
 function showScreen(id){
+  if(id!=="revealScreen")stopRevealAutoSlide();
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   const target=document.getElementById(id);target.classList.add("active");
   document.body.dataset.screen=id;
@@ -5456,6 +5505,7 @@ function showScreen(id){
 }
 
 function showScreenLocal(id){
+  if(id!=="revealScreen")stopRevealAutoSlide();
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   const target=document.getElementById(id);if(!target)return;
   target.classList.add("active");
@@ -6116,21 +6166,41 @@ function renderDecisionView(name){
   renderDepthAndCore(name);
   renderDecisionIntel(name);
 }
-function showDecisionView(){
+let revealAutoTimer=null;
+const REVEAL_AUTO_MS=10000;
+
+function stopRevealAutoSlide(){
+  if(revealAutoTimer){clearTimeout(revealAutoTimer);revealAutoTimer=null}
+}
+function scheduleRevealAutoSlide(){
+  stopRevealAutoSlide();
+  const active=document.querySelector(".screen.active")?.id==="revealScreen";
+  if(!active||!currentTeam||state.paused||teamPreviewActive)return;
+  revealAutoTimer=setTimeout(()=>{
+    revealAutoTimer=null;
+    if(document.querySelector(".screen.active")?.id!=="revealScreen"||!currentTeam||state.paused||teamPreviewActive)return;
+    const main=document.querySelector("#revealScreen .team-main");
+    if(main?.classList.contains("decision-mode"))showProfileView();
+    else showDecisionView();
+  },REVEAL_AUTO_MS);
+}
+function showDecisionView(auto=true){
   const main=document.querySelector("#revealScreen .team-main");
   if(!main||!currentTeam)return;
   renderDecisionView(currentTeam);
   main.classList.add("decision-mode");
   setTicker([...teamTickerItems(currentTeam),...draftTickerItems(),...LEAGUE_TICKER.map(x=>({...x,kind:""}))],teamByName(currentTeam)?.[1]||"TEAM");
+  if(auto)scheduleRevealAutoSlide();
 }
-function showProfileView(){
+function showProfileView(auto=true){
   document.querySelector("#revealScreen .team-main")?.classList.remove("decision-mode");
+  if(auto)scheduleRevealAutoSlide();
 }
 let teamPreviewActive=false,teamPreviewPreviousCurrent=null,teamPreviewReturnScreen="draftBoardScreen";
 
 function showReveal(name,options={}){
   const preview=!!options.preview;
-  showProfileView();
+  showProfileView(false);
 
   const reveal=document.getElementById("revealScreen");
   reveal?.classList.toggle("team-preview-mode",preview);
@@ -6178,6 +6248,7 @@ function showReveal(name,options={}){
   renderBidContext(name);
   updateTickerForScreen("revealScreen");
   renderDecisionView(name);
+  if(!preview)scheduleRevealAutoSlide();else stopRevealAutoSlide();
 }
 
 function previewTeamFromBoard(name){
