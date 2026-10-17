@@ -4046,6 +4046,36 @@ body.readable .team-main.decision-mode .decision-card{
   #revealScreen .profile-stage,
   #revealScreen .decision-stage{transition:none!important}
 }
+
+/* Keep Decision View availability readable on short laptop screens. */
+body.readable .decision-card.context .availability-list{
+  overflow:hidden!important;
+}
+body.readable .decision-card.context .availability-list li{
+  min-width:0!important;
+}
+body.readable .decision-card.context .availability-note{
+  display:inline!important;
+}
+body.readable .decision-card.context .li-meta{
+  display:block!important;
+  margin-top:2px!important;
+}
+@media(min-width:821px) and (max-height:900px){
+  body.readable .decision-card.context .availability-list{
+    font-size:clamp(10px,.72vw,13px)!important;
+    line-height:1.32!important;
+  }
+  body.readable .decision-card.context .availability-list li{
+    margin-bottom:5px!important;
+  }
+  body.readable .decision-card.context .availability-note{
+    display:-webkit-box!important;
+    -webkit-box-orient:vertical!important;
+    -webkit-line-clamp:2!important;
+    overflow:hidden!important;
+  }
+}
 </style>
 </head>
 <body>
@@ -6060,7 +6090,7 @@ function renderDepthAndCore(name){
   const av=document.getElementById("decisionAvailabilityList"),at=document.getElementById("decisionAvailabilityTitle");
   if(av){
     const ah=availabilityHeadline(d);if(at){at.textContent=ah.text;at.className=ah.cls}
-    av.innerHTML=(d.availability.length?d.availability.slice(0,4).map(a=>`<li class="${a.level.toLowerCase()}"><b>${escapeHtml(a.level)}</b> ${a.player?escapeHtml(a.player)+" — ":""}${escapeHtml(a.note)}<span class="li-meta">${a.source==="espn"?` ESPN · ${shortDate(a.date)}`:a.source==="curated"?" curated":" commissioner"}</span></li>`):["<li>No availability flags on the projected five.</li>"]).join("");
+    av.innerHTML=(d.availability.length?d.availability.slice(0,3).map(a=>`<li class="${a.level.toLowerCase()}" title="${escapeAttr((a.player?a.player+" — ":"")+a.note)}"><b>${escapeHtml(a.level)}</b> ${a.player?escapeHtml(a.player)+" — ":""}<span class="availability-note">${escapeHtml(compactAvailabilityNote(a.note))}</span><span class="li-meta">${a.source==="espn"?` ESPN · ${shortDate(a.date)}`:a.source==="curated"?" curated":" commissioner"}</span></li>`):["<li>No availability flags on the projected five.</li>"]).join("");
   }
 }
 function playoffClass(v){
@@ -6148,6 +6178,19 @@ function renderDecisionIntel(name){
   const s=changeSummary(name);
   document.getElementById("changedTitle").textContent=s.title;
   document.getElementById("changedCopy").textContent=s.copy;
+}
+function compactAvailabilityNote(note){
+  const raw=String(note||"").replace(/\s+/g," ").trim();
+  if(!raw)return "Availability update";
+  const cleaned=raw
+    .replace(/\bhas been ruled out\b/gi,"ruled out")
+    .replace(/\bhas been cleared\b/gi,"cleared")
+    .replace(/\bhas been listed as\b/gi,"listed")
+    .replace(/\bfor Friday's exhibition against the\b/gi,"vs")
+    .replace(/\bfor Friday’s exhibition against the\b/gi,"vs")
+    .replace(/\bfor the exhibition against the\b/gi,"vs")
+    .replace(/\bfor camp\b/gi,"for camp");
+  return cleaned.length>96?cleaned.slice(0,93).replace(/[\s,;:.-]+$/,"")+"…":cleaned;
 }
 function renderDecisionView(name){
   const c=state.teamContent[name]||{},r=resumeFor(name),rec=parseRecordWins(r.record);
