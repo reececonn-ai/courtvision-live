@@ -4675,7 +4675,7 @@ function showScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   const target=document.getElementById(id);target.classList.add("active");
   document.body.dataset.screen=id;
-  if(id==="wheelScreen")drawWheel();
+  if(id==="wheelScreen"){drawWheel();renderWheelTeamBoard();}
   state.lastScreen=id;persist();
   updateTickerForScreen(id);
 }
@@ -4685,7 +4685,7 @@ function showScreenLocal(id){
   const target=document.getElementById(id);if(!target)return;
   target.classList.add("active");
   document.body.dataset.screen=id;
-  if(id==="wheelScreen")drawWheel();
+  if(id==="wheelScreen"){drawWheel();renderWheelTeamBoard();}
   updateTickerForScreen(id);
 }
 
@@ -4784,6 +4784,23 @@ function closeBoardToCurrent(){
   if(state.onTheBoard&&state.available.includes(state.onTheBoard))showReveal(state.onTheBoard);
   else if(draftHasStarted())showScreen("wheelScreen");
   else showScreenLocal("wheelScreen");
+}
+function renderWheelTeamBoard(){
+  const grid=document.getElementById("wheelTeamGrid");if(!grid)return;
+  grid.innerHTML="";
+  TEAM_DATA.forEach(t=>{
+    const name=t[0],abbr=t[1],a=state.assignments[name],passed=state.passed.includes(name),available=state.available.includes(name);
+    const cls=a?"assigned":passed?"passed":available?"available":"unassigned";
+    const line=winLine(name);
+    const stateText=a?(a.barrel?"BARREL":"$"+money(a.amount)):passed?"BARREL":line!=null?String(line):"—";
+    const title=a?name+" · "+a.player+(a.barrel?" · BARREL":" · $"+money(a.amount)):passed?name+" · PASSED TO BARREL":name+" · "+(line!=null?line+" win market":"team preview");
+    const b=document.createElement("button");
+    b.type="button";b.className="wheel-team-tile "+cls;b.title=title;b.addEventListener("click",()=>previewTeamFromWheel(name));
+    const img=document.createElement("img");img.src=logoUrl(abbr);img.alt="";
+    const ab=document.createElement("span");ab.className="wheel-team-abbr";ab.textContent=abbr;
+    const ln=document.createElement("span");ln.className="wheel-team-line";ln.textContent=stateText;
+    b.append(img,ab,ln);grid.appendChild(b);
+  });
 }
 function renderDraftBoard(){
   const ps=document.getElementById("boardPlayerSummary"),grid=document.getElementById("draftBoardGrid");if(!ps||!grid)return;
@@ -4973,7 +4990,7 @@ function renderBidPlayers(){
   renderQuickPlayers();
 }
 function renderHistory(){document.getElementById("history").innerHTML=state.history.length?state.history.slice().reverse().map(x=>`<div>• ${escapeHtml(x)}</div>`).join(""):"<span class='tiny'>No picks yet.</span>"}
-function renderAll(){renderPlayers();renderBidPlayers();renderHistory();drawWheel();updateSoundButton();updateSyncStatus();updateTickerForScreen(document.querySelector(".screen.active")?.id||"homeScreen");if(currentTeam){renderPricePressure(currentTeam);renderBidContext(currentTeam)}renderDraftBoard();renderBarrelMode();renderRecap();setLastAction(state.lastAction||"Draft ready")}
+function renderAll(){renderPlayers();renderBidPlayers();renderHistory();drawWheel();renderWheelTeamBoard();updateSoundButton();updateSyncStatus();updateTickerForScreen(document.querySelector(".screen.active")?.id||"homeScreen");if(currentTeam){renderPricePressure(currentTeam);renderBidContext(currentTeam)}renderDraftBoard();renderBarrelMode();renderRecap();setLastAction(state.lastAction||"Draft ready")}
 
 function drawWheel(){
   const canvas=document.getElementById("wheel");if(!canvas)return;
