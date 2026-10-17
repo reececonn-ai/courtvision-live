@@ -1,11 +1,21 @@
 export function cleanRoom(value) {
-  const room = String(value || "").trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
-  return room || "nba2026";
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+export function generateRoomName() {
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  const code = Array.from(bytes, b => b.toString(36).padStart(2, "0")).join("").slice(0, 10);
+  return `draft-${code}`;
 }
 
 export function roomFromLocation() {
   const params = new URLSearchParams(location.search);
-  return cleanRoom(params.get("room") || localStorage.getItem("courtvision-room") || "nba2026");
+  return cleanRoom(params.get("room") || localStorage.getItem("courtvision-room") || "draft-public");
 }
 
 export function apiUrl(room) {
@@ -17,10 +27,14 @@ export function socketUrl(room) {
   return `${protocol}//${location.host}/ws/rooms/${encodeURIComponent(cleanRoom(room))}/socket`;
 }
 
-export async function getState(room) {
+export async function getRoomInfo(room) {
   const response = await fetch(apiUrl(room), { cache: "no-store" });
-  if (!response.ok) throw new Error(`State request failed (${response.status})`);
-  const data = await response.json();
+  if (!response.ok) throw new Error(`Room request failed (${response.status})`);
+  return response.json();
+}
+
+export async function getState(room) {
+  const data = await getRoomInfo(room);
   return data.state;
 }
 
@@ -32,7 +46,7 @@ export async function putState(room, pin, state) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || `Publish failed (${response.status})`);
-  return data.state;
+  return data;
 }
 
 export function connectRoom(room, handlers = {}) {
