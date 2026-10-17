@@ -1999,3 +1999,202 @@ body.tv-mode[data-screen="statsForNerdsScreen"] .stage{
 body.tv-mode[data-screen="statsForNerdsScreen"] .broadcast-ticker{
   left:0!important;
 }
+
+
+/* =========================================================
+   TEAM COLOUR SYSTEM — COMPETITION + STATS FOR NERDS
+   ========================================================= */
+
+.comp-team-chip{
+  position:relative!important;
+  overflow:hidden!important;
+  border-top:3px solid var(--team1,#2d78c7)!important;
+  background:
+    linear-gradient(90deg,color-mix(in srgb,var(--team1,#2d78c7) 16%,#07101d) 0%,#07101d 50%)!important;
+}
+.comp-team-chip:after{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  right:-18px!important;
+  top:-22px!important;
+  width:76px!important;
+  height:76px!important;
+  border-radius:50%!important;
+  background:color-mix(in srgb,var(--team2,#fff) 9%,transparent)!important;
+  pointer-events:none!important;
+}
+
+.comp-spotlight{
+  border-top:4px solid var(--team1,#2d78c7)!important;
+  background:
+    linear-gradient(100deg,
+      color-mix(in srgb,var(--team1,#2d78c7) 13%,#030912) 0 56%,
+      color-mix(in srgb,var(--team2,#fff) 8%,#071b33) 56% 100%
+    )!important;
+}
+
+#competitionGames .comp-game-side{
+  position:relative!important;
+  background:
+    linear-gradient(100deg,
+      color-mix(in srgb,var(--team1,#2d78c7) 17%,#081522) 0%,
+      #081522 72%
+    )!important;
+}
+#competitionGames .comp-game-side.home{
+  background:
+    linear-gradient(260deg,
+      color-mix(in srgb,var(--team1,#2d78c7) 17%,#081522) 0%,
+      #081522 72%
+    )!important;
+  border-left:3px solid color-mix(in srgb,var(--team1,#2d78c7) 70%,#20364f)!important;
+}
+#competitionGames .comp-game-side.away{
+  border-left:4px solid var(--team1,#2d78c7)!important;
+}
+#competitionGames .comp-game-side img{
+  filter:drop-shadow(0 5px 10px color-mix(in srgb,var(--team1,#2d78c7) 35%,transparent))!important;
+}
+
+.nerd-list-row.team-accent{
+  border-left-color:var(--team1,#2868aa)!important;
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb,var(--team1,#2868aa) 22%,#091725) 0%,
+      #07111c 58%
+    )!important;
+}
+.nerd-list-row.team-accent.negative{
+  border-left-color:var(--team1,#d73e57)!important;
+}
+
+.nerd-feature-grid .nerd-section:first-child .nerd-section-head{
+  background:linear-gradient(90deg,#09233b,#08101a)!important;
+}
+.nerd-feature-grid .nerd-section:last-child .nerd-section-head{
+  background:linear-gradient(90deg,#281837,#08101a)!important;
+}
+
+.nerd-portfolio-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  padding:8px;
+}
+.nerd-portfolio{
+  min-width:0;
+  overflow:hidden;
+  background:linear-gradient(180deg,#091725,#06101b);
+  border:1px solid #29445f;
+  box-shadow:0 10px 24px rgba(0,0,0,.12);
+}
+.nerd-portfolio header{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 14px 10px;
+}
+.nerd-portfolio header strong,
+.nerd-portfolio header b{
+  font-family:Impact,"Arial Narrow",Arial,sans-serif;
+  font-weight:400;
+}
+.nerd-portfolio header strong{font-size:30px}
+.nerd-portfolio header b{font-size:28px}
+.nerd-team-strip{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  height:8px;
+}
+.nerd-team-strip i{display:block}
+.nerd-portfolio-metrics{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:2px;
+  padding:8px;
+  background:#1f344b;
+}
+.nerd-portfolio-metrics span{
+  min-width:0;
+  min-height:78px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:9px;
+  background:#07131f;
+}
+.nerd-portfolio-metrics small{
+  color:#9eb4cb;
+  font:900 7px/1.2 Arial,Helvetica,sans-serif;
+  letter-spacing:.05em;
+}
+.nerd-portfolio-metrics b{
+  margin-top:5px;
+  font-family:Impact,"Arial Narrow",Arial,sans-serif;
+  font-size:24px;
+  font-weight:400;
+}
+.nerd-portfolio footer{
+  padding:10px 13px 12px;
+  color:#b7c6d7;
+  font:800 10px/1.3 Arial,Helvetica,sans-serif;
+}
+.nerd-portfolio footer b{color:#fff}
+
+.nerd-matrix-wrap{
+  overflow-x:auto;
+  padding:8px;
+}
+.nerd-matrix{
+  width:100%;
+  min-width:760px;
+  border-collapse:separate;
+  border-spacing:3px;
+}
+.nerd-matrix th,
+.nerd-matrix td{
+  padding:12px 9px;
+  text-align:center;
+  background:#081522;
+  border:1px solid #20364f;
+}
+.nerd-matrix thead th{
+  color:#a9bdd3;
+  font:1000 9px/1.1 Arial,Helvetica,sans-serif;
+  letter-spacing:.06em;
+}
+.nerd-matrix tbody th{
+  text-align:left;
+  color:#e7eef6;
+  font:1000 11px/1.1 Arial,Helvetica,sans-serif;
+}
+.nerd-matrix td{
+  font-family:Impact,"Arial Narrow",Arial,sans-serif;
+  font-size:23px;
+  font-weight:400;
+}
+.nerd-matrix td.win{
+  background:#0b3829;
+  border-color:#1a704f;
+}
+.nerd-matrix td.loss{
+  background:#421822;
+  border-color:#8a2f42;
+}
+.nerd-matrix td.tie{background:#282432}
+.nerd-matrix td.self{
+  color:#607086;
+  background:#060b12;
+}
+
+@media(max-width:1200px){
+  .nerd-portfolio-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:820px){
+  .nerd-portfolio-grid{grid-template-columns:1fr}
+  .nerd-portfolio header strong{font-size:25px}
+  .nerd-portfolio header b{font-size:24px}
+  .nerd-portfolio-metrics b{font-size:20px}
+}
