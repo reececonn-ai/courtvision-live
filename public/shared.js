@@ -8,9 +8,24 @@ export function cleanRoom(value) {
 }
 
 export function generateRoomName() {
-  const bytes = crypto.getRandomValues(new Uint8Array(6));
-  const code = Array.from(bytes, b => b.toString(36).padStart(2, "0")).join("").slice(0, 10);
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  const code = Array.from(bytes, b => b.toString(36).padStart(2, "0")).join("").slice(0, 12);
   return `draft-${code}`;
+}
+
+export function generateControlKey() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return Array.from(bytes, b => b.toString(16).padStart(2, "0")).join("");
+}
+
+export function controlKeyForRoom(room) {
+  const keyName = `courtvision-control-key:${cleanRoom(room)}`;
+  let key = localStorage.getItem(keyName);
+  if (!key) {
+    key = generateControlKey();
+    localStorage.setItem(keyName, key);
+  }
+  return key;
 }
 
 export function roomFromLocation() {
@@ -38,10 +53,10 @@ export async function getState(room) {
   return data.state;
 }
 
-export async function putState(room, pin, state) {
+export async function putState(room, controlKey, state) {
   const response = await fetch(apiUrl(room), {
     method: "PUT",
-    headers: { "content-type": "application/json", "x-control-pin": pin },
+    headers: { "content-type": "application/json", "x-control-key": controlKey },
     body: JSON.stringify({ state }),
   });
   const data = await response.json().catch(() => ({}));
