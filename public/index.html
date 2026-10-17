@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NBA Team Draft Night — CourtVision v1.4.4 Readable Layout</title>
+<title>NBA TEAM DRAFT DAY</title>
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -3243,6 +3243,45 @@ body.readable.paused:after{font-size:clamp(80px,9vw,300px)}
   }
 }
 
+
+/* Mobile ticker: use the bottom space above the phone navigation. */
+@media (max-width:820px){
+  body.readable .broadcast-ticker,
+  body.tv-mode .broadcast-ticker,
+  body.tv-mode.room-65 .broadcast-ticker,
+  .broadcast-ticker{
+    display:flex!important;
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:58px!important;
+    width:100%!important;
+    height:34px!important;
+    z-index:244!important;
+    border-top:1px solid #fff!important;
+    background:#02060d!important;
+  }
+  .ticker-brand{
+    flex:0 0 auto!important;
+    padding:0 14px 0 9px!important;
+    font-size:9px!important;
+    clip-path:polygon(0 0,100% 0,calc(100% - 7px) 100%,0 100%)!important;
+  }
+  .ticker-item{
+    padding:0 14px 0 10px!important;
+    font-size:9px!important;
+  }
+  .ticker-tag{
+    margin-right:6px!important;
+    padding:2px 4px!important;
+    font-size:7px!important;
+  }
+  .ticker-track{animation-duration:34s!important}
+  .screen{padding-bottom:102px!important}
+  .draft-board-screen,.barrel-screen,.recap-screen{padding-bottom:106px!important}
+  .toast{bottom:100px!important}
+}
+
 </style>
 </head>
 <body>
@@ -3253,7 +3292,7 @@ body.readable.paused:after{font-size:clamp(80px,9vw,300px)}
   <aside class="sidebar">
     <div class="brand"><div class="brand-inner">
       <div class="nba-ball">🏀</div>
-      <div><div class="kicker">Draft Control</div><h1>NBA Team Draft Night</h1></div>
+      <div><h1>NBA TEAM DRAFT DAY</h1></div>
     </div></div>
 
     <div class="player-list" id="playerList"></div>
@@ -3295,7 +3334,7 @@ body.readable.paused:after{font-size:clamp(80px,9vw,300px)}
     <section class="screen home active" id="homeScreen">
       <div class="broadcast-top"><span class="live-dot">Draft Night Live</span><span>LIVE DRAFT CONTROL</span></div>
       <div class="kicker">CourtVision · Draft Night Control</div>
-      <div class="hero-title"><span class="chrome">NBA TEAM DRAFT</span><br>DRAFT NIGHT LIVE</div>
+      <div class="hero-title"><span class="chrome">NBA TEAM</span><br>DRAFT DAY</div>
       <p class="hero-sub">30 franchises. One draft board. Every pick live.</p>
       <button class="big-start" onclick="enterDraft()">START THE SHOW</button>
       <div class="mini-stats">
@@ -3752,6 +3791,7 @@ state.barrelQueue = state.barrelQueue || [];
 state.barrelOrder = state.barrelOrder || [];
 state.barrelCurrent = state.barrelCurrent || null;
 state.onTheBoard = state.onTheBoard || null;
+state.liveSpin = state.liveSpin || null;
 state.starterSource = state.starterSource || "auto"; // "auto" = ESPN depth chart → curated; "curated" = curated only
 state.teamCap = Math.max(1,+state.teamCap||5);
 // ---- curated-data migration: refresh editorial defaults when this file ships newer data,
@@ -3840,6 +3880,7 @@ function cvSharedSnapshot(){
       barrelOrder:[...(state.barrelOrder||[])],
       barrelCurrent:state.barrelCurrent||null,
       onTheBoard:state.onTheBoard||null,
+      liveSpin:state.liveSpin?JSON.parse(JSON.stringify(state.liveSpin)):null,
       lastScreen:state.lastScreen||"homeScreen"
     }
   };
@@ -3864,6 +3905,53 @@ async function cvPushNow(){
   }catch(e){console.warn("CourtVision live sync push failed",e)}
 }
 
+let cvRemoteSpinFrame=0,cvRemoteSpinId=null;
+
+function cvStopRemoteSpin(){
+  if(cvRemoteSpinFrame)cancelAnimationFrame(cvRemoteSpinFrame);
+  cvRemoteSpinFrame=0;cvRemoteSpinId=null;
+  spinning=false;
+  const btn=document.getElementById("spinBtn");
+  if(btn){btn.disabled=false;btn.textContent="SPIN"}
+}
+
+function cvPlayRemoteSpin(spin){
+  if(!spin||!spin.id||!spin.targetName)return;
+  if(cvRemoteSpinId===spin.id)return;
+  if(cvRemoteSpinFrame)cancelAnimationFrame(cvRemoteSpinFrame);
+
+  const teams=state.available||[],targetIndex=teams.indexOf(spin.targetName);
+  if(targetIndex<0)return;
+
+  cvRemoteSpinId=spin.id;
+  spinning=true;
+  const btn=document.getElementById("spinBtn");
+  if(btn){btn.disabled=true;btn.textContent="..."}
+
+  const n=teams.length,arc=Math.PI*2/n;
+  const start=Number(spin.startRotation)||0;
+  const turns=Math.max(1,Number(spin.spins)||8);
+  const end=(-targetIndex*arc-arc/2)+(turns*Math.PI*2);
+  const dur=Math.max(1000,Number(spin.duration)||5000);
+  const startedAt=Number(spin.startedAt)||Date.now();
+
+  function frame(){
+    const p=Math.min(1,Math.max(0,(Date.now()-startedAt)/dur));
+    const ease=1-Math.pow(1-p,4);
+    wheelRotation=start+(end-start)*ease;
+    drawWheel();
+    if(p<1){
+      cvRemoteSpinFrame=requestAnimationFrame(frame);
+    }else{
+      wheelRotation=((end%(Math.PI*2))+Math.PI*2)%(Math.PI*2);
+      drawWheel();
+      cvRemoteSpinFrame=0;
+      if(btn){btn.disabled=true;btn.textContent="WAIT"}
+    }
+  }
+  frame();
+}
+
 function cvApplySnapshot(snapshot){
   if(!snapshot||snapshot.schema!==CV_SYNC_SCHEMA||!snapshot.draft)return;
   if(snapshot.origin===CV_SYNC_CLIENT)return;
@@ -3885,19 +3973,26 @@ function cvApplySnapshot(snapshot){
     state.barrelOrder=Array.isArray(d.barrelOrder)?[...d.barrelOrder]:[];
     state.barrelCurrent=d.barrelCurrent||null;
     state.onTheBoard=d.onTheBoard||null;
+    state.liveSpin=d.liveSpin?JSON.parse(JSON.stringify(d.liveSpin)):null;
     state.lastScreen=d.lastScreen||"wheelScreen";
     currentTeam=state.onTheBoard||null;
     reconcileState();
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(_){}
     renderAll();
 
-    if(state.onTheBoard&&state.available.includes(state.onTheBoard)){
-      showReveal(state.onTheBoard);
-    }else if(state.lastScreen==="barrelScreen"&&!state.available.length&&state.passed.length){
-      openBarrelMode();
+    if(state.liveSpin&&!state.onTheBoard){
+      showScreen("wheelScreen");
+      cvPlayRemoteSpin(state.liveSpin);
     }else{
-      const target=document.getElementById(state.lastScreen)?state.lastScreen:"wheelScreen";
-      if(target==="revealScreen")showScreen("wheelScreen");else showScreen(target);
+      if(cvRemoteSpinId)cvStopRemoteSpin();
+      if(state.onTheBoard&&state.available.includes(state.onTheBoard)){
+        showReveal(state.onTheBoard);
+      }else if(state.lastScreen==="barrelScreen"&&!state.available.length&&state.passed.length){
+        openBarrelMode();
+      }else{
+        const target=document.getElementById(state.lastScreen)?state.lastScreen:"wheelScreen";
+        if(target==="revealScreen")showScreen("wheelScreen");else showScreen(target);
+      }
     }
   }finally{
     cvSyncApplying=false;
@@ -4642,10 +4737,24 @@ function drawWheel(){
 }
 function spinWheel(){
   if(state.paused)return toast("Draft is paused");
-  if(spinning||!state.available.length)return;
+  if(spinning||state.liveSpin||!state.available.length)return;
   spinning=true;ensureAudio();document.getElementById("spinBtn").disabled=true;document.getElementById("spinBtn").textContent="...";
+
   const targetIndex=Math.floor(Math.random()*state.available.length),n=state.available.length,arc=Math.PI*2/n;
-  const targetAngle=-targetIndex*arc-arc/2,start=wheelRotation,spins=7+Math.floor(Math.random()*3),end=targetAngle+spins*Math.PI*2,dur=5000,t0=performance.now();
+  const targetAngle=-targetIndex*arc-arc/2,start=wheelRotation,turns=7+Math.floor(Math.random()*3),end=targetAngle+turns*Math.PI*2,dur=5000,t0=performance.now();
+  const spinId=crypto.randomUUID();
+
+  state.liveSpin={
+    id:spinId,
+    targetName:state.available[targetIndex],
+    startRotation:start,
+    spins:turns,
+    duration:dur,
+    startedAt:Date.now()
+  };
+  state.lastScreen="wheelScreen";
+  persist();
+
   let lastTick=-1;
   function anim(now){
     const p=Math.min(1,(now-t0)/dur),ease=1-Math.pow(1-p,4);wheelRotation=start+(end-start)*ease;drawWheel();
@@ -4653,9 +4762,18 @@ function spinWheel(){
     if(tick!==lastTick && p>.04){tickSound();lastTick=tick}
     if(p<1)requestAnimationFrame(anim);
     else{
-      wheelRotation=((end%(Math.PI*2))+Math.PI*2)%(Math.PI*2);drawWheel();currentTeam=state.available[targetIndex];
-      state.onTheBoard=currentTeam;persist();
-      setTimeout(()=>{spinning=false;document.getElementById("spinBtn").disabled=false;document.getElementById("spinBtn").textContent="SPIN";revealSequence(currentTeam)},420);
+      wheelRotation=((end%(Math.PI*2))+Math.PI*2)%(Math.PI*2);drawWheel();
+      currentTeam=state.available[targetIndex];
+      setTimeout(()=>{
+        spinning=false;
+        document.getElementById("spinBtn").disabled=false;
+        document.getElementById("spinBtn").textContent="SPIN";
+        state.onTheBoard=currentTeam;
+        state.liveSpin=null;
+        state.lastScreen="revealScreen";
+        persist();
+        revealSequence(currentTeam);
+      },420);
     }
   }
   requestAnimationFrame(anim);
@@ -4975,7 +5093,7 @@ function assignCurrent(){
   pushUndo(`Assign ${currentTeam}`);
   p.remaining-=amount;p.teams.push(currentTeam);state.assignments[currentTeam]={player:p.name,amount};
   state.available=state.available.filter(x=>x!==currentTeam);state.history.push(`${currentTeam} → ${p.name} for $${money(amount)}`);setLastAction(`${currentTeam} → ${p.name} · $${money(amount)}`);
-  currentTeam=null;state.onTheBoard=null;saveState();assignSting();confettiBurst();toast("FRANCHISE ASSIGNED");setTimeout(()=>{if(isDraftComplete())finishDraft();else{flash();showScreen("wheelScreen")}},800);
+  currentTeam=null;state.onTheBoard=null;state.liveSpin=null;state.lastScreen=isDraftComplete()?"recapScreen":"wheelScreen";saveState();assignSting();confettiBurst();toast("FRANCHISE ASSIGNED");setTimeout(()=>{if(isDraftComplete())finishDraft();else{flash();showScreen("wheelScreen")}},800);
 }
 function passCurrent(){
   if(!currentTeam)return;
@@ -4983,7 +5101,7 @@ function passCurrent(){
   if(!state.available.includes(currentTeam))return toast("That team is no longer on the wheel");
   pushUndo(`Pass ${currentTeam}`);
   state.available=state.available.filter(x=>x!==currentTeam);if(!state.passed.includes(currentTeam))state.passed.push(currentTeam);
-  state.history.push(`${currentTeam} passed into the barrel`);setLastAction(`${currentTeam} passed to barrel`);currentTeam=null;state.onTheBoard=null;saveState();passSting();shake();toast("THROWN INTO THE BARREL");setTimeout(()=>showScreen("wheelScreen"),650);
+  state.history.push(`${currentTeam} passed into the barrel`);setLastAction(`${currentTeam} passed to barrel`);currentTeam=null;state.onTheBoard=null;state.liveSpin=null;state.lastScreen="wheelScreen";saveState();passSting();shake();toast("THROWN INTO THE BARREL");setTimeout(()=>showScreen("wheelScreen"),650);
 }
 function backToWheel(){currentTeam=null;state.onTheBoard=null;persist();showScreen("wheelScreen")}
 function startBarrel(){openBarrelMode()}
