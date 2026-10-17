@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp12">
+<link rel="stylesheet" href="/competition.css?v=comp13">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -4078,6 +4078,18 @@ body.tv-mode .wheel-screen .wheel-wrap{
           </div>
         </header>
 
+        <section class="nerd-hero" id="nerdHero">
+          <div class="nerd-hero-copy">
+            <span class="nerd-hero-kicker">NERD STAT OF THE DAY</span>
+            <strong id="nerdHeroHeadline">CRUNCHING NUMBERS…</strong>
+            <p id="nerdHeroText">The most ridiculous useful stat will land here.</p>
+          </div>
+          <div class="nerd-hero-number">
+            <small id="nerdHeroLabel">LIVE</small>
+            <b id="nerdHeroValue">—</b>
+          </div>
+        </section>
+
         <section class="nerd-section nerd-records">
           <div class="nerd-section-head"><span>THE RECORD BOOK</span><small>THE STUFF PEOPLE WILL ARGUE ABOUT</small></div>
           <div class="nerd-record-grid" id="nerdRecordBook"><div class="comp-empty">Building records…</div></div>
@@ -5888,7 +5900,7 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp6"></script>
+<script src="/competition.js?v=comp7"></script>
 
 <nav class="mobile-nav" aria-label="Mobile draft navigation">
   <button type="button" onclick="showScreen('wheelScreen')">WHEEL</button>
