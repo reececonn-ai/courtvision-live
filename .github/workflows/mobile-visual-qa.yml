@@ -100,6 +100,10 @@ jobs:
               wheel = {
                   "viewport": driver.execute_script("return {w:innerWidth,h:innerHeight,scrollWidth:document.documentElement.scrollWidth};"),
                   "screen": rect("#wheelScreen"),
+                  "teamBoard": rect("#wheelTeamBoardWrap"),
+                  "teamGrid": rect("#wheelTeamGrid"),
+                  "teamTile": rect("#wheelTeamGrid .wheel-team-tile"),
+                  "teamCount": driver.execute_script("return document.querySelectorAll('#wheelTeamGrid .wheel-team-tile').length"),
                   "wheelWrap": rect("#wheelScreen .wheel-wrap"),
                   "canvas": rect("#wheel"),
                   "spin": rect("#spinBtn"),
@@ -165,6 +169,31 @@ jobs:
               print("FOLLOW_TO_WHEEL="+json.dumps(follow, sort_keys=True))
               if follow["active"] != "wheelScreen" or follow["spinning"]:
                   raise SystemExit("Remote assignment/pass state did not settle on wheel")
+
+              if wheel["teamCount"] != 30:
+                  raise SystemExit("Above-wheel Draft Board does not show all 30 teams")
+              if not wheel["teamBoard"] or wheel["teamBoard"]["width"] > wheel["viewport"]["w"] + 2:
+                  raise SystemExit("Above-wheel Draft Board does not fit the phone")
+              wheel_preview_before = driver.execute_script("return {onTheBoard:state.onTheBoard,lastScreen:state.lastScreen,currentTeam};")
+              driver.execute_script("previewTeamFromWheel('Boston Celtics')")
+              time.sleep(0.25)
+              wheel_preview = driver.execute_script("""
+                return {active:document.querySelector('.screen.active')?.id,
+                        previewMode:document.querySelector('#revealScreen')?.classList.contains('team-preview-mode'),
+                        onTheBoard:state.onTheBoard,lastScreen:state.lastScreen,currentTeam,
+                        broadcast:document.querySelector('#broadcastTeam')?.textContent};
+              """)
+              print("WHEEL_TEAM_PREVIEW="+json.dumps({"before":wheel_preview_before,"preview":wheel_preview}, sort_keys=True))
+              if wheel_preview["active"] != "revealScreen" or not wheel_preview["previewMode"]:
+                  raise SystemExit("Above-wheel team tile did not open preview")
+              if wheel_preview["onTheBoard"] is not None or wheel_preview["lastScreen"] != wheel_preview_before["lastScreen"]:
+                  raise SystemExit("Above-wheel team preview changed shared draft state")
+              driver.execute_script("closeTeamPreview()")
+              time.sleep(0.2)
+              wheel_preview_close = driver.execute_script("return {active:document.querySelector('.screen.active')?.id,onTheBoard:state.onTheBoard,lastScreen:state.lastScreen};")
+              print("WHEEL_TEAM_PREVIEW_CLOSE="+json.dumps(wheel_preview_close, sort_keys=True))
+              if wheel_preview_close["active"] != "wheelScreen" or wheel_preview_close["onTheBoard"] is not None:
+                  raise SystemExit("Above-wheel team preview did not return to wheel")
 
               driver.execute_script("openDraftBoard()")
               time.sleep(0.5)
