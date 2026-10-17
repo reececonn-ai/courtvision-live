@@ -664,6 +664,9 @@
     if(heroValue){
       const leader=[...rows].sort((a,b)=>b.probability-a.probability)[0];
       heroValue.textContent=leader?leader.probability.toFixed(1)+"%":"—";
+      const heroEl=$("nerdHero");
+      const leadTeam=leader?.teams?.[0]?.name;
+      if(heroEl&&leadTeam)heroEl.setAttribute("style",teamStyle(leadTeam));
     }
 
     const recordBook=$("nerdRecordBook");
@@ -779,8 +782,8 @@
       const top=[...teams].sort((a,b)=>b.pct-a.pct||b.w-a.w).slice(0,5);
       const low=[...teams].filter(t=>t.w+t.l>0).sort((a,b)=>a.pct-b.pct||a.w-b.w).slice(0,3);
       impacts.innerHTML=[
-        ...top.map((t,i)=>'<div class="nerd-list-row"><div><strong>#'+(i+1)+' '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · team impact leader</small></div><b>'+t.w+'-'+t.l+'</b></div>'),
-        ...low.map(t=>'<div class="nerd-list-row negative"><div><strong>'+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · lowest win rate</small></div><b>'+t.w+'-'+t.l+'</b></div>')
+        ...top.map((t,i)=>'<div class="nerd-list-row team-accent" style="'+teamStyle(t.name)+'"><div><strong>#'+(i+1)+' '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · team impact leader</small></div><b>'+t.w+'-'+t.l+'</b></div>'),
+        ...low.map(t=>'<div class="nerd-list-row team-accent negative" style="'+teamStyle(t.name)+'"><div><strong>'+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · lowest win rate</small></div><b>'+t.w+'-'+t.l+'</b></div>')
       ].join("");
     }
 
