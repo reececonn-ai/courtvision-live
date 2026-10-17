@@ -166,6 +166,21 @@ jobs:
               if follow["active"] != "wheelScreen" or follow["spinning"]:
                   raise SystemExit("Remote assignment/pass state did not settle on wheel")
 
+              driver.execute_script("openDraftBoard()")
+              time.sleep(0.5)
+              board = {
+                  "viewport": driver.execute_script("return {w:innerWidth,h:innerHeight,scrollWidth:document.documentElement.scrollWidth};"),
+                  "screen": rect("#draftBoardScreen"),
+                  "shell": rect("#draftBoardScreen .board-shell"),
+                  "head": rect("#draftBoardScreen .board-head"),
+                  "players": rect("#boardPlayerSummary"),
+                  "pulse": rect("#draftPulse"),
+                  "grid": rect("#draftBoardGrid"),
+                  "team0": rect("#draftBoardGrid .board-team"),
+              }
+              print("BOARD_METRICS="+json.dumps(board, sort_keys=True))
+              driver.save_screenshot("/tmp/board-390x844.png")
+
               if reveal["viewport"]["scrollWidth"] > reveal["viewport"]["w"] + 2:
                   raise SystemExit("Horizontal overflow remains on reveal")
               if reveal["grid"] and reveal["grid"]["width"] > reveal["viewport"]["w"] + 2:
@@ -189,4 +204,5 @@ jobs:
           path: |
             /tmp/reveal-390x844.png
             /tmp/wheel-390x844.png
+            /tmp/board-390x844.png
           if-no-files-found: warn
