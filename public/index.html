@@ -4629,6 +4629,17 @@ function persist(){
 function saveState(){persist();renderAll()}
 function teamByName(name){return TEAM_DATA.find(t=>t[0]===name)}
 function logoUrl(abbr){return `https://a.espncdn.com/i/teamlogos/nba/500/${abbr}.png`}
+function imageFallbackData(label="NBA"){
+  const txt=String(label||"NBA").trim().split(/\s+/).map(x=>x[0]||"").join("").slice(0,3).toUpperCase()||"NBA";
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240"><rect width="240" height="240" rx="24" fill="#07111f"/><circle cx="120" cy="120" r="72" fill="#d86b20" stroke="#f5a24d" stroke-width="6"/><path d="M48 120h144M120 48c-26 24-38 48-38 72s12 48 38 72M120 48c26 24 38 48 38 72s-12 48-38 72" fill="none" stroke="#29180f" stroke-width="6"/><text x="120" y="128" text-anchor="middle" font-family="Arial,sans-serif" font-size="30" font-weight="900" fill="#fff">${txt}</text></svg>`;
+  return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
+}
+document.addEventListener("error",e=>{
+  const img=e.target;
+  if(!(img instanceof HTMLImageElement)||img.dataset.cvFallback==="1")return;
+  img.dataset.cvFallback="1";
+  img.src=imageFallbackData(img.alt||img.dataset.team||"NBA");
+},true);
 function espnTeamKey(abbr){return ({GS:"gs",NO:"no",NY:"ny",SA:"sa",UTAH:"utah",WSH:"wsh"}[abbr]||abbr.toLowerCase())}
 function espnTeamId(name){const t=teamByName(name);return t?ESPN_TEAM_IDS[t[1]]:null}
 function normalizeName(s){return String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[.'’\-]/g," ").replace(/\s+/g," ").trim().toLowerCase()}
