@@ -1,28 +1,9 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>CourtVision Live Draft</title>
-  <link rel="stylesheet" href="/styles.css">
-</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CourtVision</title></head>
 <body>
-<div class="app-shell broadcast-shell">
-  <header class="topbar broadcast-topbar">
-    <div class="brand">COURTVISION<small>NBA TEAM DRAFT · LIVE</small></div>
-    <div id="connStatus" class="status-pill">CONNECTING</div>
-  </header>
-  <main class="watch-main mirror-main">
-    <section id="stage" class="watch-stage mirror-stage" aria-live="polite">
-      <div class="watch-lobby">
-        <div class="eyebrow">NBA TEAM DRAFT</div>
-        <h1>COURTVISION</h1>
-        <p>Connecting to the live draft…</p>
-      </div>
-    </section>
-  </main>
-</div>
-<div id="localOverlay" class="local-overlay-host" hidden></div>
-<script type="module" src="/watch.js"></script>
+<script>
+  location.replace("/" + location.search + location.hash);
+</script>
 </body>
 </html>
