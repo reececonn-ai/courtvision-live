@@ -325,7 +325,7 @@
         const best=[...r.teams].sort((a,b)=>b.w-a.w||a.l-b.l)[0];
         const worst=[...r.teams].sort((a,b)=>(a.w/(a.w+a.l||1))-(b.w/(b.w+b.l||1)))[0];
         if(best&&r.w>0&&best.w/r.w>=.30)add(5,"TEAM CARRY",shortTeam(best.name)+" accounts for "+Math.round(best.w/r.w*100)+"% of "+r.name+"'s total wins.");
-        if(worst&&(worst.w+worst.l)>=4&&worst.w<worst.l)add(4,"WEAK LINK",shortTeam(worst.name)+" is "+worst.w+"-"+worst.l+" and is currently "+r.name+"'s only clear drag if the rest of the group is stronger.");
+        if(worst&&(worst.w+worst.l)>=4&&worst.w<worst.l)add(4,"WEAK LINK",shortTeam(worst.name)+" is "+worst.w+"-"+worst.l+" and currently has the lowest win rate among "+r.name+"'s five teams.");
       }
     }
 
