@@ -1,9 +1,17 @@
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
-function json(data, status = 200, extra = {}) {
+const ALL_TEAMS = [
+  "Atlanta Hawks","Boston Celtics","Brooklyn Nets","Charlotte Hornets","Chicago Bulls","Cleveland Cavaliers",
+  "Dallas Mavericks","Denver Nuggets","Detroit Pistons","Golden State Warriors","Houston Rockets","Indiana Pacers",
+  "LA Clippers","Los Angeles Lakers","Memphis Grizzlies","Miami Heat","Milwaukee Bucks","Minnesota Timberwolves",
+  "New Orleans Pelicans","New York Knicks","Oklahoma City Thunder","Orlando Magic","Philadelphia 76ers","Phoenix Suns",
+  "Portland Trail Blazers","Sacramento Kings","San Antonio Spurs","Toronto Raptors","Utah Jazz","Washington Wizards"
+];
+
+function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...JSON_HEADERS, "cache-control": "no-store", ...extra },
+    headers: { ...JSON_HEADERS, "cache-control": "no-store" },
   });
 }
 
@@ -21,83 +29,65 @@ function defaultState(room) {
     version: 1,
     room,
     updatedAt: new Date().toISOString(),
-    screen: "lobby",
+    screen: "wheel",
     phase: "main",
+    startingBudget: 50,
+    teamCap: 5,
     currentTeam: null,
     currentBid: null,
-    wheel: { spinning: false, selectedTeam: null, spinId: null },
-    players: [],
+    wheel: { spinning: false, targetTeam: null, selectedTeam: null, spinId: null },
+    players: Array.from({ length: 6 }, (_, i) => ({
+      name: `Player ${i + 1}`,
+      remaining: 50,
+      teams: [],
+    })),
     assignments: {},
     passed: [],
-    available: [],
+    available: [...ALL_TEAMS],
     history: [],
-    message: "CourtVision is ready.",
+    message: "",
   };
 }
 
-function randomSalt() {
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  return btoa(String.fromCharCode(...bytes));
-}
-
-async function controlDigest(key, salt) {
-  const input = new TextEncoder().encode(`${salt}:${key}`);
-  const digest = await crypto.subtle.digest("SHA-256", input);
-  return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
-}
-
 export class DraftRoom {
-  constructor(ctx, env) {
+  constructor(ctx) {
     this.ctx = ctx;
-    this.env = env;
     this.stateCache = null;
   }
 
-  async state(room = "draft") {
+  async state(room) {
     if (this.stateCache) return this.stateCache;
     const stored = await this.ctx.storage.get("state");
-    this.stateCache = stored || defaultState(room);
+    const fresh = defaultState(room);
+
+    if (!stored) {
+      this.stateCache = fresh;
+      return fresh;
+    }
+
+    const hasActivity =
+      Object.keys(stored.assignments || {}).length > 0 ||
+      (stored.passed || []).length > 0 ||
+      (stored.history || []).length > 0;
+
+    this.stateCache = {
+      ...fresh,
+      ...stored,
+      players: Array.isArray(stored.players) && stored.players.length ? stored.players : fresh.players,
+      assignments: stored.assignments || {},
+      passed: Array.isArray(stored.passed) ? stored.passed : [],
+      history: Array.isArray(stored.history) ? stored.history : [],
+      available:
+        Array.isArray(stored.available) && (stored.available.length || hasActivity)
+          ? stored.available
+          : fresh.available,
+    };
+
+    if (!this.stateCache.screen || this.stateCache.screen === "lobby") {
+      this.stateCache.screen = "wheel";
+    }
+
     return this.stateCache;
-  }
-
-  async authInfo() {
-    return (await this.ctx.storage.get("commissionerAuth")) || null;
-  }
-
-  async claimOrVerifyKey(key) {
-    const supplied = String(key || "");
-    if (supplied.length < 32) {
-      return { ok: false, status: 401, error: "Commissioner key missing." };
-    }
-
-    const auth = await this.authInfo();
-
-    if (!auth) {
-      const salt = randomSalt();
-      const digest = await controlDigest(supplied, salt);
-      await this.ctx.storage.put("commissionerAuth", {
-        type: "auto-key",
-        salt,
-        digest,
-        createdAt: new Date().toISOString(),
-      });
-      return { ok: true, claimedNow: true };
-    }
-
-    if (auth.type !== "auto-key") {
-      return {
-        ok: false,
-        status: 409,
-        error: "This room was created with the older PIN system. Create a new draft room to use automatic commissioner access."
-      };
-    }
-
-    const digest = await controlDigest(supplied, auth.salt);
-    if (digest !== auth.digest) {
-      return { ok: false, status: 401, error: "This browser does not own commissioner access for this room." };
-    }
-
-    return { ok: true, claimedNow: false };
   }
 
   async save(next) {
@@ -108,20 +98,16 @@ export class DraftRoom {
     };
     this.stateCache = normalized;
     await this.ctx.storage.put("state", normalized);
-    this.broadcast({ type: "state", state: normalized });
-    return normalized;
-  }
-
-  broadcast(payload) {
-    const text = JSON.stringify(payload);
+    const payload = JSON.stringify({ type: "state", state: normalized });
     for (const socket of this.ctx.getWebSockets()) {
-      try { socket.send(text); } catch (_) {}
+      try { socket.send(payload); } catch (_) {}
     }
+    return normalized;
   }
 
   async fetch(request) {
     const url = new URL(request.url);
-    const room = request.headers.get("x-courtvision-room") || "draft";
+    const room = request.headers.get("x-courtvision-room") || "draft-public";
 
     if (url.pathname.endsWith("/socket")) {
       if (request.headers.get("Upgrade") !== "websocket") {
@@ -130,21 +116,15 @@ export class DraftRoom {
       const pair = new WebSocketPair();
       const [client, server] = Object.values(pair);
       this.ctx.acceptWebSocket(server);
-      const current = await this.state(room);
-      server.send(JSON.stringify({ type: "state", state: current }));
+      server.send(JSON.stringify({ type: "state", state: await this.state(room) }));
       return new Response(null, { status: 101, webSocket: client });
     }
 
     if (request.method === "GET") {
-      const auth = await this.authInfo();
-      return json({ ok: true, claimed: Boolean(auth), authType: auth?.type || null, state: await this.state(room) });
+      return json({ ok: true, state: await this.state(room) });
     }
 
     if (request.method === "PUT") {
-      const supplied = request.headers.get("x-control-key") || "";
-      const auth = await this.claimOrVerifyKey(supplied);
-      if (!auth.ok) return json({ ok: false, error: auth.error }, auth.status);
-
       let body;
       try { body = await request.json(); }
       catch (_) { return json({ ok: false, error: "Invalid JSON" }, 400); }
@@ -154,23 +134,13 @@ export class DraftRoom {
       }
 
       const current = await this.state(room);
-      const next = { ...current, ...body.state, room };
-      return json({
-        ok: true,
-        claimed: true,
-        claimedNow: Boolean(auth.claimedNow),
-        state: await this.save(next),
-      });
+      return json({ ok: true, state: await this.save({ ...current, ...body.state, room }) });
     }
 
     if (request.method === "POST" && url.pathname.endsWith("/reset")) {
-      const supplied = request.headers.get("x-control-key") || "";
-      const auth = await this.claimOrVerifyKey(supplied);
-      if (!auth.ok) return json({ ok: false, error: auth.error }, auth.status);
-
       const fresh = defaultState(room);
       fresh.version = 0;
-      return json({ ok: true, claimed: true, state: await this.save(fresh) });
+      return json({ ok: true, state: await this.save(fresh) });
     }
 
     return json({ ok: false, error: "Method not allowed" }, 405);
@@ -180,14 +150,6 @@ export class DraftRoom {
     if (message === "ping") {
       try { socket.send("pong"); } catch (_) {}
     }
-  }
-
-  webSocketClose(socket) {
-    try { socket.close(1000, "Closed"); } catch (_) {}
-  }
-
-  webSocketError(socket) {
-    try { socket.close(1011, "Socket error"); } catch (_) {}
   }
 }
 
@@ -201,9 +163,8 @@ export default {
 
     if (url.pathname.startsWith("/api/rooms/") || url.pathname.startsWith("/ws/rooms/")) {
       const room = roomNameFromUrl(url);
-      if (!validRoomName(room)) {
-        return json({ ok: false, error: "Invalid room name" }, 400);
-      }
+      if (!validRoomName(room)) return json({ ok: false, error: "Invalid room name" }, 400);
+
       const id = env.DRAFT_ROOM.idFromName(room);
       const stub = env.DRAFT_ROOM.get(id);
       const forwarded = new URL(request.url);
