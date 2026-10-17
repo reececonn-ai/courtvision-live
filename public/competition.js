@@ -354,14 +354,25 @@
       const r=records[name]||{w:0,l:0,rank:null};
       return "#"+(r.rank||"—")+"\u00a0·\u00a0"+r.w+"-"+r.l;
     };
+    const side=(name,owner,score,sideClass,scores)=>
+      '<div class="comp-game-side '+sideClass+'">'+
+        '<img src="'+teamLogo(name)+'" alt="">'+
+        '<div class="comp-game-copy">'+
+          '<strong>'+esc(shortTeam(name))+'</strong>'+
+          '<span class="comp-game-owner">'+esc(owner||"UNOWNED")+'</span>'+
+          '<span class="comp-game-teamline">'+esc(teamLine(name))+'</span>'+
+        '</div>'+
+        (scores?'<b>'+score+'</b>':'')+
+      '</div>';
+
     el.innerHTML=games.map(g=>{
-      const ao=teamOwner(g.away),ho=teamOwner(g.home),rivalry=ao&&ho&&ao!==ho;
+      const ao=teamOwner(g.away),ho=teamOwner(g.home);
       const scores=g.status!=="SCHEDULED";
-      const meta=g.status==="SCHEDULED"?timeSydney(g.date):(g.status==="IN"?(g.detail||"LIVE"):"FINAL");
-      return '<article class="comp-game '+g.status.toLowerCase()+(rivalry?' rivalry':'')+'">'+
-        '<div class="comp-game-side away"><img src="'+teamLogo(g.away)+'" alt=""><div class="comp-game-copy"><strong>'+esc(shortTeam(g.away))+'</strong><span class="comp-game-owner">'+esc(ao||"UNOWNED")+'</span><span class="comp-game-teamline">'+esc(teamLine(g.away))+'</span></div>'+(scores?'<b>'+g.awayScore+'</b>':'')+'</div>'+
-        '<div class="comp-game-center"><span>'+esc(meta)+'</span><b>'+(rivalry?'OWNER VS OWNER':'TODAY')+'</b></div>'+
-        '<div class="comp-game-side home"><img src="'+teamLogo(g.home)+'" alt=""><div class="comp-game-copy"><strong>'+esc(shortTeam(g.home))+'</strong><span class="comp-game-owner">'+esc(ho||"UNOWNED")+'</span><span class="comp-game-teamline">'+esc(teamLine(g.home))+'</span></div>'+(scores?'<b>'+g.homeScore+'</b>':'')+'</div>'+
+      const status=g.status==="SCHEDULED"?timeSydney(g.date):(g.status==="IN"?(g.detail||"LIVE"):"");
+      return '<article class="comp-game '+g.status.toLowerCase()+'">'+
+        side(g.away,ao,g.awayScore,"away",scores)+
+        side(g.home,ho,g.homeScore,"home",scores)+
+        (status?'<div class="comp-game-state">'+esc(status)+'</div>':'')+
       '</article>';
     }).join("");
   }
