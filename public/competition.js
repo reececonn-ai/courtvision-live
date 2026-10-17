@@ -730,37 +730,46 @@
 
     const teamValueRows=rows.flatMap(r=>r.teams.map(t=>{
       const played=t.w+t.l;
-      const pace=played?82*(t.w/played):0;
+      const pace=played?82*(t.w/played):null;
       const line=Number.isFinite(t.line)?t.line:41;
-      const delta=pace-line;
-      return {...t,owner:r.name,pace,line,delta};
+      const delta=Number.isFinite(pace)?pace-line:null;
+      return {...t,owner:r.name,played,pace,line,delta};
     }));
+    const valuedTeams=teamValueRows.filter(t=>Number.isFinite(t.delta));
 
     if(expectation){
-      const overs=[...teamValueRows].sort((a,b)=>b.delta-a.delta).slice(0,3);
-      const unders=[...teamValueRows].sort((a,b)=>a.delta-b.delta).slice(0,3);
-      expectation.innerHTML=[
-        ...overs.map((t,i)=>'<div class="nerd-list-row team-accent compact" style="'+teamStyle(t.name)+'"><div><strong>OVER #'+(i+1)+' · '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · '+t.pace.toFixed(1)+' pace vs '+t.line.toFixed(1)+'</small></div><b>+'+t.delta.toFixed(1)+'</b></div>'),
-        ...unders.map((t,i)=>'<div class="nerd-list-row team-accent compact negative" style="'+teamStyle(t.name)+'"><div><strong>UNDER #'+(i+1)+' · '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · '+t.pace.toFixed(1)+' pace vs '+t.line.toFixed(1)+'</small></div><b>'+t.delta.toFixed(1)+'</b></div>')
-      ].join("");
+      if(!valuedTeams.length){
+        expectation.innerHTML='<div class="comp-empty">Starts once regular-season results exist. No 0–0 team gets labelled a bust.</div>';
+      }else{
+        const overs=[...valuedTeams].sort((a,b)=>b.delta-a.delta).slice(0,3);
+        const unders=[...valuedTeams].sort((a,b)=>a.delta-b.delta).slice(0,3);
+        expectation.innerHTML=[
+          ...overs.map((t,i)=>'<div class="nerd-list-row team-accent compact" style="'+teamStyle(t.name)+'"><div><strong>OVER #'+(i+1)+' · '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · '+t.pace.toFixed(1)+' pace vs '+t.line.toFixed(1)+'</small></div><b>'+(t.delta>=0?'+':'')+t.delta.toFixed(1)+'</b></div>'),
+          ...unders.map((t,i)=>'<div class="nerd-list-row team-accent compact negative" style="'+teamStyle(t.name)+'"><div><strong>UNDER #'+(i+1)+' · '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · '+t.pace.toFixed(1)+' pace vs '+t.line.toFixed(1)+'</small></div><b>'+(t.delta>=0?'+':'')+t.delta.toFixed(1)+'</b></div>')
+        ].join("");
+      }
     }
 
     if(pickValue){
-      const best=[...teamValueRows].sort((a,b)=>b.delta-a.delta).slice(0,5);
-      const worst=[...teamValueRows].sort((a,b)=>a.delta-b.delta).slice(0,5);
-      pickValue.innerHTML=[
-        ...best.map((t,i)=>'<div class="nerd-list-row team-accent" style="'+teamStyle(t.name)+'"><div><strong>STEAL #'+(i+1)+' · '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · outperforming expectation</small></div><b>+'+t.delta.toFixed(1)+'</b></div>'),
-        ...worst.map((t,i)=>'<div class="nerd-list-row team-accent negative" style="'+teamStyle(t.name)+'"><div><strong>BUST #'+(i+1)+' · '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · below expectation</small></div><b>'+t.delta.toFixed(1)+'</b></div>')
-      ].join("");
+      if(!valuedTeams.length){
+        pickValue.innerHTML='<div class="comp-empty">Draft value starts once regular-season results exist.</div>';
+      }else{
+        const best=[...valuedTeams].sort((a,b)=>b.delta-a.delta).slice(0,5);
+        const worst=[...valuedTeams].sort((a,b)=>a.delta-b.delta).slice(0,5);
+        pickValue.innerHTML=[
+          ...best.map((t,i)=>'<div class="nerd-list-row team-accent" style="'+teamStyle(t.name)+'"><div><strong>STEAL #'+(i+1)+' · '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · outperforming expectation</small></div><b>'+(t.delta>=0?'+':'')+t.delta.toFixed(1)+'</b></div>'),
+          ...worst.map((t,i)=>'<div class="nerd-list-row team-accent negative" style="'+teamStyle(t.name)+'"><div><strong>BUST #'+(i+1)+' · '+esc(shortTeam(t.name))+'</strong><small>'+esc(t.owner)+' · below expectation</small></div><b>'+(t.delta>=0?'+':'')+t.delta.toFixed(1)+'</b></div>')
+        ].join("");
+      }
     }
 
     if(portfolios){
       portfolios.innerHTML=rows.map(r=>{
         const teams=teamValueRows.filter(t=>t.owner===r.name);
         const avgPct=teams.length?teams.reduce((s,t)=>s+pct(t.w,t.l),0)/teams.length:0;
-        const over=teams.filter(t=>t.delta>0).length;
-        const above500=teams.filter(t=>t.w>t.l).length;
-        const best=[...teams].sort((a,b)=>b.delta-a.delta)[0];
+        const over=teams.filter(t=>Number.isFinite(t.delta)&&t.delta>0).length;
+        const above500=teams.filter(t=>t.played>0&&t.w>t.l).length;
+        const best=[...teams].filter(t=>Number.isFinite(t.delta)).sort((a,b)=>b.delta-a.delta)[0];
         const dependency=r.w&&best?Math.round(best.w/r.w*100):0;
         const strips=teams.map(t=>'<i title="'+esc(t.name)+'" style="background:'+teamColors(t.name).primary+'"></i>').join("");
         return '<article class="nerd-portfolio">'+
@@ -769,7 +778,7 @@
           '<div class="nerd-portfolio-metrics">'+
             '<span><small>AVG WIN %</small><b>'+Math.round(avgPct*100)+'%</b></span>'+
             '<span><small>ABOVE .500</small><b>'+above500+'/5</b></span>'+
-            '<span><small>OVER LINE</small><b>'+over+'/5</b></span>'+
+            '<span><small>OVER LINE</small><b>'+over+'/'+teams.filter(t=>t.played>0).length+'</b></span>'+
             '<span><small>TOP-TEAM DEPENDENCY</small><b>'+dependency+'%</b></span>'+
           '</div>'+
           '<footer>Best value: <b>'+esc(best?shortTeam(best.name):"—")+'</b> '+(best?(best.delta>=0?'+':'')+best.delta.toFixed(1):'')+'</footer>'+
@@ -821,8 +830,8 @@
     }
 
     const nerdTicker=[];
-    const bestValue=[...teamValueRows].sort((a,b)=>b.delta-a.delta)[0];
-    const worstValue=[...teamValueRows].sort((a,b)=>a.delta-b.delta)[0];
+    const bestValue=[...valuedTeams].sort((a,b)=>b.delta-a.delta)[0];
+    const worstValue=[...valuedTeams].sort((a,b)=>a.delta-b.delta)[0];
     const rivalryTop=ownerHeadToHead(recent,180).sort((a,b)=>b.games-a.games)[0];
     if(bestValue)nerdTicker.push({tag:"BIGGEST OVER",text:shortTeam(bestValue.name)+" ("+bestValue.owner+") is "+(bestValue.delta>=0?"+":"")+bestValue.delta.toFixed(1)+" wins vs preseason pace.",kind:"draft"});
     if(worstValue)nerdTicker.push({tag:"BIGGEST UNDER",text:shortTeam(worstValue.name)+" ("+worstValue.owner+") is "+worstValue.delta.toFixed(1)+" wins vs preseason pace.",kind:"alert"});
