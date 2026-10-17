@@ -2240,6 +2240,7 @@ body[data-screen="competitionScreen"] .broadcast-ticker{
 body[data-screen="statsForNerdsScreen"] .broadcast-ticker{
   left:0!important;
   right:0!important;
+  width:100vw!important;
 }
 
 body[data-screen="competitionScreen"] .competition-shell,
@@ -2255,6 +2256,7 @@ body.tv-mode[data-screen="competitionScreen"] .broadcast-ticker{
 body.tv-mode[data-screen="statsForNerdsScreen"] .broadcast-ticker{
   left:0!important;
   right:0!important;
+  width:100vw!important;
 }
 
 .nerd-expectation-compact{
