@@ -675,7 +675,7 @@
       {label:"BEST LAST 10",value:bestForm&&bestForm.games?bestForm.name+" "+bestForm.w+"-"+bestForm.l:"—",sub:"Recent completed team games"},
       {label:"LONGEST CURRENT STREAK",value:hottest&&hottest.n?hottest.name+" "+hottest.n+(hottest.type==="W"?"W":"L"):"—",sub:"Current streak"},
       {label:"HIGHEST TITLE %",value:highProb?highProb.name+" "+highProb.probability.toFixed(1)+"%":"—",sub:highProb?highProb.key:"History builds daily"},
-      {label:"BIGGEST LEAD",value:biggestLead?biggestLead.name+" +"+biggestLead.lead:"—",sub:biggestLead?biggestLead.key:"History builds daily"}
+      {label:"BIGGEST LEAD",value:biggestLead&&biggestLead.lead>0?biggestLead.name+" +"+biggestLead.lead:"NO CLEAR LEAD",sub:biggestLead&&biggestLead.lead>0?biggestLead.key:"History builds daily"}
     ];
   }
 
@@ -688,12 +688,14 @@
     const heroHeadline=$("nerdHeroHeadline"),heroText=$("nerdHeroText"),heroLabel=$("nerdHeroLabel"),heroValue=$("nerdHeroValue");
     if(heroHeadline)heroHeadline.textContent=hero?storyHeadline(hero):"NO CHAOS YET";
     if(heroText)heroText.textContent=hero?hero.text:"The numbers are behaving themselves. Suspicious.";
-    if(heroLabel)heroLabel.textContent=hero?hero.tag:"LIVE";
+    const titleLeader=[...rows].sort((a,b)=>b.probability-a.probability)[0];
+    const heroOwner=hero?rows.find(r=>String(hero.text||"").toLowerCase().includes(String(r.name||"").toLowerCase())):null;
+    const heroPerson=heroOwner||titleLeader;
+    if(heroLabel)heroLabel.textContent=heroPerson?(heroPerson.name+" TITLE CHANCE"):"LIVE";
     if(heroValue){
-      const leader=[...rows].sort((a,b)=>b.probability-a.probability)[0];
-      heroValue.textContent=leader?leader.probability.toFixed(1)+"%":"—";
+      heroValue.textContent=heroPerson?heroPerson.probability.toFixed(1)+"%":"—";
       const heroEl=$("nerdHero");
-      const leadTeam=leader?.teams?.[0]?.name;
+      const leadTeam=heroPerson?.teams?.[0]?.name;
       if(heroEl&&leadTeam)heroEl.setAttribute("style",teamStyle(leadTeam));
     }
 
