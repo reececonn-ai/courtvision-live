@@ -5585,12 +5585,12 @@ function teamTickerItems(name){
 }
 function draftTickerItems(){
   const d=draftPulse();
-  const out=[{tag:state.available.length<=6?"FINAL STRETCH":"DRAFT UPDATE",text:`${state.available.length} TEAMS REMAIN · ${state.passed.length} IN THE BARREL · ${Object.keys(state.assignments).length} ASSIGNED`,kind:"draft"}];
+  const out=[{tag:state.available.length<=6?"FINAL STRETCH":"DRAFT UPDATE",text:state.available.length+" TEAMS REMAIN · "+state.passed.length+" IN THE BARREL · "+Object.keys(state.assignments).length+" ASSIGNED",kind:"draft"}];
   if(state.lastAction&&state.lastAction!=="Draft ready")out.push({tag:"LAST PICK",text:state.lastAction,kind:"draft"});
-  if(d.priciest)out.push({tag:"TOP PRICE",text:`${teamByName(d.priciest.name)?.[1]||d.priciest.name} · ${money(d.priciest.amount)}`,kind:"draft"});
+  if(d.priciest)out.push({tag:"TOP PRICE",text:(teamByName(d.priciest.name)?.[1]||d.priciest.name)+" · $"+money(d.priciest.amount),kind:"draft"});
   const cash=[...state.players].sort((a,b)=>b.remaining-a.remaining)[0];
-  if(cash)out.push({tag:"MOST CASH",text:`${cash.name.toUpperCase()} · ${money(cash.remaining)} LEFT · ${cash.teams.length}/${state.teamCap} TEAMS`,kind:"draft"});
-  state.players.forEach(p=>out.push({tag:p.teams.length>=state.teamCap?"ROSTER FULL":"DRAFT",text:`${p.name.toUpperCase()} · ${p.teams.length}/${state.teamCap} TEAMS · ${money(p.remaining)} LEFT`,kind:"draft"}));
+  if(cash)out.push({tag:"MOST CASH",text:cash.name.toUpperCase()+" · $"+money(cash.remaining)+" LEFT · "+cash.teams.length+"/"+state.teamCap+" TEAMS",kind:"draft"});
+  state.players.forEach(p=>out.push({tag:p.teams.length>=state.teamCap?"ROSTER FULL":"DRAFT",text:p.name.toUpperCase()+" · "+p.teams.length+"/"+state.teamCap+" TEAMS · $"+money(p.remaining)+" LEFT",kind:"draft"}));
   return out;
 }
 function setTicker(items,brand="NBA DRAFT"){
