@@ -104,8 +104,53 @@ jobs:
                   "canvas": rect("#wheel"),
                   "spin": rect("#spinBtn"),
               }
+              ticker = driver.execute_script("""
+                const t=document.querySelector('#broadcastTicker'), n=document.querySelector('.mobile-nav');
+                const tr=t.getBoundingClientRect(), nr=n.getBoundingClientRect(), cs=getComputedStyle(t);
+                return {display:cs.display, position:cs.position, top:tr.top, bottom:tr.bottom, height:tr.height,
+                        navTop:nr.top, navHeight:nr.height, title:document.querySelector('.brand h1')?.textContent?.trim(),
+                        documentTitle:document.title};
+              """)
+              print("PHONE_TICKER="+json.dumps(ticker, sort_keys=True))
+
+              spin_result = driver.execute_script("""
+                const before=wheelRotation;
+                const snap=cvSharedSnapshot();
+                snap.origin='remote-mobile-qa';
+                snap.rev=Date.now()+100000;
+                snap.draft.onTheBoard=null;
+                snap.draft.lastScreen='wheelScreen';
+                snap.draft.liveSpin={
+                  id:'qa-remote-spin-'+Date.now(),
+                  targetName:state.available[0],
+                  startRotation:before,
+                  spins:8,
+                  duration:1400,
+                  startedAt:Date.now()
+                };
+                cvApplySnapshot(snap);
+                return {before, target:snap.draft.liveSpin.targetName};
+              """)
+              time.sleep(0.45)
+              spin_after = driver.execute_script("""
+                return {rotation:wheelRotation, spinning, active:document.querySelector('.screen.active')?.id,
+                        spinText:document.querySelector('#spinBtn')?.textContent};
+              """)
+              print("REMOTE_SPIN="+json.dumps({"start":spin_result,"after":spin_after}, sort_keys=True))
+
               print("WHEEL_METRICS="+json.dumps(wheel, sort_keys=True))
               driver.save_screenshot("/tmp/wheel-390x844.png")
+
+              if ticker["title"] != "NBA TEAM DRAFT DAY" or ticker["documentTitle"] != "NBA TEAM DRAFT DAY":
+                  raise SystemExit("Draft title is not NBA TEAM DRAFT DAY")
+              if ticker["display"] == "none" or ticker["height"] < 28:
+                  raise SystemExit("Phone ticker is not visible")
+              if ticker["bottom"] > ticker["navTop"] + 2:
+                  raise SystemExit("Phone ticker overlaps the mobile navigation")
+              if spin_after["active"] != "wheelScreen":
+                  raise SystemExit("Remote spin did not force the wheel screen")
+              if abs(spin_after["rotation"] - spin_result["before"]) < 0.05:
+                  raise SystemExit("Remote spin did not animate the wheel")
 
               if reveal["viewport"]["scrollWidth"] > reveal["viewport"]["w"] + 2:
                   raise SystemExit("Horizontal overflow remains on reveal")
