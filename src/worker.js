@@ -37,6 +37,78 @@ function nbaCacheTtl(kind, value) {
   return 120;
 }
 
+
+function sydneyDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Australia/Sydney",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date).reduce((o, p) => (o[p.type] = p.value, o), {});
+  return parts.year + "-" + parts.month + "-" + parts.day;
+}
+
+function parseNbaStandingsForHistory(data) {
+  const records = {};
+  const entries = [];
+  const walk = value => {
+    if (!value || typeof value !== "object") return;
+    if (Array.isArray(value)) return value.forEach(walk);
+    if (value.team && Array.isArray(value.stats)) entries.push(value);
+    if (Array.isArray(value.children)) value.children.forEach(walk);
+    if (value.standings) walk(value.standings);
+    if (Array.isArray(value.entries)) value.entries.forEach(walk);
+  };
+  walk(data);
+
+  const statValue = (entry, keys) => {
+    for (const key of keys) {
+      const stat = entry.stats.find(s => {
+        const label = String(s.name || s.abbreviation || s.displayName || "").toLowerCase();
+        return label === key || label.includes(key);
+      });
+      const n = Number(stat?.value ?? stat?.displayValue);
+      if (Number.isFinite(n)) return n;
+    }
+    return null;
+  };
+
+  for (const entry of entries) {
+    const name = String(entry.team?.displayName || entry.team?.name || "").trim();
+    if (!ALL_TEAMS.includes(name)) continue;
+    let wins = statValue(entry, ["wins", "win"]);
+    let losses = statValue(entry, ["losses", "loss"]);
+    const rank = statValue(entry, ["playoffseed", "rank", "seed"]);
+    if (wins == null || losses == null) {
+      const summary = String(entry.note?.description || entry.summary || entry.records?.[0]?.summary || "");
+      const m = summary.match(/(\d+)\s*[-–]\s*(\d+)/);
+      if (m) { wins = Number(m[1]); losses = Number(m[2]); }
+    }
+    if (Number.isFinite(wins) && Number.isFinite(losses)) {
+      records[name] = { w: wins, l: losses, rank: Number.isFinite(rank) ? rank : null };
+    }
+  }
+  return records;
+}
+
+function mergeDailySnapshot(list, snapshot, max = 220) {
+  const next = Array.isArray(list) ? [...list] : [];
+  const key = String(snapshot?.key || "");
+  if (!key) return next.slice(-max);
+  const i = next.findIndex(x => String(x?.key || "") === key && !!x.demo === !!snapshot.demo);
+  if (i >= 0) {
+    const prevAt = Date.parse(next[i]?.at || 0) || 0;
+    const newAt = Date.parse(snapshot.at || 0) || 0;
+    if (newAt >= prevAt) next[i] = snapshot;
+  } else {
+    next.push(snapshot);
+  }
+  return next
+    .filter(Boolean)
+    .sort((a, b) => String(a.key || "").localeCompare(String(b.key || "")))
+    .slice(-max);
+}
+
 async function cachedNbaResponse(request, upstreamUrl, ttl, ctx, bypass = false) {
   const cache = caches.default;
   const cacheUrl = new URL(request.url);
@@ -102,7 +174,45 @@ export class DraftRoom {
     this.stateCache = null;
   }
 
+  async ensureSeasonAlarm() {
+    const existing = await this.ctx.storage.getAlarm();
+    if (existing == null) {
+      await this.ctx.storage.setAlarm(Date.now() + 60 * 1000);
+    }
+  }
+
+  async captureSeasonStandings() {
+    const upstream = await fetch("https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?season=2027", {
+      headers: { "accept": "application/json" },
+    });
+    if (!upstream.ok) throw new Error("Standings HTTP " + upstream.status);
+    const data = await upstream.json();
+    const records = parseNbaStandingsForHistory(data);
+    if (Object.keys(records).length < 24) throw new Error("Incomplete standings snapshot");
+    const snapshot = {
+      key: sydneyDateKey(),
+      at: new Date().toISOString(),
+      demo: false,
+      records,
+    };
+    const history = await this.ctx.storage.get("competitionRawHistory");
+    const merged = mergeDailySnapshot(history, snapshot);
+    await this.ctx.storage.put("competitionRawHistory", merged);
+    return snapshot;
+  }
+
+  async alarm() {
+    try {
+      await this.captureSeasonStandings();
+    } catch (error) {
+      console.warn("CourtVision season snapshot failed", error);
+    } finally {
+      await this.ctx.storage.setAlarm(Date.now() + 6 * 60 * 60 * 1000);
+    }
+  }
+
   async state(room) {
+    await this.ensureSeasonAlarm();
     if (this.stateCache) return this.stateCache;
     const stored = await this.ctx.storage.get("state");
     const fresh = defaultState(room);
@@ -167,6 +277,57 @@ export class DraftRoom {
       return new Response(null, { status: 101, webSocket: client });
     }
 
+    if (url.pathname.endsWith("/competition-history")) {
+      await this.ensureSeasonAlarm();
+
+      if (request.method === "GET") {
+        const [rich, raw, alarmAt] = await Promise.all([
+          this.ctx.storage.get("competitionHistory"),
+          this.ctx.storage.get("competitionRawHistory"),
+          this.ctx.storage.getAlarm(),
+        ]);
+        return json({
+          ok: true,
+          rich: Array.isArray(rich) ? rich : [],
+          raw: Array.isArray(raw) ? raw : [],
+          alarmAt: alarmAt || null,
+        });
+      }
+
+      if (request.method === "POST") {
+        let body;
+        try { body = await request.json(); }
+        catch (_) { return json({ ok: false, error: "Invalid JSON" }, 400); }
+
+        const snapshot = body?.snapshot;
+        if (!snapshot || typeof snapshot !== "object" || !snapshot.key || !Array.isArray(snapshot.rows)) {
+          return json({ ok: false, error: "Expected a competition snapshot" }, 400);
+        }
+        if (snapshot.demo) return json({ ok: true, ignored: "demo" });
+
+        const clean = {
+          key: String(snapshot.key).slice(0, 10),
+          at: String(snapshot.at || new Date().toISOString()),
+          demo: false,
+          rows: snapshot.rows.slice(0, 12).map(r => ({
+            name: String(r.name || "").slice(0, 80),
+            rank: Number(r.rank) || null,
+            w: Number(r.w) || 0,
+            l: Number(r.l) || 0,
+            projected: Number(r.projected) || 0,
+            probability: Number(r.probability) || 0,
+          })),
+        };
+
+        const current = await this.ctx.storage.get("competitionHistory");
+        const merged = mergeDailySnapshot(current, clean);
+        await this.ctx.storage.put("competitionHistory", merged);
+        return json({ ok: true, count: merged.length });
+      }
+
+      return json({ ok: false, error: "Method not allowed" }, 405);
+    }
+
     if (request.method === "GET") {
       return json({ ok: true, state: await this.state(room) });
     }
@@ -211,6 +372,8 @@ export default {
         now: new Date().toISOString(),
         nbaProxy: true,
         nbaCacheSeconds: { standings: 300, liveScoreboard: 90, historicalScoreboard: 86400 },
+        seasonMemory: true,
+        seasonSnapshotEveryHours: 6,
       });
     }
 
