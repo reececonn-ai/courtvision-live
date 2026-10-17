@@ -9,7 +9,10 @@
   let refreshToken=0;
   let autoUpdateTimer=null;
   let autoUpdateRunning=false;
+  let seasonMemoryLoadedAt=0;
+  let seasonMemoryRaw=[];
   const AUTO_UPDATE_MS=2*60*1000;
+  const SEASON_MEMORY_MS=60*1000;
 
   const $=id=>document.getElementById(id);
   const esc=s=>typeof escapeHtml==="function"?escapeHtml(String(s??"")):String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -78,6 +81,204 @@
       catch(directError){throw directError||localError}
     }
   }
+
+
+  function seasonMemoryPath(){
+    try{
+      if(typeof CV_SYNC_ROOM!=="undefined"&&CV_SYNC_ROOM)return "/api/rooms/"+encodeURIComponent(CV_SYNC_ROOM)+"/competition-history";
+    }catch(_){}
+    return null;
+  }
+
+  function mergeSeasonSnapshot(snapshot){
+    if(!snapshot?.key||!Array.isArray(snapshot.rows))return;
+    if(!Array.isArray(state.competitionSnapshots))state.competitionSnapshots=[];
+    const idx=state.competitionSnapshots.findIndex(x=>x.key===snapshot.key&&!!x.demo===!!snapshot.demo);
+    if(idx>=0){
+      const oldAt=Date.parse(state.competitionSnapshots[idx]?.at||0)||0;
+      const newAt=Date.parse(snapshot.at||0)||0;
+      if(newAt>=oldAt)state.competitionSnapshots[idx]=snapshot;
+    }else{
+      state.competitionSnapshots.push(snapshot);
+    }
+    state.competitionSnapshots=state.competitionSnapshots
+      .filter(Boolean)
+      .sort((a,b)=>String(a.key||"").localeCompare(String(b.key||"")))
+      .slice(-220);
+  }
+
+  function snapshotFromRecords(raw){
+    if(!raw?.key||!raw.records||typeof raw.records!=="object")return null;
+    const rows=calculateProbabilities(ownerSummaries(raw.records),3000);
+    return {
+      key:raw.key,
+      at:raw.at||new Date().toISOString(),
+      demo:false,
+      source:"server-standings",
+      rows:rows.map((r,i)=>({
+        name:r.name,rank:i+1,w:r.w,l:r.l,
+        projected:+r.projected.toFixed(2),
+        probability:+r.probability.toFixed(2)
+      }))
+    };
+  }
+
+  async function loadSeasonMemory(force=false){
+    if(isTestDraft())return;
+    if(!force&&seasonMemoryLoadedAt&&Date.now()-seasonMemoryLoadedAt<SEASON_MEMORY_MS)return;
+    const path=seasonMemoryPath();if(!path)return;
+    try{
+      const r=await fetch(path,{cache:"no-store"});
+      if(!r.ok)throw new Error("history HTTP "+r.status);
+      const data=await r.json();
+      for(const s of data.rich||[])mergeSeasonSnapshot(s);
+      seasonMemoryRaw=Array.isArray(data.raw)?data.raw:[];
+      for(const raw of seasonMemoryRaw){
+        const snapshot=snapshotFromRecords(raw);
+        if(snapshot)mergeSeasonSnapshot(snapshot);
+      }
+      seasonMemoryLoadedAt=Date.now();
+      try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(_){}
+    }catch(e){
+      console.warn("Season memory load failed",e);
+    }
+  }
+
+  async function pushSeasonSnapshot(snapshot){
+    if(!snapshot||snapshot.demo)return;
+    const path=seasonMemoryPath();if(!path)return;
+    try{
+      await fetch(path,{
+        method:"POST",
+        headers:{"content-type":"application/json"},
+        body:JSON.stringify({snapshot}),
+        cache:"no-store"
+      });
+    }catch(e){
+      console.warn("Season memory save failed",e);
+    }
+  }
+
+  function priorCompetitionSnapshot(demo=false){
+    const today=sydneyKey(new Date());
+    return (state.competitionSnapshots||[])
+      .filter(s=>!!s.demo===!!demo&&s.key<today&&Array.isArray(s.rows))
+      .sort((a,b)=>String(b.key).localeCompare(String(a.key)))[0]||null;
+  }
+
+  function competitionMovement(rows,demo=false){
+    const prior=priorCompetitionSnapshot(demo);
+    if(!prior)return {prior:null,items:[]};
+    const prev=new Map((prior.rows||[]).map(r=>[r.name,r]));
+    const items=rows.map((r,i)=>{
+      const p=prev.get(r.name);if(!p)return null;
+      const currentRank=i+1;
+      const rankMove=(Number(p.rank)||currentRank)-currentRank;
+      const winMove=r.w-Number(p.w||0);
+      const lossMove=r.l-Number(p.l||0);
+      const probMove=r.probability-Number(p.probability||0);
+      const score=Math.abs(probMove)*2+Math.abs(rankMove)*4+Math.abs(winMove-lossMove);
+      return {name:r.name,rankMove,winMove,lossMove,probMove,score,priorKey:prior.key,currentRank,priorRank:Number(p.rank)||currentRank};
+    }).filter(Boolean).sort((a,b)=>b.score-a.score||Math.abs(b.probMove)-Math.abs(a.probMove));
+    return {prior,items};
+  }
+
+  function renderMovement(rows,demo=false){
+    const movement=competitionMovement(rows,demo);
+    const el=$("competitionMovement"),nerd=$("nerdSinceYesterday");
+    if(!movement.prior){
+      const empty='<div class="comp-empty">Season memory needs a second Sydney day. From tomorrow, this will show exactly who moved.</div>';
+      if(el)el.innerHTML=empty;if(nerd)nerd.innerHTML=empty;
+      return movement;
+    }
+    const card=x=>{
+      const direction=x.rankMove>0?"up":x.rankMove<0?"down":"flat";
+      const rankText=x.rankMove>0?"▲ "+x.rankMove:x.rankMove<0?"▼ "+Math.abs(x.rankMove):"—";
+      const record=(x.winMove||x.lossMove)?("+"+x.winMove+"W · +"+x.lossMove+"L"):"NO NEW FINALS";
+      return '<article class="comp-move-card '+direction+'">'+
+        '<div><small>'+esc(movement.prior.key)+'</small><strong>'+esc(x.name)+'</strong><span>'+record+'</span></div>'+
+        '<div class="comp-move-numbers"><b>'+rankText+'</b><em>'+(x.probMove>=0?"+":"")+x.probMove.toFixed(1)+' pts</em></div>'+
+      '</article>';
+    };
+    if(el)el.innerHTML=movement.items.slice(0,4).map(card).join("");
+    if(nerd)nerd.innerHTML=movement.items.slice(0,6).map(card).join("");
+    return movement;
+  }
+
+  function scenarioRecords(records,g,homeWins){
+    const next={};
+    for(const [name,r] of Object.entries(records||{}))next[name]={...r};
+    if(!next[g.home])next[g.home]={w:0,l:0,rank:null};
+    if(!next[g.away])next[g.away]={w:0,l:0,rank:null};
+    if(homeWins){next[g.home].w++;next[g.away].l++}
+    else{next[g.away].w++;next[g.home].l++}
+    return next;
+  }
+
+  function flippedFinalRecords(records,g){
+    const next={};
+    for(const [name,r] of Object.entries(records||{}))next[name]={...r};
+    if(!next[g.home]||!next[g.away])return next;
+    if(g.homeWinner){
+      next[g.home].w=Math.max(0,next[g.home].w-1);next[g.away].l=Math.max(0,next[g.away].l-1);
+      next[g.home].l++;next[g.away].w++;
+    }else if(g.awayWinner){
+      next[g.away].w=Math.max(0,next[g.away].w-1);next[g.home].l=Math.max(0,next[g.home].l-1);
+      next[g.away].l++;next[g.home].w++;
+    }
+    return next;
+  }
+
+  function probabilityMap(rows){return new Map((rows||[]).map(r=>[r.name,r.probability]))}
+
+  function gameImpact(games,records,currentRows){
+    if(!games?.length)return [];
+    const current=probabilityMap(currentRows);
+    return games.map(g=>{
+      const ao=teamOwner(g.away),ho=teamOwner(g.home);
+      if(!ao&&!ho)return null;
+      let aRows,bRows,label;
+      if(g.status==="FINAL"){
+        aRows=currentRows;
+        bRows=calculateProbabilities(ownerSummaries(flippedFinalRecords(records,g)),1600);
+        label="RESULT SWING";
+      }else{
+        aRows=calculateProbabilities(ownerSummaries(scenarioRecords(records,g,true)),1600);
+        bRows=calculateProbabilities(ownerSummaries(scenarioRecords(records,g,false)),1600);
+        label=g.status==="IN"?"LIVE SWING":"POSSIBLE SWING";
+      }
+      const a=probabilityMap(aRows),b=probabilityMap(bRows);
+      const owners=[...new Set([ao,ho].filter(Boolean))];
+      let swing=0,owner=null;
+      for(const o of owners){
+        const diff=Math.abs((a.get(o)||0)-(b.get(o)||0));
+        if(diff>swing){swing=diff;owner=o}
+      }
+      const actualDelta=g.status==="FINAL"&&owner?((current.get(owner)||0)-(b.get(owner)||0)):null;
+      return {...g,awayOwner:ao,homeOwner:ho,swing,owner,label,actualDelta};
+    }).filter(Boolean).sort((a,b)=>b.swing-a.swing||a.date-b.date);
+  }
+
+  function renderGameImpact(games,records,rows){
+    const el=$("competitionImpact");if(!el)return [];
+    const impacts=gameImpact(games,records,rows).slice(0,4);
+    if(!impacts.length){
+      el.innerHTML='<div class="comp-empty">No owned-team games on today\'s Sydney slate.</div>';
+      return impacts;
+    }
+    el.innerHTML=impacts.map(x=>{
+      const status=x.status==="SCHEDULED"?timeSydney(x.date):(x.status==="IN"?(x.detail||"LIVE"):"FINAL");
+      const owners=[x.awayOwner,x.homeOwner].filter(Boolean).join(" vs ");
+      const value=x.swing.toFixed(1)+" pts";
+      return '<article class="comp-impact-card '+x.status.toLowerCase()+'">'+
+        '<div class="comp-impact-match"><span>'+esc(shortTeam(x.away))+'</span><b>vs</b><span>'+esc(shortTeam(x.home))+'</span></div>'+
+        '<div class="comp-impact-copy"><strong>'+esc(owners||"OWNED TEAMS")+'</strong><small>'+esc(status)+' · '+esc(x.label)+'</small></div>'+
+        '<div class="comp-impact-value"><b>'+value+'</b><small>TITLE % RANGE</small></div>'+
+      '</article>';
+    }).join("");
+    return impacts;
+  }
+
 
   function demoCompetitionData(){
     const records={};
@@ -634,18 +835,16 @@
 
 
   function saveCompetitionSnapshot(rows,demo=false){
-    if(!Array.isArray(state.competitionSnapshots))state.competitionSnapshots=[];
-    const key=sydneyKey(new Date());
     const snapshot={
-      key,
+      key:sydneyKey(new Date()),
       at:new Date().toISOString(),
       demo:!!demo,
       rows:rows.map((r,i)=>({name:r.name,rank:i+1,w:r.w,l:r.l,projected:+r.projected.toFixed(2),probability:+r.probability.toFixed(2)}))
     };
-    const idx=state.competitionSnapshots.findIndex(x=>x.key===key&&!!x.demo===!!demo);
-    if(idx>=0)state.competitionSnapshots[idx]=snapshot;else state.competitionSnapshots.push(snapshot);
-    state.competitionSnapshots=state.competitionSnapshots.slice(-120);
+    mergeSeasonSnapshot(snapshot);
     if(typeof persist==="function")persist();
+    if(!demo)void pushSeasonSnapshot(snapshot);
+    return snapshot;
   }
 
   function pct(w,l){
@@ -866,9 +1065,11 @@
     const status=$("nerdStatus");if(status)status.textContent="Crunching the nerd stuff…";
     try{
       const data=await getCompetitionData(force);
+      await loadSeasonMemory(force);
       const rows=calculateProbabilities(ownerSummaries(data.records||{}));
       saveCompetitionSnapshot(rows,data.demo);
       renderStatsForNerds(rows,data.games||[],data.recent||[],data.demo);
+      renderMovement(rows,data.demo);
     }catch(e){
       console.warn("Stats for Nerds failed",e);
       if(status)status.textContent="Stats unavailable · try Refresh";
@@ -918,12 +1119,21 @@
     if(status)status.textContent="Refreshing NBA records and Sydney slate…";
     try{
       const data=await getCompetitionData(force);if(token!==refreshToken)return;
+      await loadSeasonMemory(force);if(token!==refreshToken)return;
       let rows=calculateProbabilities(ownerSummaries(data.records||{}));
       saveCompetitionSnapshot(rows,data.demo);
       renderLeaderboard(rows,data.demo,data.games||[]);
       renderGames(data.games||[],data.records||{});
+      const movement=renderMovement(rows,data.demo);
+      const impacts=renderGameImpact(data.games||[],data.records||{},rows);
       const bits=competitionTidbits(rows,data.games||[],data.recent||[]);
       renderTidbits(bits);
+      const intelTicker=[];
+      const mover=movement.items?.[0];
+      if(mover)intelTicker.push({tag:"SINCE YESTERDAY",text:mover.name+" "+(mover.probMove>=0?"+":"")+mover.probMove.toFixed(1)+" title pts · rank "+(mover.rankMove>0?"up "+mover.rankMove:mover.rankMove<0?"down "+Math.abs(mover.rankMove):"unchanged")+".",kind:mover.probMove<0?"alert":"draft"});
+      const impact=impacts?.[0];
+      if(impact)intelTicker.push({tag:"SWING WATCH",text:shortTeam(impact.away)+" vs "+shortTeam(impact.home)+" carries about "+impact.swing.toFixed(1)+" title-probability points of swing.",kind:"team"});
+      window.cvCompetitionTicker=[...intelTicker,...(window.cvCompetitionTicker||[])];
       const stamp=$("competitionUpdated");
       if(stamp)stamp.textContent=(data.demo?"DEMO · ":"UPDATED ")+new Intl.DateTimeFormat("en-AU",{timeZone:TZ,day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}).format(new Date());
       if(status)status.textContent=data.demo?"Test draft · seeded competition results for troubleshooting":"Live NBA records/results · auto-checking every 2 minutes";
@@ -1005,6 +1215,8 @@
       todayGames:(cache.games||[]).length,
       recentFinals:(cache.recent||[]).length,
       snapshots:(state.competitionSnapshots||[]).length,
+      rawSeasonSnapshots:seasonMemoryRaw.length,
+      seasonMemoryLoadedAt:seasonMemoryLoadedAt||null,
       autoUpdateEveryMs:AUTO_UPDATE_MS,
       autoUpdateRunning
     };
