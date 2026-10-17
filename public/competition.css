@@ -1840,3 +1840,129 @@ body[data-screen="competitionScreen"] .scanlines{
     font-size:25px!important;
   }
 }
+
+
+/* =========================================================
+   DAILY GAMES — TRUE 50/50 TEAM PANELS
+   ========================================================= */
+
+.comp-game{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 104px minmax(0,1fr)!important;
+  grid-template-areas:"away center home"!important;
+  gap:8px!important;
+  min-height:116px!important;
+  padding:8px!important;
+  background:#06101c!important;
+}
+
+.comp-game-side{
+  width:100%!important;
+  min-width:0!important;
+  height:100%!important;
+  display:grid!important;
+  grid-template-columns:58px minmax(0,1fr) 66px!important;
+  align-items:center!important;
+  gap:10px!important;
+  padding:12px 14px!important;
+  background:#081522!important;
+  border:1px solid #24405e!important;
+}
+
+.comp-game-side.away,
+.comp-game-side.home{
+  text-align:left!important;
+}
+
+.comp-game-side img{
+  width:52px!important;
+  height:52px!important;
+  object-fit:contain!important;
+  justify-self:start!important;
+}
+
+.comp-game-copy{
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  gap:3px!important;
+  overflow:visible!important;
+}
+
+.comp-game-copy strong{
+  font-size:26px!important;
+  line-height:.95!important;
+}
+
+.comp-game-owner{
+  font-size:10px!important;
+  line-height:1!important;
+}
+
+.comp-game-teamline{
+  display:block!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  font-size:10px!important;
+  line-height:1!important;
+}
+
+.comp-game-side > b{
+  width:auto!important;
+  min-width:0!important;
+  max-width:none!important;
+  justify-self:end!important;
+  text-align:right!important;
+  font-size:36px!important;
+  line-height:1!important;
+}
+
+.comp-game-center{
+  grid-area:center!important;
+  width:100%!important;
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:6px!important;
+}
+
+.comp-game-center span{
+  font-size:14px!important;
+}
+
+.comp-game-center b{
+  font-size:9px!important;
+  white-space:nowrap!important;
+}
+
+@media(max-width:820px){
+  .comp-game{
+    grid-template-columns:minmax(0,1fr) 72px minmax(0,1fr)!important;
+    gap:5px!important;
+    min-height:104px!important;
+    padding:5px!important;
+  }
+
+  .comp-game-side{
+    grid-template-columns:42px minmax(0,1fr) 46px!important;
+    gap:6px!important;
+    padding:8px!important;
+  }
+
+  .comp-game-side img{
+    width:38px!important;
+    height:38px!important;
+  }
+
+  .comp-game-copy strong{font-size:19px!important}
+  .comp-game-owner{font-size:8px!important}
+  .comp-game-teamline{font-size:8px!important}
+  .comp-game-side > b{font-size:27px!important}
+  .comp-game-center span{font-size:10px!important}
+  .comp-game-center b{font-size:7px!important}
+}
