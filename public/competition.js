@@ -575,6 +575,18 @@
   function renderStatsForNerds(rows,games,recent,demo){
     const status=$("nerdStatus");if(status)status.textContent=(demo?"DEMO DATA · ":"")+"Deep stats from current records, recent results and saved daily snapshots.";
 
+    const form=ownerRecentStats(recent,10);
+    const heroBits=competitionTidbits(rows,games,recent);
+    const hero=heroBits[0]||null;
+    const heroHeadline=$("nerdHeroHeadline"),heroText=$("nerdHeroText"),heroLabel=$("nerdHeroLabel"),heroValue=$("nerdHeroValue");
+    if(heroHeadline)heroHeadline.textContent=hero?storyHeadline(hero):"NO CHAOS YET";
+    if(heroText)heroText.textContent=hero?hero.text:"The numbers are behaving themselves. Suspicious.";
+    if(heroLabel)heroLabel.textContent=hero?hero.tag:"LIVE";
+    if(heroValue){
+      const leader=[...rows].sort((a,b)=>b.probability-a.probability)[0];
+      heroValue.textContent=leader?leader.probability.toFixed(1)+"%":"—";
+    }
+
     const recordBook=$("nerdRecordBook");
     if(recordBook){
       recordBook.innerHTML=nerdRecordBook(rows,recent).map(x=>
@@ -582,7 +594,6 @@
       ).join("");
     }
 
-    const form=ownerRecentStats(recent,10);
     const owners=$("nerdOwners");
     if(owners){
       owners.innerHTML=rows.map(r=>{
