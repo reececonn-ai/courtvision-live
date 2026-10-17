@@ -6,22 +6,137 @@ import {
   putState,
   connectRoom
 } from "./shared.js";
+import {
+  TEAMS,
+  teamByName,
+  renderBroadcastStage,
+  renderLocalTeamOverlay,
+  renderLocalBoardOverlay
+} from "./stage.js";
 
-const $ = (id) => document.getElementById(id);
+const $ = id => document.getElementById(id);
 const refs = {
-  room: $("roomInput"), screen: $("screenInput"), team: $("teamInput"),
-  lastWins: $("lastWinsInput"), line: $("lineInput"), bid: $("bidInput"), message: $("messageInput"),
-  players: $("playersInput"), status: $("connStatus"), error: $("error"), preview: $("preview"),
-  watch: $("watchLink"), publishBtn: $("publishBtn")
+  stage: $("stage"),
+  overlay: $("localOverlay"),
+  status: $("connStatus"),
+  drawer: $("controlDrawer"),
+  scrim: $("drawerScrim"),
+  controlsBtn: $("controlsBtn"),
+  closeControlsBtn: $("closeControlsBtn"),
+  watchUrl: $("watchUrl"),
+  copyLinkBtn: $("copyLinkBtn"),
+  returnEveryoneBtn: $("returnEveryoneBtn"),
+  screen: $("screenInput"),
+  team: $("teamInput"),
+  lastWins: $("lastWinsInput"),
+  line: $("lineInput"),
+  bid: $("bidInput"),
+  message: $("messageInput"),
+  playerRows: $("playerRows"),
+  publishBtn: $("publishBtn"),
+  spinDemoBtn: $("spinDemoBtn"),
+  error: $("error")
 };
 
 const savedRoom = cleanRoom(localStorage.getItem("courtvision-control-room"));
-refs.room.value = savedRoom.length >= 6 ? savedRoom : generateRoomName();
-
-let room = refs.room.value;
+let room = savedRoom.length >= 6 ? savedRoom : generateRoomName();
 let controlKey = controlKeyForRoom(room);
 let stopSocket = null;
-let current = null;
+let currentState = null;
+let lastFocusToken = null;
+let syncingControls = false;
+
+refs.team.innerHTML = `<option value="">No team selected</option>` +
+  TEAMS.map(t => `<option value="${t.name}">${t.name}</option>`).join("");
+
+refs.playerRows.innerHTML = Array.from({ length: 6 }, (_, i) => `
+  <div class="player-edit-row">
+    <input data-player-name="${i}" value="Player ${i + 1}" aria-label="Player ${i + 1} name">
+    <input data-player-budget="${i}" value="50" inputmode="decimal" aria-label="Player ${i + 1} remaining budget">
+  </div>
+`).join("");
+
+function setStatus(value) {
+  refs.status.textContent = value === "live" ? "LIVE" : value.toUpperCase();
+  refs.status.classList.toggle("live", value === "live");
+}
+
+function openDrawer() {
+  refs.drawer.classList.add("open");
+  refs.drawer.setAttribute("aria-hidden", "false");
+  refs.scrim.hidden = false;
+  requestAnimationFrame(() => refs.scrim.classList.add("show"));
+}
+
+function closeDrawer() {
+  refs.drawer.classList.remove("open");
+  refs.drawer.setAttribute("aria-hidden", "true");
+  refs.scrim.classList.remove("show");
+  setTimeout(() => { refs.scrim.hidden = true; }, 180);
+}
+
+function closeLocal() {
+  refs.overlay.hidden = true;
+  refs.overlay.innerHTML = "";
+}
+
+function openTeam(name) {
+  renderLocalTeamOverlay(refs.overlay, name, closeLocal);
+}
+
+function openBoard() {
+  renderLocalBoardOverlay(refs.overlay, currentState || {}, openTeam, closeLocal);
+}
+
+function render(state) {
+  currentState = state;
+
+  if (lastFocusToken !== null && state.focusToken && state.focusToken !== lastFocusToken) {
+    closeLocal();
+  }
+  if (state.focusToken) lastFocusToken = state.focusToken;
+
+  renderBroadcastStage(refs.stage, state, {
+    room,
+    onTeamClick: openTeam,
+    onOpenBoard: openBoard
+  });
+}
+
+function syncControlsFromState(state) {
+  syncingControls = true;
+  refs.screen.value = state.screen || "lobby";
+  refs.team.value = state.currentTeam || "";
+  const selected = teamByName(state.currentTeam);
+  refs.lastWins.value = state.lastSeasonWins ?? selected?.lastWins ?? "";
+  refs.line.value = state.winLine ?? selected?.line ?? "";
+  refs.bid.value = state.currentBid ?? "";
+  refs.message.value = state.message || "";
+
+  const players = Array.isArray(state.players) ? state.players : [];
+  for (let i = 0; i < 6; i++) {
+    const p = players[i] || {};
+    const nameInput = refs.playerRows.querySelector(`[data-player-name="${i}"]`);
+    const budgetInput = refs.playerRows.querySelector(`[data-player-budget="${i}"]`);
+    if (nameInput) nameInput.value = p.name || `Player ${i + 1}`;
+    if (budgetInput) budgetInput.value = Number.isFinite(Number(p.remaining)) ? p.remaining : 50;
+  }
+  syncingControls = false;
+}
+
+function readPlayers() {
+  return Array.from({ length: 6 }, (_, i) => {
+    const name = refs.playerRows.querySelector(`[data-player-name="${i}"]`)?.value.trim() || `Player ${i + 1}`;
+    const raw = refs.playerRows.querySelector(`[data-player-budget="${i}"]`)?.value;
+    const remaining = Number(raw);
+    const existing = currentState?.players?.[i];
+    return {
+      name,
+      remaining: Number.isFinite(remaining) ? remaining : 0,
+      teams: Array.isArray(existing?.teams) ? existing.teams : []
+    };
+  });
+}
 
 function numberOrNull(value) {
   const raw = String(value ?? "").trim();
@@ -30,137 +145,149 @@ function numberOrNull(value) {
   return Number.isFinite(n) ? n : null;
 }
 
-function render(state) {
-  current = state;
-  const team = state.currentTeam || "NO TEAM SELECTED";
-  const last = state.lastSeasonWins ?? "—";
-  const line = state.winLine ?? "—";
-  const bid = state.currentBid == null ? "" : `<div class="preview-number">$${state.currentBid}</div><div class="preview-label">CURRENT BID</div>`;
-  refs.preview.innerHTML = `
-    <div>
-      <div class="preview-label">${String(state.screen || "lobby").toUpperCase()}</div>
-      <div class="preview-team">${team}</div>
-      <div class="preview-number">${last} → ${line}</div>
-      <div class="preview-label">LAST WINS → THIS SEASON LINE</div>
-      ${bid}
-    </div>`;
-}
-
-function status(value) {
-  refs.status.textContent = value.toUpperCase();
-  refs.status.classList.toggle("live", value === "live");
-}
-
-async function connect() {
-  room = cleanRoom(refs.room.value);
-  if (room.length < 6) {
-    room = generateRoomName();
-    refs.room.value = room;
-  }
-
-  controlKey = controlKeyForRoom(room);
-  localStorage.setItem("courtvision-control-room", room);
-  localStorage.setItem("courtvision-room", room);
-  refs.watch.href = `/watch.html?room=${encodeURIComponent(room)}`;
-
-  stopSocket?.();
+async function sendPatch(patch) {
   refs.error.textContent = "";
-
   try {
-    const info = await getRoomInfo(room);
-    if (info.claimed && info.authType && info.authType !== "auto-key") {
-      refs.error.textContent = "This is an older PIN-based room. Click NEW ROOM once to switch to automatic commissioner access.";
-    }
-    render(info.state);
-  } catch (error) {
-    refs.error.textContent = error.message;
-  }
-
-  stopSocket = connectRoom(room, {
-    onStatus: status,
-    onState: render,
-  });
-}
-
-function parsePlayers() {
-  let players;
-  try { players = JSON.parse(refs.players.value); }
-  catch (_) { throw new Error("Players JSON is invalid."); }
-  if (!Array.isArray(players)) throw new Error("Players must be a JSON array.");
-  return players.slice(0, 12).map((p, i) => ({
-    name: String(p?.name || `Player ${i + 1}`).slice(0, 40),
-    remaining: Number.isFinite(Number(p?.remaining)) ? Number(p.remaining) : 0,
-    teams: Array.isArray(p?.teams) ? p.teams.map(String).slice(0, 12) : [],
-  }));
-}
-
-async function publish(extra = {}) {
-  refs.error.textContent = "";
-
-  let players;
-  try { players = parsePlayers(); }
-  catch (error) {
-    refs.error.textContent = error.message;
-    return false;
-  }
-
-  const state = {
-    screen: refs.screen.value,
-    currentTeam: refs.team.value.trim() || null,
-    lastSeasonWins: numberOrNull(refs.lastWins.value),
-    winLine: numberOrNull(refs.line.value),
-    currentBid: numberOrNull(refs.bid.value),
-    message: refs.message.value.trim(),
-    players,
-    ...extra,
-  };
-
-  try {
-    refs.publishBtn.disabled = true;
-    const result = await putState(room, controlKey, state);
+    const result = await putState(room, controlKey, patch);
     render(result.state);
-    return true;
+    return result.state;
   } catch (error) {
-    refs.error.textContent = error.message;
+    if (String(error.message).includes("older PIN system")) {
+      refs.error.textContent = "This old test room used the earlier PIN system. Click NEW ROOM in the next build or clear this site's storage to start fresh.";
+    } else {
+      refs.error.textContent = error.message;
+    }
+    throw error;
+  }
+}
+
+async function publishFromControls() {
+  refs.publishBtn.disabled = true;
+  try {
+    const state = await sendPatch({
+      screen: refs.screen.value,
+      currentTeam: refs.team.value || null,
+      lastSeasonWins: numberOrNull(refs.lastWins.value),
+      winLine: numberOrNull(refs.line.value),
+      currentBid: numberOrNull(refs.bid.value),
+      message: refs.message.value.trim(),
+      players: readPlayers()
+    });
+    syncControlsFromState(state);
+    return true;
+  } catch (_) {
     return false;
   } finally {
     refs.publishBtn.disabled = false;
   }
 }
 
-async function demoSpin() {
-  const teams = [
-    ["Cleveland Cavaliers",52,47.5],["New York Knicks",53,52.5],["San Antonio Spurs",62,59.5],
-    ["Oklahoma City Thunder",64,62.5],["Los Angeles Lakers",53,46.5],["Boston Celtics",56,51.5]
-  ];
-  const choice = teams[Math.floor(Math.random() * teams.length)];
-  refs.screen.value = "wheel";
-  refs.team.value = "";
-
-  const started = await publish({
-    wheel: { spinning: true, selectedTeam: null, spinId: crypto.randomUUID() },
-    currentTeam: null
-  });
-  if (!started) return;
-
-  setTimeout(async () => {
-    refs.screen.value = "team";
-    refs.team.value = choice[0];
-    refs.lastWins.value = choice[1];
-    refs.line.value = choice[2];
-    await publish({
-      wheel: { spinning: false, selectedTeam: choice[0], spinId: crypto.randomUUID() }
-    });
-  }, 1800);
+async function returnEveryone() {
+  refs.returnEveryoneBtn.disabled = true;
+  try {
+    await sendPatch({ focusToken: crypto.randomUUID() });
+    closeLocal();
+    closeDrawer();
+  } catch (_) {
+  } finally {
+    refs.returnEveryoneBtn.disabled = false;
+  }
 }
 
-$("publishBtn").addEventListener("click", () => publish());
-$("spinDemoBtn").addEventListener("click", demoSpin);
-$("newRoomBtn").addEventListener("click", async () => {
-  const next = generateRoomName();
-  refs.room.value = next;
-  localStorage.setItem("courtvision-control-room", next);
-  await connect();
+async function demoSpin() {
+  refs.spinDemoBtn.disabled = true;
+  closeDrawer();
+  try {
+    const spinId = crypto.randomUUID();
+    await sendPatch({
+      screen: "wheel",
+      currentTeam: null,
+      wheel: { spinning: true, selectedTeam: null, spinId },
+      focusToken: crypto.randomUUID()
+    });
+
+    setTimeout(async () => {
+      const team = TEAMS[Math.floor(Math.random() * TEAMS.length)];
+      try {
+        const state = await sendPatch({
+          screen: "team",
+          currentTeam: team.name,
+          lastSeasonWins: team.lastWins,
+          winLine: team.line,
+          wheel: { spinning: false, selectedTeam: team.name, spinId }
+        });
+        syncControlsFromState(state);
+      } catch (_) {}
+      refs.spinDemoBtn.disabled = false;
+    }, 1800);
+  } catch (_) {
+    refs.spinDemoBtn.disabled = false;
+  }
+}
+
+async function connect() {
+  controlKey = controlKeyForRoom(room);
+  localStorage.setItem("courtvision-control-room", room);
+  localStorage.setItem("courtvision-room", room);
+
+  const watchUrl = `${location.origin}/watch.html?room=${encodeURIComponent(room)}`;
+  refs.watchUrl.value = watchUrl;
+
+  stopSocket?.();
+  refs.error.textContent = "";
+
+  try {
+    const info = await getRoomInfo(room);
+
+    if (info.claimed && info.authType && info.authType !== "auto-key") {
+      room = generateRoomName();
+      localStorage.setItem("courtvision-control-room", room);
+      controlKey = controlKeyForRoom(room);
+      refs.watchUrl.value = `${location.origin}/watch.html?room=${encodeURIComponent(room)}`;
+      return connect();
+    }
+
+    lastFocusToken = info.state.focusToken || null;
+    render(info.state);
+    syncControlsFromState(info.state);
+  } catch (error) {
+    refs.error.textContent = error.message;
+  }
+
+  stopSocket = connectRoom(room, {
+    onStatus: setStatus,
+    onState: state => {
+      render(state);
+      if (!refs.drawer.classList.contains("open")) syncControlsFromState(state);
+    }
+  });
+}
+
+refs.controlsBtn.addEventListener("click", openDrawer);
+refs.closeControlsBtn.addEventListener("click", closeDrawer);
+refs.scrim.addEventListener("click", closeDrawer);
+refs.publishBtn.addEventListener("click", publishFromControls);
+refs.returnEveryoneBtn.addEventListener("click", returnEveryone);
+refs.spinDemoBtn.addEventListener("click", demoSpin);
+
+refs.copyLinkBtn.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(refs.watchUrl.value);
+    const old = refs.copyLinkBtn.textContent;
+    refs.copyLinkBtn.textContent = "COPIED";
+    setTimeout(() => { refs.copyLinkBtn.textContent = old; }, 1200);
+  } catch (_) {
+    refs.watchUrl.select();
+  }
+});
+
+refs.team.addEventListener("change", () => {
+  if (syncingControls) return;
+  const team = teamByName(refs.team.value);
+  if (team) {
+    refs.lastWins.value = team.lastWins;
+    refs.line.value = team.line;
+  }
 });
 
 connect();
