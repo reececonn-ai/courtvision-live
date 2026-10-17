@@ -270,47 +270,113 @@
   function shortTeam(name){return teamMeta(name)?.[1]||name}
   function teamLogo(name){const t=teamMeta(name);return t?logoUrl(t[1]):""}
 
-  function renderLeaderboard(rows,demo){
+  function ownerTodayLine(name,games){
+    const d=todaysOwnerResults(games||[])[name];
+    if(!d||!d.games)return "NO FINALS YET TODAY";
+    if(d.w===d.games)return "TODAY · "+d.w+"-"+d.l+" · CLEAN SWEEP";
+    if(d.l===d.games)return "TODAY · "+d.w+"-"+d.l+" · ROUGH ONE";
+    return "TODAY · "+d.w+"-"+d.l;
+  }
+
+  function renderSpotlight(rows){
+    const el=$("competitionSpotlight");if(!el)return;
+    if(!rows.length){el.innerHTML='<div class="comp-loading">NO COMPETITION DATA YET</div>';return}
+    const leader=rows[0],second=rows[1];
+    const gap=second?leader.w-second.w:leader.w;
+    const teamIcons=leader.teams.map(t=>'<button class="comp-spot-team" onclick="previewTeamFromCompetition(\''+esc(t.name).replace(/'/g,"&#39;")+'\')" title="'+esc(t.name)+'"><img src="'+teamLogo(t.name)+'" alt=""><span>'+t.w+"-"+t.l+'</span></button>').join("");
+    const raceCopy=gap>0
+      ?leader.name+" is "+gap+" win"+(gap===1?"":"s")+" clear on actual results."
+      :leader.name+" has the tiebreaking edge on projected finish.";
+    el.innerHTML='<div class="comp-spotlight-inner">'+
+      '<div>'+
+        '<div class="comp-spotlight-label">CURRENT COMPETITION LEADER</div>'+
+        '<div class="comp-spotlight-name">'+esc(leader.name)+'</div>'+
+        '<div class="comp-spotlight-recordline"><div class="comp-spotlight-record">'+leader.w+"-"+leader.l+'</div><span>COMBINED RECORD ACROSS '+leader.teams.length+' TEAMS</span></div>'+
+        '<div class="comp-spotlight-teams">'+teamIcons+'</div>'+
+        '<div class="comp-spotlight-copy">'+esc(raceCopy+" Their five teams are currently projected for "+leader.projected.toFixed(1)+" total wins. The chase is live.")+'</div>'+
+      '</div>'+
+      '<div class="comp-spotlight-numbers">'+
+        '<div><div class="comp-big-prob-label">CHANCE TO WIN IT ALL</div><div class="comp-big-prob">'+leader.probability.toFixed(1)+'<em>%</em></div></div>'+
+        '<div class="comp-big-proj"><small>PROJECTED FINISH</small>'+leader.projected.toFixed(1)+' WINS</div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  function renderRace(rows){
+    const el=$("competitionRace");if(!el)return;
+    const race=[...rows].sort((a,b)=>b.probability-a.probability||b.projected-a.projected);
+    el.innerHTML=race.map((r,i)=>
+      '<div class="comp-race-row '+(i===0?'leader':'')+'" style="--prob:'+Math.max(1,r.probability)+'%">'+
+        '<div class="comp-race-rank">'+(i+1)+'</div>'+
+        '<div class="comp-race-name">'+esc(r.name)+'<small>'+r.w+"-"+r.l+" actual · "+r.projected.toFixed(1)+" projected</small></div>'+
+        '<div class="comp-race-pct">'+r.probability.toFixed(1)+'<span>%</span></div>'+
+      '</div>'
+    ).join("");
+  }
+
+  function renderLeaderboard(rows,demo,games=[]){
     const el=$("competitionLeaderboard");if(!el)return;
+    const today=todaysOwnerResults(games||[]);
+    renderSpotlight(rows);
+    renderRace(rows);
     el.innerHTML=rows.map((r,i)=>{
-      const teams=r.teams.map(t=>`<button class="comp-team-chip" onclick="previewTeamFromCompetition('${esc(t.name).replace(/'/g,"&#39;")}')"><img src="${teamLogo(t.name)}" alt=""><span>${esc(shortTeam(t.name))}</span><b>${t.w}-${t.l}</b></button>`).join("");
-      return `<article class="comp-player-card ${i===0?"leader":""}">
-        <div class="comp-rank">${i+1}</div>
-        <div class="comp-player-main">
-          <div class="comp-player-head"><strong>${esc(r.name)}</strong><span>${r.w}-${r.l}</span></div>
-          <div class="comp-proj">PROJECTED ${r.projected.toFixed(1)} TOTAL WINS · ${r.probability.toFixed(1)}% TITLE CHANCE</div>
-          <div class="comp-prob"><i style="width:${Math.max(1,r.probability)}%"></i></div>
-          <div class="comp-team-list">${teams}</div>
-        </div>
-      </article>`;
+      const teams=r.teams.map(t=>'<button class="comp-team-chip" onclick="previewTeamFromCompetition(\''+esc(t.name).replace(/'/g,"&#39;")+'\')"><img src="'+teamLogo(t.name)+'" alt=""><span>'+esc(shortTeam(t.name))+'</span><b>'+t.w+"-"+t.l+'</b></button>').join("");
+      const d=today[r.name]||{w:0,l:0,games:0};
+      const daily=d.games?(d.w+"-"+d.l+" TODAY"):"NO FINALS TODAY";
+      return '<article class="comp-player-card '+(i===0?'leader':'')+'">'+
+        '<div class="comp-player-main">'+
+          '<div class="comp-player-head"><div class="comp-card-rank">'+(i+1)+'</div><strong>'+esc(r.name)+'</strong><span class="comp-card-record">'+r.w+"-"+r.l+'</span></div>'+
+          '<div class="comp-card-meta"><span>'+daily+'</span><span>PROJECTED <b>'+r.projected.toFixed(1)+'</b> · TITLE <b>'+r.probability.toFixed(1)+'%</b></span></div>'+
+          '<div class="comp-prob"><i style="width:'+Math.max(1,r.probability)+'%"></i></div>'+
+          '<div class="comp-team-list">'+teams+'</div>'+
+        '</div>'+
+      '</article>';
     }).join("");
-    const badge=$("competitionModeBadge");if(badge){badge.textContent=demo?"DEMO DATA":"LIVE NBA DATA";badge.classList.toggle("demo",demo)}
+    const badge=$("competitionModeBadge");if(badge){badge.textContent=demo?"DEMO SEASON":"LIVE NBA DATA";badge.classList.toggle("demo",demo)}
   }
 
   function gameStatusText(g){
-    if(g.status==="FINAL")return "FINAL · "+g.awayScore+"-"+g.homeScore;
+    if(g.status==="FINAL")return "FINAL";
     if(g.status==="IN")return g.detail||"LIVE";
     return timeSydney(g.date);
   }
 
   function renderGames(games){
     const el=$("competitionGames");if(!el)return;
-    if(!games.length){el.innerHTML='<div class="comp-empty">No NBA games on today\'s Sydney slate.</div>';return}
+    const dateEl=$("competitionSlateDate");
+    if(dateEl)dateEl.textContent=daySydney(new Date()).toUpperCase()+" · SYDNEY";
+    if(!games.length){el.innerHTML='<div class="comp-empty">No NBA games on today\'s Sydney slate. Check back tomorrow — the table still updates from completed games.</div>';return}
     el.innerHTML=games.map(g=>{
-      const ao=teamOwner(g.away),ho=teamOwner(g.home);
-      return `<article class="comp-game ${g.status.toLowerCase()}">
-        <div class="comp-game-time">${esc(gameStatusText(g))}</div>
-        <div class="comp-game-side"><img src="${teamLogo(g.away)}" alt=""><strong>${esc(shortTeam(g.away))}</strong><span>${esc(ao||"UNOWNED")}</span>${g.status!=="SCHEDULED"?`<b>${g.awayScore}</b>`:""}</div>
-        <div class="comp-vs">VS</div>
-        <div class="comp-game-side home"><img src="${teamLogo(g.home)}" alt=""><strong>${esc(shortTeam(g.home))}</strong><span>${esc(ho||"UNOWNED")}</span>${g.status!=="SCHEDULED"?`<b>${g.homeScore}</b>`:""}</div>
-      </article>`;
+      const ao=teamOwner(g.away),ho=teamOwner(g.home),rivalry=ao&&ho&&ao!==ho;
+      const scores=g.status!=="SCHEDULED";
+      const meta=rivalry?"OWNER VS OWNER":"OWNED TEAM ACTION";
+      return '<article class="comp-game '+g.status.toLowerCase()+(rivalry?' rivalry':'')+'">'+
+        '<div class="comp-game-side away"><img src="'+teamLogo(g.away)+'" alt=""><strong>'+esc(shortTeam(g.away))+'</strong><span class="comp-game-owner">'+esc(ao||"UNOWNED")+'</span>'+(scores?'<b>'+g.awayScore+'</b>':'')+'</div>'+
+        '<div class="comp-game-meta">'+meta+'</div>'+
+        '<div class="comp-game-status">'+esc(gameStatusText(g))+'</div>'+
+        '<div class="comp-game-side home"><img src="'+teamLogo(g.home)+'" alt=""><strong>'+esc(shortTeam(g.home))+'</strong><span class="comp-game-owner">'+esc(ho||"UNOWNED")+'</span>'+(scores?'<b>'+g.homeScore+'</b>':'')+'</div>'+
+      '</article>';
     }).join("");
+  }
+
+  function storyHeadline(x){
+    const map={
+      "LEADER":"THEY WAKE UP ON TOP",
+      "HEAD-TO-HEAD":"FRIENDSHIP PAUSED",
+      "HOT":"THE HEATER CONTINUES",
+      "COLD":"SOMEONE CHECK ON THEM",
+      "BUSY NIGHT":"REMOTE CONTROL NIGHT",
+      "TODAY":"TODAY'S DAMAGE"
+    };
+    return map[x.tag]||"ONE TO TALK ABOUT";
   }
 
   function renderTidbits(bits){
     const el=$("competitionTidbits");if(!el)return;
-    el.innerHTML=bits.length?bits.map(x=>`<article class="comp-tidbit"><label>${esc(x.tag)}</label><p>${esc(x.text)}</p></article>`).join("")
-      :'<div class="comp-empty">Competition notes will appear as results come in.</div>';
+    el.innerHTML=bits.length?bits.map(x=>
+      '<article class="comp-tidbit"><label>'+esc(x.tag)+'</label><div class="comp-story-copy"><strong class="comp-story-headline">'+esc(storyHeadline(x))+'</strong><p>'+esc(x.text)+'</p></div></article>'
+    ).join("")
+      :'<div class="comp-empty">Nothing dramatic yet. That will not last.</div>';
     window.cvCompetitionTicker=bits.map(x=>({tag:x.tag,text:x.text,kind:x.tag==="COLD"?"alert":"draft"}));
   }
 
@@ -350,7 +416,7 @@
     try{
       const data=await getCompetitionData(force);if(token!==refreshToken)return;
       let rows=calculateProbabilities(ownerSummaries(data.records||{}));
-      renderLeaderboard(rows,data.demo);
+      renderLeaderboard(rows,data.demo,data.games||[]);
       renderGames(data.games||[]);
       const bits=competitionTidbits(rows,data.games||[],data.recent||[]);
       renderTidbits(bits);
