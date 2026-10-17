@@ -15,23 +15,17 @@
   <main class="main">
     <div class="control-grid">
       <section class="panel">
-        <div class="eyebrow">LIVE ROOM</div>
+        <div class="eyebrow">LIVE DRAFT</div>
         <h2>Commissioner</h2>
 
         <div class="field">
           <label>Your draft room</label>
-          <input id="roomInput" autocomplete="off">
-        </div>
-
-        <div class="field">
-          <label>Choose / enter commissioner PIN</label>
-          <input id="pinInput" type="password" autocomplete="current-password" minlength="6" placeholder="6+ characters">
-          <div class="help" id="pinHelp">The first successful publish claims this room with your PIN. After that, use the same PIN.</div>
+          <input id="roomInput" autocomplete="off" readonly>
         </div>
 
         <div class="button-row">
-          <button id="connectBtn" class="btn secondary" type="button">CONNECT</button>
           <a id="watchLink" class="btn secondary" target="_blank" rel="noopener">OPEN SPECTATOR VIEW</a>
+          <button id="newRoomBtn" class="btn secondary" type="button">NEW ROOM</button>
         </div>
 
         <hr style="border:0;border-top:1px solid #263c59;margin:16px 0">
@@ -72,7 +66,7 @@
         </div>
 
         <div id="error" class="error" role="alert"></div>
-        <p class="help">No Cloudflare secret setup is required. Your commissioner PIN belongs to this draft room only and is not shown to spectators.</p>
+        <p class="help">Commissioner access is handled automatically on this laptop. There is no PIN to remember.</p>
       </section>
 
       <section class="panel">
