@@ -66,6 +66,8 @@ jobs:
                   stories:document.querySelectorAll('#competitionTidbits .comp-tidbit').length,
                   cards:document.querySelectorAll('#competitionLeaderboard .comp-player-card').length,
                   chips:document.querySelectorAll('#competitionLeaderboard .comp-team-chip').length,
+                  movementPanel:!!q('#competitionMovement'),
+                  impactCards:document.querySelectorAll('#competitionImpact .comp-impact-card').length,
                   mode:q('#competitionModeBadge')?.textContent?.trim()
                 };
               """)
@@ -88,6 +90,8 @@ jobs:
                   raise SystemExit("Competition ticker is not edge-to-edge")
               if comp["games"]<1 or comp["stories"]<1 or comp["cards"]!=6 or comp["chips"]!=30:
                   raise SystemExit("Competition content incomplete")
+              if not comp["movementPanel"] or comp["impactCards"]<1:
+                  raise SystemExit("Season movement / game impact panels did not render")
               if comp["mode"]!="DEMO DATA":
                   raise SystemExit("Competition demo badge missing")
 
@@ -107,6 +111,7 @@ jobs:
                   tickerPosition:ts?.position,
                   owners:document.querySelectorAll('#nerdOwners .nerd-owner-card').length,
                   expectationRows:document.querySelectorAll('#nerdExpectation .nerd-list-row').length,
+                  memoryPanel:!!q('#nerdSinceYesterday'),
                   matrixRows:document.querySelectorAll('#nerdRivalryMatrix tbody tr').length,
                   ownerY:rr('#nerdOwners')?.y,
                   matrixY:rr('#nerdRivalryMatrix')?.y,
@@ -128,6 +133,8 @@ jobs:
                   raise SystemExit("Stats ticker is not fixed edge-to-edge")
               if nerd["owners"]!=6:
                   raise SystemExit("Owner deep dives missing")
+              if not nerd["memoryPanel"]:
+                  raise SystemExit("Stats for Nerds season-memory panel missing")
               if nerd["expectationRows"]>6:
                   raise SystemExit("Over/Under expectation is no longer condensed")
               if nerd["matrixRows"]!=6:
