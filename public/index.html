@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp10">
+<link rel="stylesheet" href="/competition.css?v=comp11">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -3702,6 +3702,7 @@ body.tv-mode .wheel-screen .wheel-wrap{
       <button class="btn secondary" id="zoomBtn" onclick="cycleZoom()">Text: M</button>
       <button class="btn secondary" onclick="openDraftBoard()">Draft Board</button>
       <button class="btn secondary" onclick="openCompetitionBoard()">Competition</button>
+      <button class="btn secondary" onclick="openStatsForNerds()">Stats for Nerds</button>
       <button class="btn secondary" onclick="undoLastAction()">Undo Last</button>
       <button class="btn secondary" onclick="togglePresentationMode()" id="presentationBtn">Presentation</button>
       <button class="btn gold" onclick="openBarrelMode()">Barrel Mode</button>
@@ -4002,6 +4003,7 @@ body.tv-mode .wheel-screen .wheel-wrap{
             <div class="comp-updated" id="competitionUpdated">NOT LOADED</div>
             <button class="comp-icon-btn" onclick="refreshCompetitionBoard(true)">REFRESH</button>
             <button class="comp-icon-btn" onclick="clearTestMode()">LIVE DATA</button>
+            <button class="comp-icon-btn" onclick="openStatsForNerds()">STATS FOR NERDS</button>
             <button class="comp-icon-btn primary" onclick="openDraftBoard()">DRAFT BOARD</button>
           </div>
         </header>
@@ -4061,6 +4063,55 @@ body.tv-mode .wheel-screen .wheel-wrap{
       </div>
     </section>
 
+    <section class="screen nerd-screen" id="statsForNerdsScreen">
+      <div class="nerd-shell">
+        <header class="nerd-topbar">
+          <div>
+            <div class="nerd-eyebrow">COURTVISION DEEP CUTS · VERIFIED FROM COMPETITION DATA</div>
+            <h2>STATS FOR NERDS</h2>
+            <p id="nerdStatus">Loading the unnecessarily specific stuff…</p>
+          </div>
+          <div class="nerd-actions">
+            <button class="comp-icon-btn" onclick="refreshStatsForNerds(true)">REFRESH</button>
+            <button class="comp-icon-btn" onclick="openCompetitionBoard()">COMPETITION</button>
+            <button class="comp-icon-btn primary" onclick="openDraftBoard()">DRAFT BOARD</button>
+          </div>
+        </header>
+
+        <section class="nerd-section nerd-records">
+          <div class="nerd-section-head"><span>THE RECORD BOOK</span><small>THE STUFF PEOPLE WILL ARGUE ABOUT</small></div>
+          <div class="nerd-record-grid" id="nerdRecordBook"><div class="comp-empty">Building records…</div></div>
+        </section>
+
+        <section class="nerd-section">
+          <div class="nerd-section-head"><span>OWNER DEEP DIVES</span><small>FORM · CLUTCH · BLOWOUTS · CARRY JOBS</small></div>
+          <div class="nerd-owner-grid" id="nerdOwners"><div class="comp-empty">Crunching owner stats…</div></div>
+        </section>
+
+        <section class="nerd-two-col">
+          <article class="nerd-section">
+            <div class="nerd-section-head"><span>RIVALRIES</span><small>DIRECT OWNER-V-OWNER RESULTS</small></div>
+            <div class="nerd-list" id="nerdRivalries"><div class="comp-empty">Building rivalry records…</div></div>
+          </article>
+          <article class="nerd-section">
+            <div class="nerd-section-head"><span>TEAM IMPACT</span><small>WHO IS CARRYING · WHO IS HURTING</small></div>
+            <div class="nerd-list" id="nerdTeamImpact"><div class="comp-empty">Ranking team impact…</div></div>
+          </article>
+        </section>
+
+        <section class="nerd-two-col">
+          <article class="nerd-section">
+            <div class="nerd-section-head"><span>ODDITIES</span><small>STATS NOBODY ASKED FOR BUT EVERYONE NEEDS</small></div>
+            <div class="nerd-list" id="nerdOddities"><div class="comp-empty">Searching for nonsense…</div></div>
+          </article>
+          <article class="nerd-section">
+            <div class="nerd-section-head"><span>COMPETITION HISTORY</span><small>MOVEMENT · HIGHS · LOWS · LEADS</small></div>
+            <div class="nerd-list" id="nerdHistory"><div class="comp-empty">History starts building from daily snapshots.</div></div>
+          </article>
+        </section>
+      </div>
+    </section>
+
     <section class="screen recap-screen" id="recapScreen">
       <div class="broadcast-top"><span class="live-dot">Draft Complete</span><span>Final ownership recap</span></div>
       <div class="recap-shell">
@@ -4073,6 +4124,7 @@ body.tv-mode .wheel-screen .wheel-wrap{
         <div class="recap-leftover" id="recapLeftover" style="display:none"></div>
         <div class="board-actions recap-actions">
           <button class="btn" onclick="openCompetitionBoard()">Competition Board</button>
+          <button class="btn secondary" onclick="openStatsForNerds()">Stats for Nerds</button>
           <button class="btn secondary" onclick="openDraftBoard()">Draft Board</button>
           <button class="btn secondary" onclick="copyRecap()">Copy Summary</button>
           <button class="btn secondary" onclick="exportResults()">Export JSON</button>
@@ -4273,6 +4325,7 @@ state.barrelOrder = state.barrelOrder || [];
 state.barrelCurrent = state.barrelCurrent || null;
 state.onTheBoard = state.onTheBoard || null;
 state.liveSpin = state.liveSpin || null;
+state.competitionSnapshots = Array.isArray(state.competitionSnapshots) ? state.competitionSnapshots : [];
 state.starterSource = state.starterSource || "auto"; // "auto" = ESPN depth chart → curated; "curated" = curated only
 state.teamCap = Math.max(1,+state.teamCap||5);
 // ---- curated-data migration: refresh editorial defaults when this file ships newer data,
@@ -4362,7 +4415,8 @@ function cvSharedSnapshot(){
       barrelCurrent:state.barrelCurrent||null,
       onTheBoard:state.onTheBoard||null,
       liveSpin:state.liveSpin?JSON.parse(JSON.stringify(state.liveSpin)):null,
-      lastScreen:state.lastScreen||"homeScreen"
+      lastScreen:state.lastScreen||"homeScreen",
+      competitionSnapshots:JSON.parse(JSON.stringify(state.competitionSnapshots||[]))
     }
   };
 }
@@ -4456,6 +4510,7 @@ function cvApplySnapshot(snapshot){
     state.onTheBoard=d.onTheBoard||null;
     state.liveSpin=d.liveSpin?JSON.parse(JSON.stringify(d.liveSpin)):null;
     state.lastScreen=d.lastScreen||"wheelScreen";
+    state.competitionSnapshots=Array.isArray(d.competitionSnapshots)?JSON.parse(JSON.stringify(d.competitionSnapshots)):state.competitionSnapshots||[];
     currentTeam=state.onTheBoard||null;
     reconcileState();
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(_){}
@@ -5833,7 +5888,7 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp5"></script>
+<script src="/competition.js?v=comp6"></script>
 
 <nav class="mobile-nav" aria-label="Mobile draft navigation">
   <button type="button" onclick="showScreen('wheelScreen')">WHEEL</button>
