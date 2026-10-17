@@ -1,0 +1,89 @@
+name: Competition Desktop Visual QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "public/index.html"
+      - "public/competition.js"
+      - "public/competition.css"
+      - ".github/workflows/competition-visual-qa.yml"
+  workflow_dispatch:
+
+jobs:
+  competition-desktop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install selenium
+      - run: |
+          python -m http.server 8000 --directory public >/tmp/cv-http.log 2>&1 &
+          sleep 2
+      - name: Check full-screen competition page
+        run: |
+          cat >/tmp/competition_desktop.py <<'PY'
+          import json,time
+          from selenium import webdriver
+          from selenium.webdriver.chrome.options import Options
+
+          o=Options()
+          o.add_argument("--headless=new")
+          o.add_argument("--no-sandbox")
+          o.add_argument("--disable-dev-shm-usage")
+          d=webdriver.Chrome(options=o)
+          d.set_window_size(1440,900)
+          try:
+              d.get("http://127.0.0.1:8000/?room=competitionqa")
+              time.sleep(1.5)
+              d.execute_script("loadTestDraft(true)")
+              time.sleep(1.0)
+              data=d.execute_script("""
+                const q=s=>document.querySelector(s);
+                const r=s=>{const e=q(s);if(!e)return null;const x=e.getBoundingClientRect();return {x:x.x,y:x.y,width:x.width,height:x.height,right:x.right,bottom:x.bottom}};
+                return {
+                  viewport:{w:innerWidth,h:innerHeight,scrollWidth:document.documentElement.scrollWidth},
+                  active:q('.screen.active')?.id,
+                  bodyScreen:document.body.dataset.screen,
+                  sidebarDisplay:getComputedStyle(q('.sidebar')).display,
+                  stage:r('.stage'),
+                  screen:r('#competitionScreen'),
+                  shell:r('#competitionScreen .competition-shell'),
+                  spotlight:r('#competitionSpotlight'),
+                  race:r('#competitionRace'),
+                  games:document.querySelectorAll('#competitionGames .comp-game').length,
+                  stories:document.querySelectorAll('#competitionTidbits .comp-tidbit').length,
+                  cards:document.querySelectorAll('#competitionLeaderboard .comp-player-card').length,
+                  title:q('.comp-title-row h2')?.textContent?.trim(),
+                  mode:q('#competitionModeBadge')?.textContent?.trim()
+                };
+              """)
+              print("DESKTOP_COMPETITION="+json.dumps(data,sort_keys=True))
+              d.save_screenshot("/tmp/competition-1440x900.png")
+              if data["active"]!="competitionScreen" or data["bodyScreen"]!="competitionScreen":
+                  raise SystemExit("Competition screen is not active")
+              if data["sidebarDisplay"]!="none":
+                  raise SystemExit("Draft sidebar is still visible on Competition")
+              if not data["screen"] or data["screen"]["width"] < 1435:
+                  raise SystemExit("Competition does not use the full desktop width")
+              if data["viewport"]["scrollWidth"] > data["viewport"]["w"]+2:
+                  raise SystemExit("Competition horizontally overflows desktop")
+              if not data["spotlight"] or data["spotlight"]["height"] < 250:
+                  raise SystemExit("Leader spotlight is not visually dominant")
+              if data["games"] < 1 or data["stories"] < 1 or data["cards"] != 6:
+                  raise SystemExit("Competition daily content did not populate")
+              if data["title"]!="THE COMPETITION" or data["mode"]!="DEMO DATA":
+                  raise SystemExit("Competition headline/demo state incorrect")
+          finally:
+              d.quit()
+          PY
+          python /tmp/competition_desktop.py
+      - name: Upload desktop screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: competition-desktop-qa
+          path: /tmp/competition-1440x900.png
+          if-no-files-found: warn
