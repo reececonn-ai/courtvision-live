@@ -5,7 +5,7 @@ const refs = {
   room: $("roomInput"), pin: $("pinInput"), screen: $("screenInput"), team: $("teamInput"),
   lastWins: $("lastWinsInput"), line: $("lineInput"), bid: $("bidInput"), message: $("messageInput"),
   players: $("playersInput"), status: $("connStatus"), error: $("error"), preview: $("preview"),
-  watch: $("watchLink")
+  watch: $("watchLink"), publishBtn: $("publishBtn")
 };
 
 let room = cleanRoom(refs.room.value);
@@ -13,7 +13,9 @@ let stopSocket = null;
 let current = null;
 
 function numberOrNull(value) {
-  const n = Number(String(value).trim());
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const n = Number(raw);
   return Number.isFinite(n) ? n : null;
 }
 
@@ -75,12 +77,12 @@ async function publish(extra = {}) {
   const pin = refs.pin.value.trim();
   if (!pin) {
     refs.error.textContent = "Enter the commissioner PIN first.";
-    return;
+    return false;
   }
 
   let players;
   try { players = parsePlayers(); }
-  catch (error) { refs.error.textContent = error.message; return; }
+  catch (error) { refs.error.textContent = error.message; return false; }
 
   const state = {
     screen: refs.screen.value,
@@ -97,8 +99,10 @@ async function publish(extra = {}) {
     refs.publishBtn.disabled = true;
     const saved = await putState(room, pin, state);
     render(saved);
+    return true;
   } catch (error) {
     refs.error.textContent = error.message;
+    return false;
   } finally {
     refs.publishBtn.disabled = false;
   }
@@ -112,7 +116,8 @@ async function demoSpin() {
   const choice = teams[Math.floor(Math.random() * teams.length)];
   refs.screen.value = "wheel";
   refs.team.value = "";
-  await publish({ wheel: { spinning: true, selectedTeam: null, spinId: crypto.randomUUID() }, currentTeam: null });
+  const started = await publish({ wheel: { spinning: true, selectedTeam: null, spinId: crypto.randomUUID() }, currentTeam: null });
+  if (!started) return;
   setTimeout(async () => {
     refs.screen.value = "team";
     refs.team.value = choice[0];
