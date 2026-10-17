@@ -44,7 +44,7 @@ jobs:
               return js("""
                 const e=document.querySelector(arguments[0]); if(!e)return null;
                 const r=e.getBoundingClientRect();
-                return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};
+                return {x:r.x,y:r.y,top:r.top,width:r.width,height:r.height,right:r.right,bottom:r.bottom};
               """,sel)
 
           def viewport():
