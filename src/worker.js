@@ -161,6 +161,10 @@ export default {
       return json({ ok: true, service: "courtvision-live", now: new Date().toISOString() });
     }
 
+    if (url.pathname === "/draft" || url.pathname === "/friends") {
+      return Response.redirect(new URL("/?room=draft-4e6u6d5p46", url), 302);
+    }
+
     if (url.pathname.startsWith("/api/rooms/") || url.pathname.startsWith("/ws/rooms/")) {
       const room = roomNameFromUrl(url);
       if (!validRoomName(room)) return json({ ok: false, error: "Invalid room name" }, 400);
