@@ -3485,6 +3485,38 @@ body.readable.paused:after{font-size:clamp(80px,9vw,300px)}
   }
 }
 
+
+/* Draft Board team browsing: local preview mode, never a live pick. */
+.preview-exit{display:none}
+#revealScreen.team-preview-mode .bid-panel > *:not(.preview-exit){display:none!important}
+#revealScreen.team-preview-mode .preview-exit{
+  display:block!important;
+  padding:4px 0 2px;
+}
+#revealScreen.team-preview-mode .preview-exit h2{
+  margin:5px 0 7px;
+}
+#revealScreen.team-preview-mode .preview-exit p{
+  margin:0 0 12px;
+  color:#a9b9cd;
+  font:800 10px/1.4 Arial,Helvetica,sans-serif;
+}
+#revealScreen.team-preview-mode .lower-third,
+#revealScreen.team-preview-mode .barrel{
+  display:none!important;
+}
+#draftBoardGrid .board-team{
+  touch-action:manipulation;
+}
+@media(max-width:820px){
+  #revealScreen.team-preview-mode .bid-panel{
+    order:-1;
+  }
+  #revealScreen.team-preview-mode .preview-exit p{
+    font-size:9px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -3743,6 +3775,12 @@ body.readable.paused:after{font-size:clamp(80px,9vw,300px)}
               <button class="btn danger" onclick="passCurrent()">Pass</button>
             </div>
             <button class="btn secondary" style="width:100%;margin-top:10px" onclick="backToWheel()">Return to wheel</button>
+            <div class="preview-exit" id="teamPreviewExit">
+              <div class="kicker">TEAM PREVIEW</div>
+              <h2>SCOUT THIS TEAM</h2>
+              <p>Browse the roster, market line, recent results and CourtVision read before draft night begins.</p>
+              <button class="btn" style="width:100%" onclick="closeTeamPreview()">BACK TO DRAFT BOARD</button>
+            </div>
           </div>
         </div>
       </div>
@@ -4635,6 +4673,15 @@ function showScreen(id){
   updateTickerForScreen(id);
 }
 
+function showScreenLocal(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  const target=document.getElementById(id);if(!target)return;
+  target.classList.add("active");
+  document.body.dataset.screen=id;
+  if(id==="wheelScreen")drawWheel();
+  updateTickerForScreen(id);
+}
+
 /* =====================================================================================
    DRAFT STATE — undo, modes, board, commissioner corrections
    ===================================================================================== */
@@ -4718,8 +4765,19 @@ function renderDraftPulse(){
     `<div class="pulse-tile wide"><label>Avg paid by tier</label><strong class="small">${escapeHtml(tierText)}</strong></div>`
   ].join("");
 }
-function openDraftBoard(){renderDraftBoard();showScreen("draftBoardScreen")}
-function closeBoardToCurrent(){if(currentTeam)showReveal(currentTeam);else showScreen("wheelScreen")}
+function draftHasStarted(){
+  return Object.keys(state.assignments||{}).length>0 || (state.passed||[]).length>0 || !!state.onTheBoard || !!state.liveSpin;
+}
+function openDraftBoard(){
+  renderDraftBoard();
+  if(draftHasStarted())showScreen("draftBoardScreen");else showScreenLocal("draftBoardScreen");
+}
+function closeBoardToCurrent(){
+  if(teamPreviewActive)return closeTeamPreview();
+  if(state.onTheBoard&&state.available.includes(state.onTheBoard))showReveal(state.onTheBoard);
+  else if(draftHasStarted())showScreen("wheelScreen");
+  else showScreenLocal("wheelScreen");
+}
 function renderDraftBoard(){
   const ps=document.getElementById("boardPlayerSummary"),grid=document.getElementById("draftBoardGrid");if(!ps||!grid)return;
   ps.innerHTML=state.players.map(p=>`<div class="board-player-card ${p.teams.length>=state.teamCap?"full":""}"><strong>${escapeHtml(p.name)}</strong><span>${p.teams.length}/${state.teamCap} TEAMS · $${money(p.budget-p.remaining)} SPENT · $${money(p.remaining)} LEFT</span></div>`).join("");
@@ -4728,7 +4786,7 @@ function renderDraftBoard(){
     const cls=a?"assigned":passed?"passed":"available";
     const line=winLine(name);
     const status=a?`${escapeHtml(a.player)}${a.barrel?" · BARREL":` · $${money(a.amount)}`}`:passed?"PASSED → BARREL":available?`AVAILABLE${line!=null?` · ${line}`:""}`:"UNASSIGNED";
-    return `<div class="board-team ${cls}" onclick="openAdminTeamFromBoard('${escapeAttr(name)}')"><img src="${logoUrl(t[1])}" alt=""><div class="board-team-copy"><div class="board-team-name">${escapeHtml(name)}</div><div class="board-team-status">${status}</div></div><div class="board-team-price">${a&&!a.barrel?`$${money(a.amount)}`:""}</div></div>`;
+    return `<div class="board-team ${cls}" onclick="previewTeamFromBoard('${escapeAttr(name)}')"><img src="${logoUrl(t[1])}" alt=""><div class="board-team-copy"><div class="board-team-name">${escapeHtml(name)}</div><div class="board-team-status">${status}</div></div><div class="board-team-price">${a&&!a.barrel?`$${money(a.amount)}`:""}</div></div>`;
   }).join("");
   const top=document.getElementById("boardTopStatus");if(top)top.textContent=`${Object.keys(state.assignments).length} assigned · ${state.available.length} available · ${state.passed.length} passed`;
   renderDraftPulse();
@@ -5259,24 +5317,50 @@ function showDecisionView(){
 function showProfileView(){
   document.querySelector("#revealScreen .team-main")?.classList.remove("decision-mode");
 }
-function showReveal(name){
+let teamPreviewActive=false,teamPreviewPreviousCurrent=null;
+
+function showReveal(name,options={}){
+  const preview=!!options.preview;
   showProfileView();
-  currentTeam=name;state.onTheBoard=name;persist();
+
+  const reveal=document.getElementById("revealScreen");
+  reveal?.classList.toggle("team-preview-mode",preview);
+
+  if(preview){
+    teamPreviewActive=true;
+    teamPreviewPreviousCurrent=currentTeam;
+    currentTeam=name;
+  }else{
+    teamPreviewActive=false;
+    teamPreviewPreviousCurrent=null;
+    currentTeam=name;
+    state.onTheBoard=name;
+    persist();
+  }
+
   const bidInput=document.getElementById("bidAmount");if(bidInput)bidInput.value=1;
   const t=teamByName(name),content=state.teamContent[name]||{};
   document.documentElement.style.setProperty("--c1",t[2]);document.documentElement.style.setProperty("--c2",t[3]);
   document.getElementById("teamBg").style.setProperty("--c1",t[2]);document.getElementById("teamBg").style.setProperty("--c2",t[3]);
   const logo=logoUrl(t[1]);["teamLogo","logoWatermark","lowerLogo"].forEach(id=>document.getElementById(id).src=logo);
-  document.getElementById("teamName").textContent=name;document.getElementById("broadcastTeam").textContent=name.toUpperCase();
+  document.getElementById("teamName").textContent=name;
+  document.getElementById("broadcastTeam").textContent=preview?name.toUpperCase()+" · TEAM PREVIEW":name.toUpperCase();
   document.getElementById("lowerTeam").textContent=name;
+  const mastheadKicker=document.querySelector("#revealScreen .masthead-kicker");
+  if(mastheadKicker)mastheadKicker.textContent=preview?"NBA TEAM DRAFT DAY · TEAM PREVIEW":"NBA TEAM DRAFT DAY · TEAM ON THE BOARD";
+  const revealLive=document.querySelector("#revealScreen .broadcast-top .live-dot");
+  if(revealLive)revealLive.textContent=preview?"Team Preview":"Franchise Reveal";
+
   const live=state.liveRosters[name]||[];
   const headline=resolveHeadline(name,live);
   document.getElementById("starPlayer").textContent=headline;
-  document.getElementById("lowerStar").textContent=headline+" · FRANCHISE REVEAL";
+  document.getElementById("lowerStar").textContent=headline+(preview?" · TEAM PREVIEW":" · FRANCHISE REVEAL");
   document.getElementById("hypeLine").textContent=content.hype||"The sales pitch begins now.";
   document.getElementById("winPrediction").textContent=(content.wins||"TBD")+" wins";
   document.getElementById("winSource").textContent=MARKET_SOURCE;
-  renderBidPlayers();showScreen("revealScreen");
+
+  renderBidPlayers();
+  if(preview)showScreenLocal("revealScreen");else showScreen("revealScreen");
   renderStartingFive(name,live);
   renderTeamMasthead(name);
   renderProfileRibbon(name,live);
@@ -5286,6 +5370,24 @@ function showReveal(name){
   updateTickerForScreen("revealScreen");
   renderDecisionView(name);
 }
+
+function previewTeamFromBoard(name){
+  if(!teamByName(name))return;
+  showReveal(name,{preview:true});
+}
+
+function closeTeamPreview(){
+  if(!teamPreviewActive)return openDraftBoard();
+  teamPreviewActive=false;
+  document.getElementById("revealScreen")?.classList.remove("team-preview-mode");
+  currentTeam=state.onTheBoard&&state.available.includes(state.onTheBoard)
+    ?state.onTheBoard
+    :(teamPreviewPreviousCurrent&&state.available.includes(teamPreviewPreviousCurrent)?teamPreviewPreviousCurrent:null);
+  teamPreviewPreviousCurrent=null;
+  renderDraftBoard();
+  showScreenLocal("draftBoardScreen");
+}
+
 function assignCurrent(){
   if(!currentTeam)return;
   if(state.paused)return toast("Draft is paused");
