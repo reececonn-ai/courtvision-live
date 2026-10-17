@@ -14,5 +14,5 @@ jobs:
       - name: Create TinyURL
         run: |
           SHORT=$(curl -fsSLG "https://tinyurl.com/api-create.php" \
-            --data-urlencode "url=https://courtvision-live.stremio-organiser.workers.dev/draft")
+            --data-urlencode "url=https://courtvision-live.stremio-organiser.workers.dev/")
           echo "COURTVISION_TINYURL=$SHORT"
