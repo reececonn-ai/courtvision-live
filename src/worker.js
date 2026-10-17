@@ -37,14 +37,18 @@ function nbaCacheTtl(kind, value) {
   return 120;
 }
 
-async function cachedNbaResponse(request, upstreamUrl, ttl, ctx) {
+async function cachedNbaResponse(request, upstreamUrl, ttl, ctx, bypass = false) {
   const cache = caches.default;
-  const cacheKey = new Request(request.url, { method: "GET" });
-  const hit = await cache.match(cacheKey);
-  if (hit) {
-    const headers = new Headers(hit.headers);
-    headers.set("x-courtvision-cache", "HIT");
-    return new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers });
+  const cacheUrl = new URL(request.url);
+  cacheUrl.searchParams.delete("fresh");
+  const cacheKey = new Request(cacheUrl.toString(), { method: "GET" });
+  if (!bypass) {
+    const hit = await cache.match(cacheKey);
+    if (hit) {
+      const headers = new Headers(hit.headers);
+      headers.set("x-courtvision-cache", "HIT");
+      return new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers });
+    }
   }
 
   const upstream = await fetch(upstreamUrl, {
@@ -214,7 +218,8 @@ export default {
       const season = String(url.searchParams.get("season") || "2027");
       if (!/^\d{4}$/.test(season)) return json({ ok: false, error: "Invalid season" }, 400);
       const upstream = "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?season=" + encodeURIComponent(season);
-      return cachedNbaResponse(request, upstream, nbaCacheTtl("standings", season), ctx);
+      const bypass = url.searchParams.get("fresh") === "1";
+      return cachedNbaResponse(request, upstream, nbaCacheTtl("standings", season), ctx, bypass);
     }
 
     if (url.pathname === "/api/nba/scoreboard") {
