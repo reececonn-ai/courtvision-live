@@ -1126,3 +1126,127 @@ body .broadcast-ticker .ticker-track{
   #revealScreen .decision-card p,
   #revealScreen .changed-panel p{font-size:11px!important}
 }
+
+
+/* =========================================================
+   BALANCED OPAQUE PASS — readability without flattening UI
+   ========================================================= */
+
+/* Primary reading surfaces: mostly solid. */
+.comp-spotlight,
+.comp-race-panel,
+.comp-slate-panel,
+.comp-stories-panel,
+.comp-table-panel,
+.comp-player-card,
+.comp-game,
+.comp-tidbit,
+#revealScreen .team-masthead,
+#revealScreen .starting-five-panel,
+#revealScreen .profile-stage,
+#revealScreen .decision-stage,
+#revealScreen .franchise-resume,
+#revealScreen .glance-panel,
+#revealScreen .bid-panel{
+  background:rgba(5,12,22,.91)!important;
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+}
+
+/* Secondary cards: still show a little depth/background. */
+.comp-race-row,
+.comp-team-chip,
+#revealScreen .decision-card,
+#revealScreen .intel-box,
+#revealScreen .resume-cell,
+#revealScreen .glance-cell,
+#revealScreen .move-panel,
+#revealScreen .changed-panel{
+  background:rgba(6,14,25,.86)!important;
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+}
+
+/* Preserve separation so the layout still feels like broadcast graphics. */
+.comp-spotlight,
+.comp-race-panel,
+.comp-slate-panel,
+.comp-stories-panel,
+.comp-table-panel,
+#revealScreen .team-masthead,
+#revealScreen .starting-five-panel,
+#revealScreen .franchise-resume,
+#revealScreen .glance-panel,
+#revealScreen .bid-panel{
+  border-color:rgba(122,157,201,.34)!important;
+}
+
+.comp-player-card,
+.comp-game,
+.comp-tidbit,
+.comp-race-row,
+.comp-team-chip,
+#revealScreen .decision-card,
+#revealScreen .intel-box,
+#revealScreen .resume-cell,
+#revealScreen .glance-cell{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.025),
+    0 4px 12px rgba(0,0,0,.16);
+}
+
+/* Slightly darken the graphic background itself, but don't bury team colour. */
+#revealScreen .team-bg:after{
+  background:
+    linear-gradient(90deg,
+      rgba(0,0,0,.78) 0%,
+      rgba(0,0,0,.64) 46%,
+      rgba(0,0,0,.48) 100%
+    ),
+    linear-gradient(180deg,
+      rgba(0,0,0,.34),
+      rgba(0,0,0,.18) 40%,
+      rgba(0,0,0,.42) 100%
+    )!important;
+}
+
+/* Keep the main Competition spotlight a touch richer than the generic cards. */
+.comp-spotlight{
+  background:
+    linear-gradient(100deg,
+      rgba(3,9,18,.96) 0 56%,
+      rgba(7,27,51,.93) 56% 100%
+    )!important;
+}
+
+/* Mobile: slightly more solid to compensate for the smaller type. */
+@media(max-width:820px){
+  .comp-spotlight,
+  .comp-race-panel,
+  .comp-slate-panel,
+  .comp-stories-panel,
+  .comp-table-panel,
+  .comp-player-card,
+  .comp-game,
+  .comp-tidbit,
+  #revealScreen .team-masthead,
+  #revealScreen .starting-five-panel,
+  #revealScreen .profile-stage,
+  #revealScreen .decision-stage,
+  #revealScreen .franchise-resume,
+  #revealScreen .glance-panel,
+  #revealScreen .bid-panel{
+    background:rgba(5,12,22,.94)!important;
+  }
+
+  .comp-race-row,
+  .comp-team-chip,
+  #revealScreen .decision-card,
+  #revealScreen .intel-box,
+  #revealScreen .resume-cell,
+  #revealScreen .glance-cell,
+  #revealScreen .move-panel,
+  #revealScreen .changed-panel{
+    background:rgba(6,14,25,.90)!important;
+  }
+}
