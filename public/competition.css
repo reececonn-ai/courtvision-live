@@ -717,6 +717,19 @@ body .broadcast-ticker .ticker-track{
 
 /* Phone */
 @media(max-width:820px){
+  /* Five phone destinations must stay on one row. */
+  .mobile-nav{
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    grid-auto-rows:44px!important;
+  }
+  .mobile-nav button{
+    min-width:0!important;
+    width:auto!important;
+    padding-left:2px!important;
+    padding-right:2px!important;
+    font-size:8px!important;
+  }
+
   /* Keep the ticker directly above the iPhone safe-area-aware nav. */
   body .broadcast-ticker{
     bottom:calc(58px + env(safe-area-inset-bottom))!important;
