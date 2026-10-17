@@ -3703,6 +3703,100 @@ body.tv-mode .wheel-screen .wheel-wrap{
 .preflight-row{display:grid;grid-template-columns:62px 1fr;gap:10px;padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.035);font-size:12px}
 .preflight-row b{font-size:10px;letter-spacing:.08em}
 .preflight-row.pass b{color:#69e3a3}.preflight-row.warn b{color:#ffc85d}.preflight-row.fail b{color:#ff7187}
+
+/* Draft board priority pass — readable ownership + price at a glance. */
+.wheel-team-board{
+  width:min(1500px,98%)!important;
+}
+.wheel-team-grid{
+  grid-template-columns:repeat(10,minmax(0,1fr))!important;
+  gap:2px!important;
+}
+.wheel-team-tile{
+  height:68px!important;
+  grid-template-columns:38px minmax(0,1fr) auto!important;
+  grid-template-rows:1fr!important;
+  gap:8px!important;
+  padding:7px 9px!important;
+  border-left-width:4px!important;
+}
+.wheel-team-tile img{
+  width:36px!important;
+  height:36px!important;
+}
+.wheel-team-copy{
+  display:flex!important;
+  min-width:0!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-items:flex-start!important;
+  gap:4px!important;
+}
+.wheel-team-abbr{
+  font-size:12px!important;
+  line-height:1!important;
+  letter-spacing:.04em!important;
+}
+.wheel-team-owner{
+  display:block!important;
+  width:100%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  color:#9fb3cc!important;
+  font:900 8px/1 Arial,Helvetica,sans-serif!important;
+  letter-spacing:.05em!important;
+}
+.wheel-team-line{
+  font-size:10px!important;
+  line-height:1!important;
+  color:#d8e5f5!important;
+}
+.wheel-team-tile.assigned .wheel-team-owner{color:#80caff!important}
+.wheel-team-tile.assigned .wheel-team-line{color:#fff!important}
+.wheel-team-tile.passed .wheel-team-owner,
+.wheel-team-tile.passed .wheel-team-line{color:#ff7e91!important}
+
+.wheel-screen{
+  justify-content:flex-start!important;
+  padding-top:70px!important;
+}
+.wheel-screen .wheel-wrap{
+  width:min(43vh,38vw,590px)!important;
+  margin-top:4px!important;
+}
+.wheel-head{
+  width:min(1500px,98%)!important;
+}
+
+@media(max-width:1100px){
+  .wheel-team-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+  .wheel-team-tile{height:62px!important}
+  .wheel-screen .wheel-wrap{width:min(42vh,48vw,520px)!important}
+}
+@media(max-width:820px){
+  .wheel-team-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+  .wheel-team-tile{
+    height:58px!important;
+    grid-template-columns:28px minmax(0,1fr)!important;
+    grid-template-rows:1fr!important;
+    gap:5px!important;
+    padding:5px 6px!important;
+  }
+  .wheel-team-tile img{width:27px!important;height:27px!important}
+  .wheel-team-line{
+    position:absolute!important;
+    right:5px!important;
+    bottom:5px!important;
+    font-size:7px!important;
+  }
+  .wheel-team-abbr{font-size:10px!important}
+  .wheel-team-owner{font-size:6px!important;max-width:58px!important}
+  .wheel-screen .wheel-wrap{
+    width:min(calc(100vw - 90px),420px)!important;
+    margin-top:6px!important;
+  }
+}
 </style>
 </head>
 <body>
@@ -5290,14 +5384,18 @@ function renderWheelTeamBoard(){
     const name=t[0],abbr=t[1],a=state.assignments[name],passed=state.passed.includes(name),available=state.available.includes(name);
     const cls=a?"assigned":passed?"passed":available?"available":"unassigned";
     const line=winLine(name);
-    const stateText=a?(a.barrel?"BARREL":"$"+money(a.amount)):passed?"BARREL":line!=null?String(line):"—";
+    const ownerText=a?String(a.player||"").toUpperCase():passed?"BARREL":"AVAILABLE";
+    const valueText=a?(a.barrel?"BARREL":"$"+money(a.amount)):passed?"PASSED":line!=null?String(line)+" W":"—";
     const title=a?name+" · "+a.player+(a.barrel?" · BARREL":" · $"+money(a.amount)):passed?name+" · PASSED TO BARREL":name+" · "+(line!=null?line+" win market":"team preview");
     const b=document.createElement("button");
     b.type="button";b.className="wheel-team-tile "+cls;b.title=title;b.addEventListener("click",()=>previewTeamFromWheel(name));
-    const img=document.createElement("img");img.src=logoUrl(abbr);img.alt="";
-    const ab=document.createElement("span");ab.className="wheel-team-abbr";ab.textContent=abbr;
-    const ln=document.createElement("span");ln.className="wheel-team-line";ln.textContent=stateText;
-    b.append(img,ab,ln);grid.appendChild(b);
+    const img=document.createElement("img");img.src=logoUrl(abbr);img.alt=name;
+    const copy=document.createElement("span");copy.className="wheel-team-copy";
+    const ab=document.createElement("strong");ab.className="wheel-team-abbr";ab.textContent=abbr;
+    const owner=document.createElement("small");owner.className="wheel-team-owner";owner.textContent=ownerText;
+    copy.append(ab,owner);
+    const ln=document.createElement("span");ln.className="wheel-team-line";ln.textContent=valueText;
+    b.append(img,copy,ln);grid.appendChild(b);
   });
 }
 function renderDraftBoard(){
