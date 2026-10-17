@@ -2849,6 +2849,259 @@ body.readable.paused:after{font-size:clamp(80px,9vw,300px)}
   }
 }
 
+
+/* Phone: neutralize legacy Readable / TV layout constraints.
+   These selectors intentionally outrank the desktop mode selectors above. */
+@media (max-width:820px){
+  body.readable .shell,
+  body.tv-mode .shell,
+  body.tv-mode.room-65 .shell{
+    display:block!important;
+    grid-template-columns:1fr!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:100dvh!important;
+    overflow:visible!important;
+  }
+
+  body.readable .sidebar,
+  body.tv-mode .sidebar,
+  body.tv-mode.room-65 .sidebar{
+    position:relative!important;
+    top:auto!important;
+    width:100%!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+    padding:8px!important;
+  }
+
+  body.readable .stage,
+  body.tv-mode .stage,
+  body.tv-mode.room-65 .stage{
+    width:100%!important;
+    height:auto!important;
+    min-height:100dvh!important;
+    overflow:visible!important;
+  }
+
+  body.readable .screen,
+  body.tv-mode .screen,
+  body.tv-mode.room-65 .screen{
+    width:100%!important;
+    height:auto!important;
+    min-height:100dvh!important;
+    overflow-x:hidden!important;
+    overflow-y:visible!important;
+  }
+
+  body.readable .reveal-grid,
+  body.tv-mode .reveal-grid,
+  body.tv-mode.room-65 .reveal-grid{
+    display:flex!important;
+    flex-direction:column!important;
+    grid-template-columns:none!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+    padding:8px 9px 24px!important;
+    gap:9px!important;
+    align-items:stretch!important;
+  }
+
+  body.readable .team-main,
+  body.tv-mode .team-main,
+  body.tv-mode.room-65 .team-main,
+  body.readable .right-rail,
+  body.tv-mode .right-rail,
+  body.tv-mode.room-65 .right-rail{
+    width:100%!important;
+    min-width:0!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+    gap:8px!important;
+  }
+
+  body.readable .team-masthead,
+  body.tv-mode .team-masthead,
+  body.tv-mode.room-65 .team-masthead{
+    display:block!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+
+  body.readable .masthead-identity,
+  body.tv-mode .masthead-identity,
+  body.tv-mode.room-65 .masthead-identity{
+    padding:10px!important;
+    gap:10px!important;
+  }
+
+  body.readable .masthead-logo,
+  body.tv-mode .masthead-logo,
+  body.tv-mode.room-65 .masthead-logo{
+    width:68px!important;
+    height:68px!important;
+    flex:0 0 68px!important;
+  }
+
+  body.readable .masthead-name,
+  body.tv-mode .masthead-name,
+  body.tv-mode.room-65 .masthead-name{
+    font-size:clamp(34px,11vw,54px)!important;
+    line-height:.88!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+  }
+
+  body.readable .masthead-sub,
+  body.tv-mode .masthead-sub,
+  body.tv-mode.room-65 .masthead-sub{
+    font-size:8px!important;
+    line-height:1.25!important;
+    max-height:none!important;
+    white-space:normal!important;
+    overflow:visible!important;
+  }
+
+  body.readable .masthead-metrics,
+  body.tv-mode .masthead-metrics,
+  body.tv-mode.room-65 .masthead-metrics{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    width:100%!important;
+    border-left:0!important;
+  }
+
+  body.readable .masthead-metric,
+  body.tv-mode .masthead-metric,
+  body.tv-mode.room-65 .masthead-metric{
+    min-width:0!important;
+    padding:9px!important;
+  }
+
+  body.readable .starting-five-panel,
+  body.tv-mode .starting-five-panel,
+  body.tv-mode.room-65 .starting-five-panel{
+    width:100%!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow:hidden!important;
+    padding:8px!important;
+  }
+
+  body.readable .starter-row,
+  body.tv-mode .starter-row,
+  body.tv-mode.room-65 .starter-row{
+    display:flex!important;
+    grid-template-columns:none!important;
+    width:100%!important;
+    height:auto!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    gap:6px!important;
+  }
+
+  body.readable .starter-card,
+  body.tv-mode .starter-card,
+  body.tv-mode.room-65 .starter-card{
+    flex:0 0 142px!important;
+    min-width:142px!important;
+    width:142px!important;
+    height:auto!important;
+    min-height:174px!important;
+    max-height:none!important;
+  }
+
+  body.readable .starter-card img,
+  body.tv-mode .starter-card img,
+  body.tv-mode.room-65 .starter-card img{
+    height:112px!important;
+  }
+
+  body.readable .intel-strip,
+  body.tv-mode .intel-strip,
+  body.tv-mode.room-65 .intel-strip{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    width:100%!important;
+  }
+
+  body.readable .profile-stage .data-grid,
+  body.readable .data-grid,
+  body.tv-mode .profile-stage .data-grid,
+  body.tv-mode .data-grid{
+    grid-template-columns:1fr!important;
+    width:100%!important;
+  }
+
+  body.readable .decision-grid,
+  body.readable .decision-extra,
+  body.tv-mode .decision-grid,
+  body.tv-mode .decision-extra{
+    grid-template-columns:1fr!important;
+    width:100%!important;
+  }
+
+  body.readable .wheel-wrap,
+  body.tv-mode .wheel-wrap,
+  body.tv-mode.room-65 .wheel-wrap{
+    width:min(calc(100vw - 42px),520px)!important;
+    max-width:none!important;
+    max-height:none!important;
+  }
+
+  body.readable .spin-btn,
+  body.tv-mode .spin-btn,
+  body.tv-mode.room-65 .spin-btn{
+    width:92px!important;
+    height:92px!important;
+    font-size:18px!important;
+  }
+
+  body.readable .broadcast-top,
+  body.tv-mode .broadcast-top,
+  body.tv-mode.room-65 .broadcast-top{
+    position:relative!important;
+    height:auto!important;
+    min-height:0!important;
+    left:auto!important;
+    right:auto!important;
+    top:auto!important;
+    width:100%!important;
+    margin:0 0 9px!important;
+    padding:8px 9px!important;
+    font-size:8px!important;
+  }
+
+  body.readable .broadcast-ticker,
+  body.tv-mode .broadcast-ticker,
+  body.tv-mode.room-65 .broadcast-ticker{
+    display:none!important;
+  }
+
+  /* Phone viewers need the draft first, not the full commissioner rail. */
+  .sidebar #soundBtn,
+  .sidebar #syncBtn,
+  .sidebar #syncStatus,
+  .sidebar .commissioner-status{
+    display:none!important;
+  }
+
+  .side-actions{
+    border-top:1px solid #213b5d!important;
+    padding-top:6px!important;
+  }
+}
+
 </style>
 </head>
 <body>
