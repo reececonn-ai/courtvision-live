@@ -213,17 +213,43 @@ jobs:
               js("closeSettings()")
               time.sleep(.15)
 
-              # Barrel screen
-              js("openBarrelMode()")
-              time.sleep(.35)
+              # Barrel screen: seed a real end-of-main-draft state with one missing team per owner.
+              js("""
+                loadTestDraft(true);
+                const passed=[];
+                state.players.forEach(p=>{
+                  const team=p.teams[0];
+                  if(team){
+                    passed.push(team);
+                    p.teams=p.teams.filter(x=>x!==team);
+                    delete state.assignments[team];
+                  }
+                });
+                state.passed=passed;
+                state.available=[];
+                state.barrelQueue=[];
+                state.barrelOrder=[];
+                state.barrelCurrent=null;
+                state.onTheBoard=null;
+                currentTeam=null;
+                reconcileState();
+                renderAll();
+                openBarrelMode();
+              """)
+              time.sleep(.45)
               barrel={
+                "active":js("return document.querySelector('.screen.active')?.id"),
                 "screen":rect("#barrelScreen"),
                 "shell":rect("#barrelScreen .barrel-shell"),
-                "ticker":rect("#broadcastTicker")
+                "ticker":rect("#broadcastTicker"),
+                "pool":js("return document.querySelectorAll('#barrelPool .barrel-pool-team').length"),
+                "needs":js("return document.querySelectorAll('#barrelNeeds .barrel-need-card').length")
               }
               print("BARREL",json.dumps(barrel,sort_keys=True))
               shot("barrel-"+label)
               assert_no_h_overflow(label+" barrel")
+              if barrel["active"]!="barrelScreen" or barrel["pool"]!=6 or barrel["needs"]!=6:
+                  raise SystemExit(label+": seeded Barrel Mode did not render six teams / six owners")
 
               # Post-draft
               js("loadTestDraft(true)")
@@ -274,6 +300,28 @@ jobs:
               time.sleep(.35)
               shot("phone-board-"+label)
               assert_no_h_overflow(label+" phone board")
+
+              js("""
+                loadTestDraft(true);
+                const passed=[];
+                state.players.forEach(p=>{
+                  const team=p.teams[0];
+                  if(team){passed.push(team);p.teams=p.teams.filter(x=>x!==team);delete state.assignments[team];}
+                });
+                state.passed=passed;state.available=[];state.barrelQueue=[];state.barrelOrder=[];state.barrelCurrent=null;
+                reconcileState();renderAll();openBarrelMode();
+              """)
+              time.sleep(.35)
+              phone_barrel={
+                "active":js("return document.querySelector('.screen.active')?.id"),
+                "pool":js("return document.querySelectorAll('#barrelPool .barrel-pool-team').length"),
+                "needs":js("return document.querySelectorAll('#barrelNeeds .barrel-need-card').length")
+              }
+              print("PHONE_BARREL",label,json.dumps(phone_barrel,sort_keys=True))
+              shot("phone-barrel-"+label)
+              assert_no_h_overflow(label+" phone barrel")
+              if phone_barrel["active"]!="barrelScreen" or phone_barrel["pool"]!=6:
+                  raise SystemExit(label+": phone Barrel Mode did not render correctly")
 
           try:
               audit_desktop(1366,768,"1366x768")
