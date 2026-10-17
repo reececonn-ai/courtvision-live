@@ -3651,6 +3651,20 @@ body.tv-mode .wheel-screen .wheel-wrap{
   }
 }
 
+
+/* Mobile screen isolation: screen-specific mobile layouts must not keep inactive pages in flow. */
+@media(max-width:820px){
+  #homeScreen:not(.active),
+  #wheelScreen:not(.active),
+  #revealScreen:not(.active),
+  #draftBoardScreen:not(.active),
+  #barrelScreen:not(.active),
+  #competitionScreen:not(.active),
+  #recapScreen:not(.active){
+    display:none!important;
+  }
+}
+
 </style>
 </head>
 <body>
