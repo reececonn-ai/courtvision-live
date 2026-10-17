@@ -4323,7 +4323,8 @@ if(state.onTheBoard&&state.available.includes(state.onTheBoard)){showReveal(stat
 else if(state.lastScreen==="barrelScreen"&&!state.available.length&&state.passed.length){openBarrelMode()}
 else if(state.lastScreen&&state.lastScreen!=="homeScreen"&&(state.history.length||state.passed.length)&&state.lastScreen!=="revealScreen"){showScreen(state.lastScreen==="recapScreen"&&!isDraftComplete()?"wheelScreen":state.lastScreen)}
 // Auto-sync only when the cache is missing or older than 6 hours; the button forces a refresh.
-if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueData(false),700);\nsetTimeout(cvStartSync,80);
+if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueData(false),700);
+setTimeout(cvStartSync,80);
 
 </script>
 </body>
