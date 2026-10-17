@@ -4414,7 +4414,7 @@ const wheelImages={};
 const CV_SYNC_SCHEMA="courtvision-old-ui-v1";
 const CV_SYNC_CLIENT=sessionStorage.getItem("courtvisionSyncClient")||crypto.randomUUID();
 sessionStorage.setItem("courtvisionSyncClient",CV_SYNC_CLIENT);
-let cvSyncApplying=false,cvSyncReady=false,cvSyncTimer=null,cvSyncSocket=null,cvSyncRev=0;
+let cvSyncApplying=false,cvSyncReady=false,cvSyncTimer=null,cvSyncSocket=null,cvSyncRev=0,cvSyncServerVersion=0;
 
 function cvSyncRoom(){
   const params=new URLSearchParams(location.search);
@@ -4534,11 +4534,17 @@ function cvMergeCompetitionSnapshots(localList,remoteList){
     .slice(-120);
 }
 
-function cvApplySnapshot(snapshot){
+function cvApplySnapshot(snapshot,serverVersion=0){
   if(!snapshot||snapshot.schema!==CV_SYNC_SCHEMA||!snapshot.draft)return;
+  const sv=Number(serverVersion||0);
+  if(sv>0){
+    if(sv<cvSyncServerVersion)return;
+    cvSyncServerVersion=Math.max(cvSyncServerVersion,sv);
+  }else{
+    if(Number(snapshot.rev||0)<cvSyncRev)return;
+  }
+  cvSyncRev=Math.max(cvSyncRev,Number(snapshot.rev||0));
   if(snapshot.origin===CV_SYNC_CLIENT)return;
-  if(Number(snapshot.rev||0)<cvSyncRev)return;
-  cvSyncRev=Number(snapshot.rev||0);
   const d=snapshot.draft;
   cvSyncApplying=true;
   try{
@@ -4592,7 +4598,7 @@ function cvConnectSocket(){
     if(e.data==="pong")return;
     try{
       const msg=JSON.parse(e.data);
-      if(msg.type==="state"&&msg.state?.sharedSnapshot)cvApplySnapshot(msg.state.sharedSnapshot);
+      if(msg.type==="state"&&msg.state?.sharedSnapshot)cvApplySnapshot(msg.state.sharedSnapshot,msg.state.version);
     }catch(_){}
   });
   ws.addEventListener("close",()=>setTimeout(cvConnectSocket,1200));
@@ -4607,7 +4613,7 @@ async function cvStartSync(){
       const data=await res.json();
       const snapshot=data?.state?.sharedSnapshot;
       if(snapshot?.schema===CV_SYNC_SCHEMA){
-        cvApplySnapshot(snapshot);
+        cvApplySnapshot(snapshot,data.state?.version||0);
         applied=true;
       }
     }
