@@ -4338,6 +4338,7 @@ body[data-screen="draftBoardScreen"] .board-shell{width:100%;max-width:none}
 body[data-screen="draftBoardScreen"] .board-actions{display:none}
 body[data-screen="draftBoardScreen"] .board-hub-heading{padding:0 22px}
 @media(max-width:700px){.competition-hub-tabs{padding:10px 12px}.competition-hub-tabs button{flex:1;padding:10px 8px}}
+.competition-hub-updated{margin-left:auto;align-self:center;font-size:11px;color:#9eb0cf;letter-spacing:.07em}
 </style>
 </head>
 <body>
@@ -4666,7 +4667,7 @@ body[data-screen="draftBoardScreen"] .board-hub-heading{padding:0 22px}
     </section>
 
     <section class="screen competition-screen" id="competitionScreen">
-      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><button onclick="openDraftBoard()">DRAFT BOARD</button><button onclick="openStatsForNerds()">STATS FOR NERDS</button></nav>
+      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><button onclick="openDraftBoard()">DRAFT BOARD</button><button onclick="openStatsForNerds()">STATS FOR NERDS</button><button onclick="refreshCompetitionBoard(true)">REFRESH</button><button onclick="clearTestMode()">LIVE DATA</button><span class="competition-hub-updated" id="competitionUpdated">NOT LOADED</span></nav>
         <header class="comp-topbar">
           <div class="comp-brand-lockup">
             <div class="comp-eyebrow">COURTVISION DAILY · AUSTRALIA/SYDNEY</div>
@@ -4676,13 +4677,7 @@ body[data-screen="draftBoardScreen"] .board-hub-heading{padding:0 22px}
             </div>
             <div class="comp-data-status" id="competitionDataStatus">Loading the race, today's games and daily stories…</div>
           </div>
-          <div class="comp-top-actions">
-            <div class="comp-updated" id="competitionUpdated">NOT LOADED</div>
-            <button class="comp-icon-btn" onclick="refreshCompetitionBoard(true)">REFRESH</button>
-            <button class="comp-icon-btn" onclick="clearTestMode()">LIVE DATA</button>
-            <button class="comp-icon-btn" onclick="openStatsForNerds()">STATS FOR NERDS</button>
-            <button class="comp-icon-btn primary" onclick="openDraftBoard()">DRAFT BOARD</button>
-          </div>
+
         </header>
 
         <section class="comp-lead-grid">
