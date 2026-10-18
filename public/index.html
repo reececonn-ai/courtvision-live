@@ -4699,7 +4699,7 @@ body[data-screen="draftBoardScreen"] .board-hub-heading{padding:0 22px}
     </section>
 
     <section class="screen competition-screen" id="competitionScreen">
-      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><button onclick="openDraftBoard()">DRAFT BOARD</button><button onclick="openStatsForNerds()">STATS FOR NERDS</button><button onclick="refreshCompetitionBoard(true)">REFRESH</button><button onclick="clearTestMode()">LIVE DATA</button><span class="competition-hub-updated" id="competitionUpdated">NOT LOADED</span></nav>
+      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><button onclick="openDraftBoard()">DRAFT BOARD</button><button onclick="openTeamsHub()">TEAMS</button><button onclick="openStatsForNerds()">STATS FOR NERDS</button><button onclick="refreshCompetitionBoard(true)">REFRESH</button><button onclick="clearTestMode()">LIVE DATA</button><span class="competition-hub-updated" id="competitionUpdated">NOT LOADED</span></nav>
         <header class="comp-topbar">
           <div class="comp-brand-lockup">
             <div class="comp-eyebrow">COURTVISION DAILY · AUSTRALIA/SYDNEY</div>
@@ -4789,8 +4789,22 @@ body[data-screen="draftBoardScreen"] .board-hub-heading{padding:0 22px}
       </div>
     </section>
 
-    <section class="screen nerd-screen" id="statsForNerdsScreen">
-      <div class="nerd-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button onclick="openCompetitionBoard()">COMPETITION</button><button onclick="openDraftBoard()">DRAFT BOARD</button><button class="active" aria-current="page" onclick="openStatsForNerds()">STATS FOR NERDS</button></nav>
+    <section class="screen teams-hub-screen" id="teamsHubScreen">
+  <div class="teams-hub-shell">
+    <nav class="competition-hub-tabs" aria-label="Competition navigation">
+      <button onclick="openCompetitionBoard()">COMPETITION</button>
+      <button onclick="openDraftBoard()">DRAFT BOARD</button>
+      <button class="active" aria-current="page" onclick="openTeamsHub()">TEAMS</button>
+      <button onclick="openStatsForNerds()">STATS FOR NERDS</button>
+    </nav>
+    <header class="teams-hub-head"><div class="comp-eyebrow">2026–27 NBA · FRANCHISE DIRECTORY</div><h2>TEAMS</h2><p>Every franchise, its draft owner and season outlook.</p></header>
+    <div class="teams-hub-filter"><label for="teamsHubSearch">FIND A TEAM</label><input id="teamsHubSearch" type="search" placeholder="Search team or owner…" oninput="renderTeamsHub()" autocomplete="off"></div>
+    <div id="teamsHubDetail" class="teams-hub-detail" hidden></div>
+    <div id="teamsHubGrid" class="teams-hub-grid"></div>
+  </div>
+</section>
+<section class="screen nerd-screen" id="statsForNerdsScreen">
+      <div class="nerd-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button onclick="openCompetitionBoard()">COMPETITION</button><button onclick="openDraftBoard()">DRAFT BOARD</button><button onclick="openTeamsHub()">TEAMS</button><button class="active" aria-current="page" onclick="openStatsForNerds()">STATS FOR NERDS</button></nav>
         <header class="nerd-topbar">
           <div>
             <div class="nerd-eyebrow">COURTVISION DEEP CUTS · VERIFIED FROM COMPETITION DATA</div>
@@ -6647,6 +6661,247 @@ function showReveal(name,options={}){
   updateTickerForScreen("revealScreen");
   renderDecisionView(name);
   if(!preview)scheduleRevealAutoSlide();else stopRevealAutoSlide();
+}
+
+
+/* Read-only post-draft team directory; never enters the auction reveal UI. */
+let teamsHubSelected=null;
+function openTeamsHub(name){
+  if(name&&teamByName(name))teamsHubSelected=name;
+  showScreenLocal("teamsHubScreen");
+  renderTeamsHub();
+  window.scrollTo(0,0);
+}
+function openTeamFromHub(name){teamsHubSelected=name;openTeamsHub();}
+function renderTeamsHub(){
+  const grid=document.getElementById("teamsHubGrid"),detail=document.getElementById("teamsHubDetail");
+  if(!grid||!detail)return;
+  const q=(document.getElementById("teamsHubSearch")?.value||"").trim().toLowerCase();
+  const teams=TEAM_DATA.filter(t=>!q||t[0].toLowerCase().includes(q)||(state.assignments?.[t[0]]?.player||"").toLowerCase().includes(q));
+  grid.innerHTML=teams.map(t=>{
+    const name=t[0],a=state.assignments?.[name],line=winLine(name);
+    return '<button type="button" class="teams-hub-card" onclick="openTeamFromHub('+JSON.stringify(name).replace(/"/g,'&quot;')+')"><img src="'+logoUrl(t[1])+'" alt=""><span><strong>'+escapeHtml(name)+'</strong><small>'+(a?'OWNED BY '+escapeHtml(a.player):'UNASSIGNED')+'</small></span><b>'+(line==null?'—':line+' W')+'</b></button>';
+  }).join("")||'<p class="teams-hub-empty">No teams match that search.</p>';
+  if(teamsHubSelected&&teamByName(teamsHubSelected)){
+    const t=teamByName(teamsHubSelected),a=state.assignments?.[teamsHubSelected],line=winLine(teamsHubSelected);
+    detail.hidden=false;
+    detail.innerHTML='<button type="button" class="teams-hub-back" onclick="teamsHubSelected=null;renderTeamsHub()">← ALL TEAMS</button><div class="teams-hub-profile"><img src="'+logoUrl(t[1])+'" alt=""><div><span class="comp-eyebrow">TEAM PROFILE</span><h3>'+escapeHtml(t[0])+'</h3><p>'+(a?'Drafted by '+escapeHtml(a.player)+(a.barrel?' · Barrel pick':' · 
+  if(!teamByName(name))return;
+  openTeamsHub(name);
+}
+
+function previewTeamFromWheel(name){
+  if(!teamByName(name))return;
+  teamPreviewReturnScreen="wheelScreen";
+  showReveal(name,{preview:true});
+}
+
+function closeTeamPreview(){
+  if(!teamPreviewActive){
+    if(teamPreviewReturnScreen==="wheelScreen")return showScreenLocal("wheelScreen");
+    return openDraftBoard();
+  }
+  teamPreviewActive=false;
+  document.getElementById("revealScreen")?.classList.remove("team-preview-mode");
+  currentTeam=state.onTheBoard&&state.available.includes(state.onTheBoard)
+    ?state.onTheBoard
+    :(teamPreviewPreviousCurrent&&state.available.includes(teamPreviewPreviousCurrent)?teamPreviewPreviousCurrent:null);
+  teamPreviewPreviousCurrent=null;
+  renderDraftBoard();
+  renderWheelTeamBoard();
+  const target=teamPreviewReturnScreen==="wheelScreen"?"wheelScreen":"draftBoardScreen";
+  teamPreviewReturnScreen="draftBoardScreen";
+  showScreenLocal(target);
+}
+
+function assignCurrent(){
+  if(!currentTeam||draftActionLocked)return;
+  if(state.paused)return toast("Draft is paused");
+  const idx=+document.getElementById("bidPlayer").value,amount=+document.getElementById("bidAmount").value,p=state.players[idx];
+  if(!p)return toast("Choose a player");if(p.teams.length>=state.teamCap)return toast(`${p.name} is already full`);
+  if(!Number.isFinite(amount)||amount<0)return toast("Enter a valid bid");if(amount>p.remaining)return toast(`${p.name} only has $${money(p.remaining)} left`);
+  if(!state.available.includes(currentTeam))return toast("That team is no longer on the wheel");
+  setDraftActionLocked(true);
+  pushUndo(`Assign ${currentTeam}`);
+  p.remaining-=amount;p.teams.push(currentTeam);state.assignments[currentTeam]={player:p.name,amount};
+  state.available=state.available.filter(x=>x!==currentTeam);state.history.push(`${currentTeam} → ${p.name} for $${money(amount)}`);setLastAction(`${currentTeam} → ${p.name} · $${money(amount)}`);
+  currentTeam=null;state.onTheBoard=null;state.liveSpin=null;state.lastScreen=isDraftComplete()?"recapScreen":"wheelScreen";saveState();assignSting();confettiBurst();toast("FRANCHISE ASSIGNED");setTimeout(()=>{if(isDraftComplete())finishDraft();else{flash();showScreen("wheelScreen")}setDraftActionLocked(false)},800);
+}
+function passCurrent(){
+  if(!currentTeam||draftActionLocked)return;
+  if(state.paused)return toast("Draft is paused");
+  if(!state.available.includes(currentTeam))return toast("That team is no longer on the wheel");
+  setDraftActionLocked(true);
+  pushUndo(`Pass ${currentTeam}`);
+  state.available=state.available.filter(x=>x!==currentTeam);if(!state.passed.includes(currentTeam))state.passed.push(currentTeam);
+  state.history.push(`${currentTeam} passed into the barrel`);setLastAction(`${currentTeam} passed to barrel`);currentTeam=null;state.onTheBoard=null;state.liveSpin=null;state.lastScreen="wheelScreen";saveState();passSting();shake();toast("THROWN INTO THE BARREL");setTimeout(()=>{showScreen("wheelScreen");setDraftActionLocked(false)},650);
+}
+function backToWheel(){currentTeam=null;state.onTheBoard=null;persist();showScreen("wheelScreen")}
+function startBarrel(){openBarrelMode()}
+
+/* =====================================================================================
+   SETTINGS / COMMISSIONER
+   ===================================================================================== */
+function openSettings(){buildPeopleEditor();buildTeamEditorSelect();buildAdminTeamSelect();loadTeamEditor();document.getElementById("teamCapInput").value=state.teamCap;const ss=document.getElementById("starterSourceSelect");if(ss)ss.value=state.starterSource;const ls=document.getElementById("layoutSelect");if(ls)ls.value=document.body.classList.contains("readable")?"readable":"classic";const zs=document.getElementById("zoomSelect");if(zs)zs.value=localStorage.getItem("nbaDraftZoom")||"m";document.getElementById("settingsModal").classList.add("open");renderHistory();renderDataStatus()}
+function closeSettings(){document.getElementById("settingsModal").classList.remove("open")}
+function isSettingsOpen(){return document.getElementById("settingsModal")?.classList.contains("open")}
+function buildPeopleEditor(){
+  const el=document.getElementById("peopleEditor");el.innerHTML="";
+  state.players.forEach((p,i)=>{
+    const row=document.createElement("div");row.className="person-row";
+    row.innerHTML=`<input data-name="${i}" value="${escapeAttr(p.name)}"><input data-budget="${i}" type="number" min="0" step="1" value="${p.budget}"><button class="btn danger" onclick="removePerson(${i})">×</button>`;
+    el.appendChild(row);
+  });
+}
+function addPerson(){state.players.push({name:`Player ${state.players.length+1}`,budget:50,remaining:50,teams:[]});buildPeopleEditor()}
+function removePerson(i){if(state.players[i].teams.length)return toast("Remove their assigned teams first or reset");state.players.splice(i,1);buildPeopleEditor()}
+function savePeople(){
+  const renames=[],budgets=[];let clamped=false;
+  const seen=new Set();
+  document.querySelectorAll("[data-name]").forEach(inp=>{
+    const i=+inp.dataset.name,p=state.players[i];if(!p)return;
+    const oldName=p.name,oldBudget=p.budget,spent=Math.max(0,oldBudget-p.remaining);
+    const requestedBudget=Math.max(0,+document.querySelector(`[data-budget="${i}"]`).value||0);
+    const newBudget=Math.max(requestedBudget,spent);if(newBudget!==requestedBudget)clamped=true;
+    let newName=inp.value.trim()||`Player ${i+1}`;
+    while(seen.has(newName))newName+=" 2"; seen.add(newName);
+    p.name=newName;p.budget=newBudget;p.remaining=Math.max(0,newBudget-spent);
+    if(oldName!==newName){renames.push([oldName,newName]);Object.values(state.assignments).forEach(a=>{if(a.player===oldName)a.player=newName});state.barrelOrder=state.barrelOrder.map(n=>n===oldName?newName:n)}
+    if(oldBudget!==newBudget)budgets.push([newName,oldBudget,newBudget]);
+  });
+  // keep the undo stack consistent with renames / budget edits so Undo never resurrects an old name or budget
+  for(const entry of state.undoStack||[]){
+    for(const sp of entry.snapshot.players||[]){
+      for(const [o,n] of renames) if(sp.name===o) sp.name=n;
+      for(const [n,ob,nb] of budgets) if(sp.name===n){const spent=Math.max(0,ob-sp.remaining);sp.budget=nb;sp.remaining=Math.max(0,nb-spent)}
+    }
+    for(const a of Object.values(entry.snapshot.assignments||{})) for(const [o,n] of renames) if(a.player===o) a.player=n;
+  }
+  const maxHeld=Math.max(0,...state.players.map(p=>p.teams.length));
+  const requestedCap=Math.max(1,+document.getElementById("teamCapInput").value||5);
+  state.teamCap=Math.max(requestedCap,maxHeld);
+  if(state.teamCap!==requestedCap)toast(`Cap kept at ${state.teamCap}: someone already holds ${maxHeld} teams`);
+  else if(clamped)toast("Budget raised to cover money already spent");
+  else toast("Settings saved");
+  saveState();
+}
+function saveStarterSource(){const ss=document.getElementById("starterSourceSelect");if(!ss)return;state.starterSource=ss.value==="curated"?"curated":"auto";persist();toast(state.starterSource==="curated"?"Starting 5: curated list only":"Starting 5: ESPN depth chart when synced, curated fallback");if(currentTeam&&document.getElementById("revealScreen").classList.contains("active"))showReveal(currentTeam)}
+function buildTeamEditorSelect(){
+  const s=document.getElementById("teamEditSelect");if(s.options.length===30)return;s.innerHTML=TEAM_DATA.map(t=>`<option>${t[0]}</option>`).join("");
+}
+function loadTeamEditor(){
+  const name=document.getElementById("teamEditSelect").value||TEAM_DATA[0][0],c=state.teamContent[name]||{};
+  document.getElementById("editStar").value=c.star||"";document.getElementById("editWins").value=c.wins||"";document.getElementById("editHype").value=c.hype||"";
+  document.getElementById("editStarters").value=(c.starters||[]).join(", ");
+  document.getElementById("editRoster").value=(c.roster||[]).join(", ");document.getElementById("editFacts").value=(c.facts||[]).join("\n");
+  document.getElementById("editTickerNotes").value=(c.tickerNotes||[]).join("\n");
+  const hint=document.getElementById("editStartersHint");
+  if(hint){const live=state.liveRosters[name]||[];const cur=projectedStarters(name,live);hint.textContent=`Current projection (${starterSourceLabel(cur,name)}): ${cur.map(p=>p.name).join(", ")||"—"}`}
+}
+function saveTeamContent(){
+  const name=document.getElementById("teamEditSelect").value;
+  const starters=document.getElementById("editStarters").value.split(",").map(x=>x.trim()).filter(Boolean);
+  if(starters.length&&starters.length!==5)return toast("Starting five override needs exactly 5 names (or leave it blank)");
+  state.teamContent[name]={...(state.teamContent[name]||{}),star:document.getElementById("editStar").value.trim(),wins:document.getElementById("editWins").value.trim(),
+    hype:document.getElementById("editHype").value.trim(),starters,
+    roster:document.getElementById("editRoster").value.split(",").map(x=>x.trim()).filter(Boolean),
+    facts:document.getElementById("editFacts").value.split("\n").map(x=>x.trim()).filter(Boolean),
+    tickerNotes:document.getElementById("editTickerNotes").value.split("\n").map(x=>x.trim()).filter(Boolean),
+    edited:true
+    };
+  saveState();toast(`${name} presentation updated`);
+  if(currentTeam===name&&document.getElementById("revealScreen").classList.contains("active"))showReveal(name);
+}
+function resetTeamContent(){
+  const name=document.getElementById("teamEditSelect").value;if(!confirm(`Reset ${name} to the built-in curated presentation? Your manual lineup override and notes for this team will be cleared.`))return;
+  state.teamContent[name]={...(defaultTeamContent[name]||{}),starters:[],tickerNotes:[],edited:false};saveState();loadTeamEditor();toast(`${name} reset to curated defaults`);
+}
+function renderDataStatus(){
+  const el=document.getElementById("dataStatus");if(!el)return;
+  const m=state.liveMeta||{};
+  const row=(label,live,fallback)=>`<div class="data-row"><span>${label}</span><b class="${live?"live":"curated"}">${live?"LIVE":"CURATED"}</b><small>${escapeHtml(live||fallback)}</small></div>`;
+  el.innerHTML=[
+    row("Records · playoffs · titles","",`Verified ${DATA_STAMP.curatedAt} (Basketball-Reference)`),
+    row("Market win totals","",MARKET_SOURCE),
+    row("Rosters · ages · headshots",m.rostersOk?`ESPN ${DATA_STAMP.season} rosters · ${m.rostersOk}/30 · ${shortDate(state.liveSyncAt)}`:"",`Curated ${DATA_STAMP.curatedAt}`),
+    row("Projected Starting 5",m.depthOk&&state.starterSource!=="curated"?`ESPN depth charts · ${m.depthOk}/30 · validated against live roster`:"",`Curated ${DATA_STAMP.curatedAt} (PROJECTED_STARTERS)`),
+    row("Injuries / availability",m.injuriesOk?`ESPN injuries feed (RotoWire) · ${shortDate(state.liveSyncAt)} · items older than 60 days ignored`:"",`Curated AVAILABILITY_NOTES ${DATA_STAMP.curatedAt}`),
+    row("Player stats",m.statsTotal?`ESPN ${DATA_STAMP.lastSeason} per-game · ${m.statsOk}/${m.statsTotal} cached`:"",`Fetched on reveal when online`),
+    row("Offseason IN / OUT · Draft Case · hype","",`Editorial · curated ${DATA_STAMP.curatedAt}`)
+  ].join("");
+}
+function resetDraft(){
+  if(!confirm("Reset all picks, spending and passed teams? Player names, budgets, presentation settings and cached live data will be kept."))return;
+  const keep=(({teamContent,sound,liveRosters,liveDepth,liveInjuries,playerStats,liveMeta,liveSyncAt,teamCap,presentationMode,starterSource,curatedVersion})=>({teamContent,sound,liveRosters,liveDepth,liveInjuries,playerStats,liveMeta,liveSyncAt,teamCap,presentationMode,starterSource,curatedVersion}))(state);
+  const players=state.players.map(p=>({name:p.name,budget:p.budget,remaining:p.budget,teams:[]}));
+  state={...freshState(),...keep,players,undoStack:[],lastAction:"Draft reset",paused:false,barrelQueue:[],barrelOrder:[],barrelCurrent:null,onTheBoard:null,lastScreen:"homeScreen"};
+  currentTeam=null;reconcileState();saveState();applyRuntimeModes();showScreen("homeScreen");toast("Draft reset · players and budgets kept");
+}
+function exportResults(){
+  const payload={
+    exportedAt:new Date().toISOString(),
+    teamCap:state.teamCap,
+    players:state.players.map(p=>({
+      name:p.name,budget:p.budget,spent:p.budget-p.remaining,remaining:p.remaining,
+      teams:p.teams.map(team=>({team,...(state.assignments[team]||{})}))
+    })),
+    passedTeams:state.passed,
+    remainingOnWheel:state.available,
+    history:state.history
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="nba-draft-results.json";
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast("Draft results exported");
+}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),2200)}
+function confettiBurst(){
+  const c=document.getElementById("confetti"),ctx=c.getContext("2d");c.width=innerWidth;c.height=innerHeight;
+  let bits=Array.from({length:170},()=>({x:innerWidth/2,y:innerHeight*.32,vx:(Math.random()-.5)*19,vy:(Math.random()-1)*18,g:.38,w:4+Math.random()*9,h:4+Math.random()*9,r:Math.random()*6.28,vr:(Math.random()-.5)*.22,hue:Math.random()*360,life:105}));
+  function f(){ctx.clearRect(0,0,c.width,c.height);bits.forEach(b=>{b.x+=b.vx;b.y+=b.vy;b.vy+=b.g;b.r+=b.vr;b.life--;ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.r);ctx.fillStyle=`hsl(${b.hue} 90% 60%)`;ctx.fillRect(-b.w/2,-b.h/2,b.w,b.h);ctx.restore()});bits=bits.filter(b=>b.life>0&&b.y<c.height+30);if(bits.length)requestAnimationFrame(f);else ctx.clearRect(0,0,c.width,c.height)}f();
+}
+
+document.addEventListener("keydown",e=>{
+  const tag=(e.target?.tagName||"").toLowerCase();
+  if(tag==="input"||tag==="textarea"||tag==="select"||e.target?.isContentEditable||isSettingsOpen()) return; // never hijack typing
+  const key=e.key.toLowerCase();
+  if((e.ctrlKey||e.metaKey)&&key==="z"){e.preventDefault();undoLastAction();return}
+  if(e.ctrlKey||e.metaKey||e.altKey) return;
+  if(key==="c"){togglePresentationMode();return}
+  if(key==="b"){openDraftBoard();return}
+  if(key==="p"){togglePause();return}
+  if(key==="d" && document.getElementById("revealScreen")?.classList.contains("active")){
+    const main=document.querySelector("#revealScreen .team-main");
+    if(main?.classList.contains("decision-mode"))showProfileView();else showDecisionView();
+  }
+});
+document.getElementById("settingsModal")?.addEventListener("click",e=>{if(e.target.id==="settingsModal")closeSettings()});
+
+window.addEventListener("resize",drawWheel);
+initDisplayMode();applyRuntimeModes();preloadLogos();renderAll();
+// Landing view is Competition, not the old auction UI.
+showScreenLocal("competitionScreen");
+// Auto-sync only when the cache is missing or older than 6 hours; the button forces a refresh.
+if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueData(false),700);
+setTimeout(cvStartSync,80);
+
+</script>
+<script src="/competition.js?v=comp19"></script>
+
+<nav class="mobile-nav" aria-label="Mobile draft navigation">
+  <button type="button" onclick="showScreen('wheelScreen')">WHEEL</button>
+  <button type="button" onclick="openDraftBoard()">BOARD</button>
+  <button type="button" onclick="openCompetitionBoard()">COMP</button>
+  <button type="button" onclick="showScreen('homeScreen')">HOME</button>
+  <button type="button" onclick="openSettings()">MORE</button>
+</nav>
+</body>
+</html>+money(a.amount)):'Not assigned in draft')+'</p><strong>'+(line==null?'Season projection pending':line+' projected wins')+'</strong></div></div>';
+    grid.hidden=true;
+  }else{detail.hidden=true;grid.hidden=false;}
 }
 
 function previewTeamFromBoard(name){
