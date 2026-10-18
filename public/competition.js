@@ -1240,6 +1240,12 @@
   }
 
   // Expose lightweight diagnostics for QA/support without adding UI clutter.
+  // Activate the post-draft landing dashboard on first load.
+  if(document.querySelector(".screen.active")?.id==="competitionScreen"){
+    ensureAutoUpdate();
+    void refreshCompetitionBoard(false);
+  }
+
   window.cvCompetition={
     demoCompetitionData,
     ownerSummaries,
