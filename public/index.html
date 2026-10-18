@@ -6314,6 +6314,15 @@ function setTicker(items,brand="NBA DRAFT"){
   brandEl.textContent=brand;const safe=(items||[]).length?items:[{tag:"NBA",text:"DRAFT NIGHT",kind:""}];
   track.innerHTML=[...safe,...safe].map(x=>`<div class="ticker-item ${escapeAttr(x.kind||"")}"><span class="ticker-tag">${escapeHtml(x.tag)}</span>${escapeHtml(x.text)}</div>`).join("");
   track.style.animation="none";void track.offsetWidth;track.style.animation="";
+  // Competition and Nerd Stats must scroll at the same actual pixel speed,
+  // regardless of how much text each feed contains.
+  if(brand==="COMP BOARD"||brand==="STATS FOR NERDS"){
+    const distance=track.scrollWidth/2;
+    const seconds=Math.max(12,distance/55);
+    track.style.setProperty("animation-duration",seconds+"s","important");
+  }else{
+    track.style.removeProperty("animation-duration");
+  }
 }
 function updateTickerForScreen(id){
   if(id==="revealScreen"&&currentTeam)setTicker([...teamTickerItems(currentTeam),...draftTickerItems(),...LEAGUE_TICKER.map(x=>({...x,kind:""}))],teamByName(currentTeam)?.[1]||"TEAM");
