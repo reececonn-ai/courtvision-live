@@ -2648,3 +2648,20 @@ body.tv-mode[data-screen="competitionScreen"] .broadcast-ticker{
  #competitionScreen,#draftBoardScreen,#statsForNerdsScreen,#teamsHubScreen{padding-bottom:calc(66px + env(safe-area-inset-bottom))!important}
 }
 @media(min-width:540px) and (max-width:1100px){.teams-hub-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* Post-draft editorial hierarchy: title race -> fixtures -> standings -> paper -> movement. */
+.comp-games-feature,.comp-paper-feature{width:100%;min-width:0;margin-top:12px}
+.comp-games-feature .comp-slate-panel,.comp-paper-feature .comp-stories-panel{width:100%;min-width:0}
+.comp-games-feature .comp-games{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+.comp-paper-feature .comp-stories-panel{border-top:5px solid #d1a454!important;background:linear-gradient(120deg,#101b2b,#0a1322)!important}
+.comp-paper-feature .comp-section-head{padding:16px 18px!important}
+.comp-paper-feature .comp-section-head strong{font-size:clamp(23px,2.1vw,32px)!important}
+.comp-paper-feature .comp-tidbits{padding:12px!important}
+@media(max-width:820px){
+ .comp-games-feature,.comp-paper-feature{margin-top:12px!important;width:100%!important}
+ .comp-games-feature .comp-games{grid-template-columns:minmax(0,1fr)!important;gap:8px!important;padding:8px!important}
+ .comp-paper-feature .comp-section-head{padding:14px 12px!important}
+ .comp-paper-feature .comp-section-head strong{font-size:23px!important}
+ .comp-paper-feature .comp-tidbits{padding:8px!important}
+}
