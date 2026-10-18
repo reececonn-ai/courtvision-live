@@ -4287,6 +4287,44 @@ body.readable .decision-card.context .li-meta{
     align-self:stretch!important;
   }
 }
+
+/* Draft-night Decision View guard: long availability notes must never disappear under the card. */
+body.readable .decision-card.context{
+  min-width:0!important;
+  overflow:hidden!important;
+}
+body.readable .decision-card.context .availability-list{
+  max-height:clamp(118px,16vh,190px)!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  padding-right:5px!important;
+  scrollbar-width:thin;
+}
+body.readable .decision-card.context .availability-list li{
+  overflow:hidden!important;
+}
+body.readable .decision-card.context .availability-note{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+  overflow:hidden!important;
+}
+body.readable .decision-card.context .li-meta{
+  display:block!important;
+  margin-top:3px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+@media(max-width:820px){
+  body.readable .decision-card.context .availability-list{
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  body.readable .decision-card.context .availability-note{
+    -webkit-line-clamp:3!important;
+  }
+}
 </style>
 </head>
 <body>
