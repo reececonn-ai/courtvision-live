@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp22">
+<link rel="stylesheet" href="/competition.css?v=comp23">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -5331,7 +5331,7 @@ function cvApplySnapshot(snapshot,serverVersion=0){
     // The competition hub is read-only navigation. Stale draft events must never
     // hijack a phone viewing Competition, Draft Board or Stats for Nerds.
     const currentView=document.querySelector(".screen.active")?.id;
-    const isCompetitionHub=["competitionScreen","draftBoardScreen","statsForNerdsScreen"].includes(currentView);
+    const isCompetitionHub=["competitionScreen","draftBoardScreen","statsForNerdsScreen","teamsHubScreen"].includes(currentView);
     if(!isCompetitionHub&&state.liveSpin&&!state.onTheBoard){
       showScreenLocal("wheelScreen");
       cvPlayRemoteSpin(state.liveSpin);
