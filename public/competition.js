@@ -4,6 +4,10 @@
 (() => {
   const TZ="Australia/Sydney";
   const SEASON_YEAR=2027;
+  // NBA 2026-27 opening tip: 20 Oct 2026, 3pm ET (21 Oct, 6am Sydney).
+  const REGULAR_SEASON_START=Date.parse("2026-10-20T19:00:00Z");
+  const REGULAR_SEASON_KEY="2026-10-21";
+  const regularSeasonStarted=()=>Date.now()>=REGULAR_SEASON_START;
   const CACHE_MS=15*60*1000;
   let cache={at:0,records:null,games:null,recent:null,demo:false};
   let refreshToken=0;
@@ -92,6 +96,9 @@
 
   function mergeSeasonSnapshot(snapshot){
     if(!snapshot?.key||!Array.isArray(snapshot.rows))return;
+    // Preseason projections are a separate phase, never regular-season competition history.
+    if(regularSeasonStarted() && snapshot.key<REGULAR_SEASON_KEY)return;
+    if(!regularSeasonStarted() && snapshot.key>=REGULAR_SEASON_KEY)return;
     if(!Array.isArray(state.competitionSnapshots))state.competitionSnapshots=[];
     const idx=state.competitionSnapshots.findIndex(x=>x.key===snapshot.key&&!!x.demo===!!snapshot.demo);
     if(idx>=0){
@@ -102,13 +109,14 @@
       state.competitionSnapshots.push(snapshot);
     }
     state.competitionSnapshots=state.competitionSnapshots
-      .filter(Boolean)
+      .filter(x=>x && (regularSeasonStarted()?x.key>=REGULAR_SEASON_KEY:x.key<REGULAR_SEASON_KEY))
       .sort((a,b)=>String(a.key||"").localeCompare(String(b.key||"")))
       .slice(-220);
   }
 
   function snapshotFromRecords(raw){
     if(!raw?.key||!raw.records||typeof raw.records!=="object")return null;
+    if(raw.key<REGULAR_SEASON_KEY)return null;
     const rows=calculateProbabilities(ownerSummaries(raw.records),3000);
     return {
       key:raw.key,
@@ -124,7 +132,7 @@
   }
 
   async function loadSeasonMemory(force=false){
-    if(isTestDraft())return;
+    if(isTestDraft()||!regularSeasonStarted())return;
     if(!force&&seasonMemoryLoadedAt&&Date.now()-seasonMemoryLoadedAt<SEASON_MEMORY_MS)return;
     const path=seasonMemoryPath();if(!path)return;
     try{
@@ -145,7 +153,7 @@
   }
 
   async function pushSeasonSnapshot(snapshot){
-    if(!snapshot||snapshot.demo)return;
+    if(!snapshot||snapshot.demo||!regularSeasonStarted())return;
     const path=seasonMemoryPath();if(!path)return;
     try{
       await fetch(path,{
@@ -162,7 +170,7 @@
   function priorCompetitionSnapshot(demo=false){
     const today=sydneyKey(new Date());
     return (state.competitionSnapshots||[])
-      .filter(s=>!!s.demo===!!demo&&s.key<today&&Array.isArray(s.rows))
+      .filter(s=>!!s.demo===!!demo&&s.key<today&&Array.isArray(s.rows)&&(!regularSeasonStarted()||s.key>=REGULAR_SEASON_KEY))
       .sort((a,b)=>String(b.key).localeCompare(String(a.key)))[0]||null;
   }
 
@@ -364,6 +372,8 @@
   }
 
   async function fetchRecords(force=false){
+    // Pre-opening ESPN standings can include preseason wins. Projections start at 0-0.
+    if(!regularSeasonStarted())return {};
     try{
       const direct="https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?season="+SEASON_YEAR;
       const local="/api/nba/standings?season="+SEASON_YEAR+(force?"&fresh=1":"");
@@ -385,6 +395,10 @@
     const out=[];
     for(const ev of data?.events||[]){
       const comp=ev.competitions?.[0];if(!comp)continue;
+      // ESPN scoreboard includes preseason fixtures. Never count those toward competition.
+      if(Date.parse(ev.date||comp.date||"")<REGULAR_SEASON_START)continue;
+      const seasonType=Number(ev.season?.type??data?.season?.type??0);
+      if(seasonType&&seasonType!==2)continue;
       const cs=comp.competitors||[];
       const home=cs.find(x=>x.homeAway==="home")||cs[0],away=cs.find(x=>x.homeAway==="away")||cs[1];
       const hn=teamNameFromEspn(home?.team),an=teamNameFromEspn(away?.team);if(!hn||!an)continue;
@@ -837,6 +851,7 @@
   function saveCompetitionSnapshot(rows,demo=false){
     const snapshot={
       key:sydneyKey(new Date()),
+      source:regularSeasonStarted()?"regular-season":"preseason-projection",
       at:new Date().toISOString(),
       demo:!!demo,
       rows:rows.map((r,i)=>({name:r.name,rank:i+1,w:r.w,l:r.l,projected:+r.projected.toFixed(2),probability:+r.probability.toFixed(2)}))
@@ -1120,6 +1135,8 @@
     try{
       const data=await getCompetitionData(force);if(token!==refreshToken)return;
       await loadSeasonMemory(force);if(token!==refreshToken)return;
+      // Clear preseason-only competition snapshot history at the opening tip.
+      state.competitionSnapshots=(state.competitionSnapshots||[]).filter(x=>x && (!regularSeasonStarted()||x.key>=REGULAR_SEASON_KEY));
       let rows=calculateProbabilities(ownerSummaries(data.records||{}));
       saveCompetitionSnapshot(rows,data.demo);
       renderLeaderboard(rows,data.demo,data.games||[]);
@@ -1135,8 +1152,8 @@
       if(impact)intelTicker.push({tag:"SWING WATCH",text:shortTeam(impact.away)+" vs "+shortTeam(impact.home)+" carries about "+impact.swing.toFixed(1)+" title-probability points of swing.",kind:"team"});
       window.cvCompetitionTicker=[...intelTicker,...(window.cvCompetitionTicker||[])];
       const stamp=$("competitionUpdated");
-      if(stamp)stamp.textContent=(data.demo?"DEMO · ":"UPDATED ")+new Intl.DateTimeFormat("en-AU",{timeZone:TZ,day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}).format(new Date());
-      if(status)status.textContent=data.demo?"Test draft · seeded competition results for troubleshooting":"Live NBA records/results · auto-checking every 2 minutes";
+      if(stamp)stamp.textContent=(data.demo?"DEMO · ":regularSeasonStarted()?"UPDATED ":"PRESEASON PROJECTION · ")+new Intl.DateTimeFormat("en-AU",{timeZone:TZ,day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}).format(new Date());
+      if(status)status.textContent=data.demo?"Test draft · seeded competition results for troubleshooting":regularSeasonStarted()?"Regular-season NBA results · auto-checking every 2 minutes":"PRESEASON PROJECTIONS · regular-season records begin 21 Oct (Sydney)";
       if(document.querySelector(".screen.active")?.id==="competitionScreen"){
         setTicker(window.cvCompetitionTicker?.length?window.cvCompetitionTicker:[{tag:"COMPETITION",text:"Daily rivalry board",kind:"draft"}],"COMP BOARD");
       }
