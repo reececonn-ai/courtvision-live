@@ -4763,7 +4763,7 @@ body[data-screen="draftBoardScreen"] .board-hub-heading{padding:0 22px}
     </section>
 
     <section class="screen nerd-screen" id="statsForNerdsScreen">
-      <div class="nerd-shell">
+      <div class="nerd-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button onclick="openCompetitionBoard()">COMPETITION</button><button onclick="openDraftBoard()">DRAFT BOARD</button><button class="active" aria-current="page" onclick="openStatsForNerds()">STATS FOR NERDS</button></nav>
         <header class="nerd-topbar">
           <div>
             <div class="nerd-eyebrow">COURTVISION DEEP CUTS · VERIFIED FROM COMPETITION DATA</div>
@@ -6823,7 +6823,7 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp17"></script>
+<script src="/competition.js?v=comp18"></script>
 
 <nav class="mobile-nav" aria-label="Mobile draft navigation">
   <button type="button" onclick="showScreen('wheelScreen')">WHEEL</button>
