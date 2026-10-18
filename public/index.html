@@ -6685,7 +6685,18 @@ function renderTeamsHub(){
   if(teamsHubSelected&&teamByName(teamsHubSelected)){
     const t=teamByName(teamsHubSelected),a=state.assignments?.[teamsHubSelected],line=winLine(teamsHubSelected);
     detail.hidden=false;
-    detail.innerHTML='<button type="button" class="teams-hub-back" onclick="teamsHubSelected=null;renderTeamsHub()">← ALL TEAMS</button><div class="teams-hub-profile"><img src="'+logoUrl(t[1])+'" alt=""><div><span class="comp-eyebrow">TEAM PROFILE</span><h3>'+escapeHtml(t[0])+'</h3><p>'+(a?'Drafted by '+escapeHtml(a.player)+(a.barrel?' · Barrel pick':' · 
+    const ownerLine=a ? ("Drafted by "+escapeHtml(a.player)+(a.barrel?" · Barrel pick":" · $"+money(a.amount))) : "Not assigned in draft";
+    detail.innerHTML='<button type="button" class="teams-hub-back" onclick="teamsHubSelected=null;renderTeamsHub()">← ALL TEAMS</button>'
+      +'<div class="teams-hub-profile"><img src="'+logoUrl(t[1])+'" alt=""><div><span class="comp-eyebrow">TEAM PROFILE</span><h3>'
+      +escapeHtml(t[0])+'</h3><p>'+ownerLine+'</p><strong>'
+      +(line==null?"Season projection pending":line+" projected wins")+'</strong></div></div>';
+    grid.hidden=true;
+  }else{
+    detail.hidden=true;
+    grid.hidden=false;
+  }
+}
+function previewTeamFromBoard(name){
   if(!teamByName(name))return;
   openTeamsHub(name);
 }
