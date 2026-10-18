@@ -65,6 +65,30 @@ export function connectRoom(room, handlers = {}) {
   let ws;
   let stopped = false;
   let retry = 700;
+  let lastVersion = -1;
+  let syncInFlight = false;
+
+  const deliverState = state => {
+    if (!state || typeof state !== "object") return;
+    const version = Number(state.version);
+    if (Number.isFinite(version)) {
+      if (version < lastVersion) return;
+      lastVersion = Math.max(lastVersion, version);
+    }
+    handlers.onState?.(state);
+  };
+
+  const syncLatest = async () => {
+    if (stopped || syncInFlight) return;
+    syncInFlight = true;
+    try {
+      deliverState(await getState(room));
+    } catch (_) {
+      // WebSocket reconnect logic remains the primary recovery path.
+    } finally {
+      syncInFlight = false;
+    }
+  };
 
   const open = () => {
     if (stopped) return;
@@ -74,13 +98,16 @@ export function connectRoom(room, handlers = {}) {
     ws.addEventListener("open", () => {
       retry = 700;
       handlers.onStatus?.("live");
+      // Catch up immediately in case this tab missed a state broadcast while
+      // backgrounded, sleeping or between WebSocket connections.
+      syncLatest();
     });
 
     ws.addEventListener("message", event => {
       if (event.data === "pong") return;
       try {
         const data = JSON.parse(event.data);
-        if (data.type === "state") handlers.onState?.(data.state);
+        if (data.type === "state") deliverState(data.state);
       } catch (_) {}
     });
 
@@ -98,16 +125,34 @@ export function connectRoom(room, handlers = {}) {
     });
   };
 
+  const onVisibility = () => {
+    if (!document.hidden) syncLatest();
+  };
+  const onFocus = () => syncLatest();
+
+  document.addEventListener("visibilitychange", onVisibility);
+  window.addEventListener("focus", onFocus);
+
   open();
+
   const ping = setInterval(() => {
     if (ws?.readyState === WebSocket.OPEN) {
       try { ws.send("ping"); } catch (_) {}
     }
   }, 25000);
 
+  // Draft-night safety net: if a browser silently misses a WebSocket message,
+  // a visible screen self-heals within a couple of seconds.
+  const fallbackSync = setInterval(() => {
+    if (!document.hidden) syncLatest();
+  }, 2000);
+
   return () => {
     stopped = true;
     clearInterval(ping);
+    clearInterval(fallbackSync);
+    document.removeEventListener("visibilitychange", onVisibility);
+    window.removeEventListener("focus", onFocus);
     try { ws?.close(1000, "Client closed"); } catch (_) {}
   };
 }
