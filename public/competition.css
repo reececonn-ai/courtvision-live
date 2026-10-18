@@ -2598,3 +2598,53 @@ body.tv-mode[data-screen="competitionScreen"] .broadcast-ticker{
  .comp-leaderboard{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 }
 @media(prefers-reduced-motion:reduce){.competition-hub-tabs{scroll-behavior:auto!important}}
+
+
+/* Post-draft teams directory */
+.teams-hub-screen.active{display:block!important;min-height:100vh;width:100%;overflow:visible}
+.teams-hub-shell{max-width:1500px;margin:auto;padding:0 22px 65px}
+.teams-hub-head{padding:18px 0;border-bottom:1px solid #263750}
+.teams-hub-head h2{font:normal clamp(40px,5vw,65px)/1 Impact,"Arial Narrow",sans-serif}
+.teams-hub-head p{color:#9caec4;font-size:13px;margin-top:6px}
+.teams-hub-filter{display:flex;align-items:center;gap:12px;padding:15px 0}
+.teams-hub-filter label{font:900 11px Arial,sans-serif;color:#9ebbd9;white-space:nowrap}
+.teams-hub-filter input{width:min(100%,460px);min-width:0;border:1px solid #284361;border-radius:9px;padding:13px;color:white;background:#091626;font-size:15px}
+.teams-hub-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.teams-hub-card{text-align:left;min-width:0;display:flex;align-items:center;gap:12px;background:#091727;border:1px solid #213955;border-radius:10px;color:white;padding:12px;min-height:82px}
+.teams-hub-card img{width:50px;height:50px;object-fit:contain;flex-shrink:0}
+.teams-hub-card span{flex:1;min-width:0}
+.teams-hub-card strong{display:block;font-size:15px;line-height:1.3}
+.teams-hub-card small{display:block;color:#90adc8;font-size:11px;margin-top:5px}
+.teams-hub-card b{font-size:16px;white-space:nowrap;color:#6cd0ff}
+.teams-hub-detail[hidden],.teams-hub-grid[hidden]{display:none!important}
+.teams-hub-back{min-height:44px;padding:10px 16px;margin:18px 0;background:#183554;color:white;border:1px solid #4f83a9;border-radius:8px}
+.teams-hub-profile{display:flex;align-items:center;gap:24px;background:linear-gradient(120deg,#0c2340,#07111d);border:1px solid #31557b;border-radius:14px;padding:25px}
+.teams-hub-profile img{width:110px;height:110px;object-fit:contain}
+.teams-hub-profile h3{font:normal clamp(32px,5vw,56px)/1 Impact,sans-serif;margin:9px 0}
+.teams-hub-profile p{color:#b6cadd;margin:8px 0 16px}
+.teams-hub-profile strong{font-size:19px;color:#70d0ff}
+@media(max-width:820px){
+ body[data-screen="teamsHubScreen"] .shell{display:block!important;width:100%!important;padding:0!important;min-height:100dvh!important}
+ body[data-screen="teamsHubScreen"] .sidebar,body[data-screen="teamsHubScreen"] .mobile-nav{display:none!important}
+ body[data-screen="teamsHubScreen"] .stage{width:100%!important;min-width:0!important;overflow:visible!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+ #teamsHubScreen{padding:0!important;min-height:100dvh!important}
+ .teams-hub-shell{width:100%;padding:0 14px 85px}
+ #teamsHubScreen .competition-hub-tabs{display:flex!important;position:sticky!important;top:0!important;z-index:150!important;gap:6px!important;flex-wrap:nowrap!important;overflow-x:auto!important;scrollbar-width:none!important;background:#07111e!important;padding:calc(8px + env(safe-area-inset-top)) 14px 8px!important;margin:0 -14px 8px!important;width:calc(100% + 28px)!important;border-bottom:1px solid #28405e!important}
+ #teamsHubScreen .competition-hub-tabs button{min-height:44px!important;flex:0 0 auto!important;white-space:nowrap!important;padding:0 12px!important;font-size:11px!important}
+ .teams-hub-head{padding:13px 0}
+ .teams-hub-filter{display:block}
+ .teams-hub-filter label{display:block;margin-bottom:8px}
+ .teams-hub-filter input{width:100%;min-height:48px}
+ .teams-hub-grid{grid-template-columns:1fr;gap:8px}
+ .teams-hub-card{min-height:78px;padding:11px}
+ .teams-hub-card img{width:45px;height:45px}
+ .teams-hub-profile{padding:19px;gap:14px;align-items:flex-start}
+ .teams-hub-profile img{width:80px;height:80px}
+ .teams-hub-profile h3{font-size:32px}
+ /* Put the ticker at the bottom of the viewport, not the old draft canvas. */
+ body[data-screen="competitionScreen"] #broadcastTicker,body[data-screen="draftBoardScreen"] #broadcastTicker,body[data-screen="statsForNerdsScreen"] #broadcastTicker,body[data-screen="teamsHubScreen"] #broadcastTicker{position:fixed!important;bottom:0!important;left:0!important;right:0!important;width:100vw!important;height:36px!important;z-index:80!important;border-top:1px solid #33526d!important;padding-bottom:env(safe-area-inset-bottom)!important;box-sizing:content-box!important}
+ body[data-screen="competitionScreen"] .ticker-brand,body[data-screen="draftBoardScreen"] .ticker-brand,body[data-screen="statsForNerdsScreen"] .ticker-brand,body[data-screen="teamsHubScreen"] .ticker-brand{padding:0 10px!important;font-size:10px!important;white-space:nowrap}
+ body[data-screen="competitionScreen"] .ticker-window,body[data-screen="draftBoardScreen"] .ticker-window,body[data-screen="statsForNerdsScreen"] .ticker-window,body[data-screen="teamsHubScreen"] .ticker-window{min-width:0!important;overflow:hidden!important}
+ #competitionScreen,#draftBoardScreen,#statsForNerdsScreen,#teamsHubScreen{padding-bottom:calc(66px + env(safe-area-inset-bottom))!important}
+}
+@media(min-width:540px) and (max-width:1100px){.teams-hub-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
