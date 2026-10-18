@@ -96,7 +96,7 @@
 
   function mergeSeasonSnapshot(snapshot){
     if(!snapshot?.key||!Array.isArray(snapshot.rows))return;
-    // Preseason projections are a separate phase, never regular-season competition history.
+    // Season projections are a separate phase, never regular-season competition history.
     if(regularSeasonStarted() && snapshot.key<REGULAR_SEASON_KEY)return;
     if(!regularSeasonStarted() && snapshot.key>=REGULAR_SEASON_KEY)return;
     if(!Array.isArray(state.competitionSnapshots))state.competitionSnapshots=[];
@@ -785,7 +785,7 @@
         '</div>'+
       '</article>';
     }).join("");
-    const badge=$("competitionModeBadge");if(badge){badge.textContent=demo?"DEMO DATA":"LIVE NBA DATA";badge.classList.toggle("demo",demo)}
+    const badge=$("competitionModeBadge");if(badge){badge.textContent=demo?"DEMO DATA":regularSeasonStarted()?"LIVE NBA DATA":"SEASON PROJECTIONS";badge.classList.toggle("demo",demo)}
   }
 
   function gameStatusText(g){
@@ -851,7 +851,7 @@
   function saveCompetitionSnapshot(rows,demo=false){
     const snapshot={
       key:sydneyKey(new Date()),
-      source:regularSeasonStarted()?"regular-season":"preseason-projection",
+      source:regularSeasonStarted()?"regular-season":"season-projection",
       at:new Date().toISOString(),
       demo:!!demo,
       rows:rows.map((r,i)=>({name:r.name,rank:i+1,w:r.w,l:r.l,projected:+r.projected.toFixed(2),probability:+r.probability.toFixed(2)}))
@@ -1135,7 +1135,7 @@
     try{
       const data=await getCompetitionData(force);if(token!==refreshToken)return;
       await loadSeasonMemory(force);if(token!==refreshToken)return;
-      // Clear preseason-only competition snapshot history at the opening tip.
+      // Clear projection-only competition snapshot history at the opening tip.
       state.competitionSnapshots=(state.competitionSnapshots||[]).filter(x=>x && (!regularSeasonStarted()||x.key>=REGULAR_SEASON_KEY));
       let rows=calculateProbabilities(ownerSummaries(data.records||{}));
       saveCompetitionSnapshot(rows,data.demo);
@@ -1153,7 +1153,7 @@
       window.cvCompetitionTicker=[...intelTicker,...(window.cvCompetitionTicker||[])];
       const stamp=$("competitionUpdated");
       if(stamp)stamp.textContent=(data.demo?"DEMO · ":regularSeasonStarted()?"UPDATED ":"PRESEASON PROJECTION · ")+new Intl.DateTimeFormat("en-AU",{timeZone:TZ,day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}).format(new Date());
-      if(status)status.textContent=data.demo?"Test draft · seeded competition results for troubleshooting":regularSeasonStarted()?"Regular-season NBA results · auto-checking every 2 minutes":"PRESEASON PROJECTIONS · regular-season records begin 21 Oct (Sydney)";
+      if(status)status.textContent=data.demo?"Test draft · seeded competition results for troubleshooting":regularSeasonStarted()?"Regular-season NBA results · auto-checking every 2 minutes":"2026–27 SEASON PROJECTIONS · reset at opening tip, then live records take over";
       if(document.querySelector(".screen.active")?.id==="competitionScreen"){
         setTicker(window.cvCompetitionTicker?.length?window.cvCompetitionTicker:[{tag:"COMPETITION",text:"Daily rivalry board",kind:"draft"}],"COMP BOARD");
       }
