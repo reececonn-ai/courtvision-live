@@ -1100,8 +1100,7 @@
   window.openStatsForNerds=openStatsForNerds;
 
   function previewTeamFromCompetition(name){
-    teamPreviewReturnScreen="competitionScreen";
-    showReveal(name,{preview:true});
+    openTeamsHub(name);
   }
   window.previewTeamFromCompetition=previewTeamFromCompetition;
 
