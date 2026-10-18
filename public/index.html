@@ -4325,6 +4325,19 @@ body.readable .decision-card.context .li-meta{
     -webkit-line-clamp:3!important;
   }
 }
+/* Post-draft full width hub */
+body[data-screen="competitionScreen"] .shell,body[data-screen="draftBoardScreen"] .shell,body[data-screen="statsForNerdsScreen"] .shell{grid-template-columns:minmax(0,1fr)!important}
+body[data-screen="competitionScreen"] .sidebar,body[data-screen="draftBoardScreen"] .sidebar,body[data-screen="statsForNerdsScreen"] .sidebar{display:none!important}
+body[data-screen="competitionScreen"] .stage,body[data-screen="draftBoardScreen"] .stage,body[data-screen="statsForNerdsScreen"] .stage{width:100%;min-width:0}
+.competition-hub-tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0 16px}
+.competition-hub-tabs button{appearance:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.05);color:#c8d6ea;padding:10px 18px;border-radius:9px;cursor:pointer;font-weight:900;letter-spacing:.07em;font-size:12px}
+.competition-hub-tabs button.active{background:#f4f7ff;color:#0a1530;border-color:#f4f7ff}
+body[data-screen="draftBoardScreen"] .draft-board-screen{padding-top:16px;display:flex;flex-direction:column}
+body[data-screen="draftBoardScreen"] .draft-board-screen .broadcast-top{display:none}
+body[data-screen="draftBoardScreen"] .board-shell{width:100%;max-width:none}
+body[data-screen="draftBoardScreen"] .board-actions{display:none}
+body[data-screen="draftBoardScreen"] .board-hub-heading{padding:0 22px}
+@media(max-width:700px){.competition-hub-tabs{padding:10px 12px}.competition-hub-tabs button{flex:1;padding:10px 8px}}
 </style>
 </head>
 <body>
@@ -4613,7 +4626,7 @@ body.readable .decision-card.context .li-meta{
       <div class="barrel" id="barrelCount">Barrel: 0 teams</div>
     </section>
 
-    <section class="screen draft-board-screen" id="draftBoardScreen">
+    <section class="screen draft-board-screen" id="draftBoardScreen"><div class="board-hub-heading"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button onclick="openCompetitionBoard()">COMPETITION</button><button class="active" aria-current="page" onclick="openDraftBoard()">DRAFT BOARD</button><button onclick="openStatsForNerds()">STATS FOR NERDS</button></nav></div>
       <div class="broadcast-top"><span class="live-dot">Draft Board</span><span id="boardTopStatus">League overview</span></div>
       <div class="board-shell">
         <div class="board-head">
@@ -4653,7 +4666,7 @@ body.readable .decision-card.context .li-meta{
     </section>
 
     <section class="screen competition-screen" id="competitionScreen">
-      <div class="competition-shell">
+      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><button onclick="openDraftBoard()">DRAFT BOARD</button><button onclick="openStatsForNerds()">STATS FOR NERDS</button></nav>
         <header class="comp-topbar">
           <div class="comp-brand-lockup">
             <div class="comp-eyebrow">COURTVISION DAILY · AUSTRALIA/SYDNEY</div>
@@ -5899,7 +5912,7 @@ function draftHasStarted(){
 }
 function openDraftBoard(){
   renderDraftBoard();
-  if(draftHasStarted())showScreen("draftBoardScreen");else showScreenLocal("draftBoardScreen");
+  showScreenLocal("draftBoardScreen");
 }
 function closeBoardToCurrent(){
   if(teamPreviewActive)return closeTeamPreview();
@@ -6803,10 +6816,8 @@ document.getElementById("settingsModal")?.addEventListener("click",e=>{if(e.targ
 
 window.addEventListener("resize",drawWheel);
 initDisplayMode();applyRuntimeModes();preloadLogos();renderAll();
-// Resume where the room left off after an accidental reload.
-if(state.onTheBoard&&state.available.includes(state.onTheBoard)){showReveal(state.onTheBoard);toast(`Resumed · ${state.onTheBoard} is still on the board`)}
-else if(state.lastScreen==="barrelScreen"&&!state.available.length&&state.passed.length){openBarrelMode()}
-else if(state.lastScreen&&state.lastScreen!=="homeScreen"&&(state.history.length||state.passed.length)&&state.lastScreen!=="revealScreen"){showScreen(state.lastScreen==="recapScreen"&&!isDraftComplete()?"wheelScreen":state.lastScreen)}
+// Landing view is Competition, not the old auction UI.
+showScreenLocal("competitionScreen");
 // Auto-sync only when the cache is missing or older than 6 hours; the button forces a refresh.
 if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueData(false),700);
 setTimeout(cvStartSync,80);
