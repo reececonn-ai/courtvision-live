@@ -377,6 +377,41 @@ export default {
       });
     }
 
+    // Optional editorial feed: one upstream source, cached 3 hours at the edge.
+    // Never touches the draft Durable Object or triggers scheduled background work.
+    if (url.pathname === "/api/nba/news") {
+      const key = new Request(url.origin + "/api/nba/news", { method: "GET" });
+      const cache = caches.default;
+      const hit = await cache.match(key);
+      if (hit) return hit;
+      try {
+        const upstream = await fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news?limit=20", {
+          headers: { accept: "application/json" },
+          signal: AbortSignal.timeout(5500),
+        });
+        if (!upstream.ok) throw new Error("ESPN news unavailable");
+        const data = await upstream.json();
+        const articles = (Array.isArray(data?.articles) ? data.articles : []).slice(0, 20).map(a => ({
+          headline: String(a.headline || "").slice(0, 180),
+          summary: String(a.description || a.story || "").replace(/<[^>]*>/g, "").slice(0, 260),
+          published: String(a.published || a.lastModified || ""),
+          url: String(a.links?.web?.href || a.links?.mobile?.href || ""),
+          category: /injur|out for|questionable|doubtful|ruled out|surgery|availability/i.test(a.headline || "") ? "INJURY" :
+            /trad|sign|waiv|acquir|deal|contract/i.test(a.headline || "") ? "ROSTER" : "NBA NEWS",
+        })).filter(a => a.headline && /^https:\/\/(www\.)?espn\.com\//.test(a.url));
+        const response = json({ ok: true, source: "ESPN", fetchedAt: new Date().toISOString(), articles });
+        response.headers.set("cache-control", "public, max-age=10800, s-maxage=10800");
+        ctx.waitUntil(cache.put(key, response.clone()));
+        return response;
+      } catch (_) {
+        // Cache failures temporarily too: do not hammer upstream on every viewer.
+        const response = json({ ok: false, articles: [], error: "News temporarily unavailable" });
+        response.headers.set("cache-control", "public, max-age=1800, s-maxage=1800");
+        ctx.waitUntil(cache.put(key, response.clone()));
+        return response;
+      }
+    }
+
     if (url.pathname === "/api/nba/standings") {
       const season = String(url.searchParams.get("season") || "2027");
       if (!/^\d{4}$/.test(season)) return json({ ok: false, error: "Invalid season" }, 400);
