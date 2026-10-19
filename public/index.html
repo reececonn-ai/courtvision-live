@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp24">
+<link rel="stylesheet" href="/competition.css?v=comp25">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -4771,6 +4771,8 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
               <div><span class="comp-section-kicker">TODAY</span><strong>TODAY'S GAMES</strong></div>
               <small id="competitionSlateDate">SYDNEY TIME</small>
             </div>
+            <div class="comp-slate-tools"><span>Win chance · team projections + home advantage</span><button type="button" id="competitionSampleDay" aria-pressed="false" onclick="toggleSampleGameDay()">Try sample day</button></div>
+            <div class="comp-sample-note" id="competitionSampleNote" hidden>SAMPLE DAY · Fictional games, scores and records for tomorrow's preview. Only these game tiles use sample data.</div>
             <div class="comp-games" id="competitionGames">
               <div class="comp-empty">Today's NBA games will appear here.</div>
             </div>
@@ -6963,7 +6965,7 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp20"></script>
+<script src="/competition.js?v=comp21"></script>
 <script src="/nba-news.js?v=1" defer></script>
 
 <nav class="mobile-nav" aria-label="Mobile draft navigation">

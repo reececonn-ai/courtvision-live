@@ -794,10 +794,56 @@
     return timeSydney(g.date);
   }
 
+
+  // Presentation-only sample slate: never changes picks, records, or saved history.
+  let sampleDayEnabled=new URLSearchParams(window.location.search).get("sampleDay")==="1";
+  function sampleDaySlate(){
+    const key=new Date(Date.parse(sydneyKey()+"T00:00:00Z")+86400000).toISOString().slice(0,10);
+    const base=Date.parse(key+"T00:00:00Z");
+    const pairs=[[1,8],[20,6],[9,21],[27,19]];
+    return pairs.map(([h,a],i)=>({
+      id:"sample-day-"+i,home:TEAM_DATA[h][0],away:TEAM_DATA[a][0],
+      date:new Date(base+i*45*60000),status:i===0?"FINAL":i===1?"IN":"SCHEDULED",
+      homeScore:i===0?112:i===1?78:0,awayScore:i===0?106:i===1?81:0,
+      homeWinner:i===0,awayWinner:false,detail:i===1?"Q3 04:32":"",sample:true
+    }));
+  }
+
+  function gameWinChance(g){
+    if(g.status==="FINAL")return null;
+    const homeLine=winLineFor(g.home),awayLine=winLineFor(g.away);
+    if(homeLine===null||awayLine===null)return null;
+    // Log5 matchup estimate from season win projections; +0.12 log-odds at home.
+    const clamp=p=>Math.max(.05,Math.min(.95,p));
+    const hp=clamp(homeLine/82),ap=clamp(awayLine/82);
+    const odds=Math.log(hp/(1-hp))-Math.log(ap/(1-ap))+.12;
+    const home=Math.round(100/(1+Math.exp(-odds)));
+    return {home,away:100-home};
+  }
+
+  function gameWinChanceMarkup(g){
+    if(g.status==="FINAL")return '<div class="comp-game-probability"><span>FINAL RESULT</span><strong>'+esc(shortTeam(g.homeWinner?g.home:g.awayWinner?g.away:g.home))+(g.homeWinner||g.awayWinner?' WON':' · FINAL')+'</strong></div>';
+    const p=gameWinChance(g);
+    if(!p)return '<div class="comp-game-probability"><span>WIN CHANCE</span><strong>Projection unavailable</strong></div>';
+    return '<div class="comp-game-probability"><div><span>'+esc(shortTeam(g.away))+' <b>'+p.away+'%</b></span><span>'+esc(shortTeam(g.home))+' <b>'+p.home+'%</b></span></div>'+
+      '<div class="comp-game-prob-track" aria-hidden="true"><i style="width:'+p.away+'%"></i></div>'+
+      '<small>'+(g.sample?'SAMPLE · ':'')+'PREGAME ESTIMATE'+(g.status==="IN"?' · NOT LIVE ODDS':'')+'</small></div>';
+  }
+
+  window.toggleSampleGameDay=function(){
+    sampleDayEnabled=!sampleDayEnabled;
+    renderGames(cache.games||[],cache.records||{});
+  };
+
   function renderGames(games,records={}){
     const el=$("competitionGames");if(!el)return;
+    const toggle=$("competitionSampleDay");
+    if(toggle){toggle.setAttribute("aria-pressed",String(sampleDayEnabled));toggle.textContent=sampleDayEnabled?"Return to today":"Try sample day";}
+    const note=$("competitionSampleNote");
+    if(note)note.hidden=!sampleDayEnabled;
+    if(sampleDayEnabled){games=sampleDaySlate();records=demoCompetitionData().records;}
     const dateEl=$("competitionSlateDate");
-    if(dateEl)dateEl.textContent=daySydney(new Date()).toUpperCase()+" · SYDNEY";
+    if(dateEl)dateEl.textContent=(sampleDayEnabled?"SAMPLE · ":"")+daySydney(sampleDayEnabled?games[0].date:new Date()).toUpperCase()+" · SYDNEY";
     if(!games.length){el.innerHTML='<div class="comp-empty">No NBA games on today\'s Sydney slate. Check back tomorrow — the table still updates from completed games.</div>';return}
     const teamLine=name=>{
       const r=records[name]||{w:0,l:0,rank:null};
@@ -822,6 +868,7 @@
         side(g.away,ao,g.awayScore,"away",scores)+
         side(g.home,ho,g.homeScore,"home",scores)+
         (status?'<div class="comp-game-state">'+esc(status)+'</div>':'')+
+        gameWinChanceMarkup(g)+
       '</article>';
     }).join("");
   }
@@ -1247,6 +1294,8 @@
 
   window.cvCompetition={
     demoCompetitionData,
+    gameWinChance,
+    sampleDaySlate,
     ownerSummaries,
     calculateProbabilities,
     competitionTidbits,
