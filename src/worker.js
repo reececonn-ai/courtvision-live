@@ -420,6 +420,14 @@ export default {
       return cachedNbaResponse(request, upstream, nbaCacheTtl("standings", season), ctx, bypass);
     }
 
+    if (url.pathname === "/api/nba/summary") {
+      if (request.method !== "GET") return json({ ok: false, error: "Method not allowed" }, 405);
+      const event = String(url.searchParams.get("event") || "");
+      if (!/^\d{1,15}$/.test(event)) return json({ ok: false, error: "Invalid event" }, 400);
+      const upstream = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=" + encodeURIComponent(event);
+      return cachedNbaResponse(request, upstream, 60, ctx);
+    }
+
     if (url.pathname === "/api/nba/scoreboard") {
       const dates = String(url.searchParams.get("dates") || "");
       if (!/^\d{8}$/.test(dates)) return json({ ok: false, error: "Invalid dates" }, 400);

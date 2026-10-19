@@ -835,6 +835,96 @@
     renderGames(cache.games||[],cache.records||{});
   };
 
+
+  let gameStatsOpen=null;
+  let gameStatsPinned=false;
+  const gameStatsCache=new Map();
+
+  function statsTable(headers,rows){
+    return '<table class="comp-game-stats-table"><thead><tr>'+headers.map(h=>'<th scope="col">'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+
+      rows.map(r=>'<tr>'+r.map((v,i)=>i===0?'<th scope="row">'+esc(v)+'</th>':'<td>'+esc(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+  }
+
+  function gameStatsMarkup(data,g){
+    const teams=data?.boxscore?.teams||[];
+    const home=teams.find(t=>teamNameFromEspn(t.team)===g.home);
+    const away=teams.find(t=>teamNameFromEspn(t.team)===g.away);
+    const metrics=[["Field goals","fieldGoalsMade-fieldGoalsAttempted"],["3-pointers","threePointFieldGoalsMade-threePointFieldGoalsAttempted"],["Free throws","freeThrowsMade-freeThrowsAttempted"],["Rebounds","totalRebounds"],["Assists","assists"],["Turnovers","turnovers"],["Steals","steals"],["Blocks","blocks"]];
+    const value=(team,key)=>team?.statistics?.find(x=>x.name===key)?.displayValue??"—";
+    const rows=metrics.filter(([,key])=>value(away,key)!=="—"||value(home,key)!=="—").map(([label,key])=>[label,value(away,key),value(home,key)]);
+    let html=rows.length?statsTable(["Team stats",shortTeam(g.away),shortTeam(g.home)],rows):'<p>Team stats are not available yet.</p>';
+    for(const name of [g.away,g.home]){
+      const team=(data?.boxscore?.players||[]).find(t=>teamNameFromEspn(t.team)===name);
+      const group=team?.statistics?.find(x=>x.labels?.includes("PTS"));
+      if(!group)continue;
+      const cell=(a,label)=>a.stats?.[group.labels.indexOf(label)]??"—";
+      const players=(group.athletes||[]).filter(a=>!a.didNotPlay&&Array.isArray(a.stats))
+        .sort((a,b)=>(parseFloat(cell(b,"PTS"))||0)-(parseFloat(cell(a,"PTS"))||0)).slice(0,3);
+      if(players.length)html+='<h4>'+esc(shortTeam(name))+' · scoring leaders</h4>'+statsTable(["Player","PTS","REB","AST"],players.map(a=>[a.athlete?.displayName||"Player",cell(a,"PTS"),cell(a,"REB"),cell(a,"AST")]));
+    }
+    return html;
+  }
+
+  function sampleGameStats(g){
+    const make=(name,home)=>{const score=home?g.homeScore:g.awayScore;const made=Math.max(0,Math.floor((score-20)/2));const ft=Math.max(0,score-made*2-9);return {team:{displayName:name},statistics:[
+      ["fieldGoalsMade-fieldGoalsAttempted",made+"-"+(made+32)],
+      ["threePointFieldGoalsMade-threePointFieldGoalsAttempted","9-24"],
+      ["freeThrowsMade-freeThrowsAttempted",ft+"-"+(ft+2)],
+      ["totalRebounds",home?"31":"29"],["assists",home?"19":"21"],
+      ["turnovers",home?"8":"10"],["steals",home?"6":"4"],["blocks",home?"3":"5"]
+    ].map(([name,displayValue])=>({name,displayValue}))};};
+    // Sample totals are illustrative; never mix them with live API responses.
+    return {boxscore:{teams:[make(g.away,false),make(g.home,true)]}};
+  }
+
+  async function populateGameStats(panel,g,records){
+    if(g.status==="SCHEDULED"){
+      const record=name=>{const r=records[name];return r?r.w+"–"+r.l:"—"};
+      panel.innerHTML='<p>Pregame matchup · game stats appear after tip-off.</p>'+statsTable(["Team",shortTeam(g.away),shortTeam(g.home)],[["Season record",record(g.away),record(g.home)],["Projected season wins",winLineFor(g.away)??"—",winLineFor(g.home)??"—"]]);
+      return;
+    }
+    if(g.sample||String(g.id).startsWith("demo-")){
+      panel.innerHTML='<p class="comp-game-stats-note">SAMPLE STATS · Fictional preview</p>'+gameStatsMarkup(sampleGameStats(g),g);
+      return;
+    }
+    panel.innerHTML='<p>Loading game stats…</p>';
+    const key=[g.id,g.status,g.homeScore,g.awayScore].join(":");
+    try{
+      let item=gameStatsCache.get(key);
+      if(!item||Date.now()-item.at>60000){
+        if(!/^\d+$/.test(String(g.id)))throw new Error("Invalid game ID");
+        const direct="https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event="+encodeURIComponent(g.id);
+        item={at:Date.now(),promise:fetchNbaJson("/api/nba/summary?event="+encodeURIComponent(g.id),direct,8000)};
+        gameStatsCache.set(key,item);
+      }
+      const data=await item.promise;
+      if(panel.isConnected)panel.innerHTML='<p class="comp-game-stats-note">ESPN · '+(g.status==="FINAL"?"FINAL BOX SCORE":"LIVE SNAPSHOT · "+esc(g.detail||"IN PROGRESS"))+'</p>'+gameStatsMarkup(data,g);
+    }catch(e){
+      gameStatsCache.delete(key);
+      if(panel.isConnected)panel.innerHTML='<p>Stats temporarily unavailable. Close and reopen to try again.</p>';
+    }
+  }
+
+  function bindGameStats(el,games,records){
+    if(!games.some(g=>g.id===gameStatsOpen)){gameStatsOpen=null;gameStatsPinned=false;}
+    el.querySelectorAll(".comp-game").forEach((card,index)=>{
+      const g=games[index],button=card.querySelector(".comp-game-stats-toggle"),panel=card.querySelector(".comp-game-stats"),body=card.querySelector(".comp-game-stats-body");
+      const open=()=>{
+        el.querySelectorAll(".comp-game-stats-toggle").forEach(b=>b.setAttribute("aria-expanded","false"));
+        el.querySelectorAll(".comp-game-stats").forEach(p=>p.hidden=true);
+        gameStatsOpen=g.id;panel.hidden=false;button.setAttribute("aria-expanded","true");
+        void populateGameStats(body,g,records);
+      };
+      const close=()=>{panel.hidden=true;button.setAttribute("aria-expanded","false");if(gameStatsOpen===g.id){gameStatsOpen=null;gameStatsPinned=false}};
+      card.addEventListener("pointerenter",e=>{if(e.pointerType==="mouse"&&!gameStatsPinned)open()});
+      card.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse"&&!gameStatsPinned&&!card.contains(document.activeElement))close()});
+      button.addEventListener("click",()=>{if(gameStatsOpen===g.id&&gameStatsPinned){close();return}gameStatsPinned=true;open()});
+      card.querySelector(".comp-game-stats-close").addEventListener("click",()=>{close();button.focus()});
+      card.addEventListener("keydown",e=>{if(e.key==="Escape"){close();button.focus()}});
+      if(gameStatsOpen===g.id)open();
+    });
+  }
+
   function renderGames(games,records={}){
     const el=$("competitionGames");if(!el)return;
     const toggle=$("competitionSampleDay");
@@ -860,17 +950,20 @@
         (scores?'<b>'+score+'</b>':'')+
       '</div>';
 
-    el.innerHTML=games.map(g=>{
+    el.innerHTML=games.map((g,index)=>{
       const ao=teamOwner(g.away),ho=teamOwner(g.home);
       const scores=g.status!=="SCHEDULED";
       const status=g.status==="SCHEDULED"?timeSydney(g.date):(g.status==="IN"?(g.detail||"LIVE"):"");
-      return '<article class="comp-game '+g.status.toLowerCase()+'">'+
+      return '<article class="comp-game '+g.status.toLowerCase()+'"><div class="comp-game-main">'+
         side(g.away,ao,g.awayScore,"away",scores)+
         side(g.home,ho,g.homeScore,"home",scores)+
         (status?'<div class="comp-game-state">'+esc(status)+'</div>':'')+
         gameWinChanceMarkup(g)+
+        '<button type="button" class="comp-game-stats-toggle" aria-expanded="false" aria-controls="compGameStats'+index+'" aria-label="Game stats: '+esc(shortTeam(g.away))+' vs '+esc(shortTeam(g.home))+'"><span>Hover or tap for stats</span></button></div>'+
+        '<section class="comp-game-stats" id="compGameStats'+index+'" aria-label="Game stats" hidden><div class="comp-game-stats-head"><strong>'+esc(shortTeam(g.away))+' vs '+esc(shortTeam(g.home))+'</strong><button type="button" class="comp-game-stats-close">Close stats</button></div><div class="comp-game-stats-body" aria-live="polite"></div></section>'+
       '</article>';
     }).join("");
+    bindGameStats(el,games,records);
   }
 
   function storyHeadline(x){
