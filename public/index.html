@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp40">
+<link rel="stylesheet" href="/competition.css?v=comp41">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -4445,7 +4445,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 
     <div class="side-actions">
       <button class="btn secondary" onclick="openSettings()">Settings</button>
-      <button class="btn secondary" id="layoutBtn" onclick="toggleLayout()" title="Switch between the Readable layout and the Classic v1.4.3 layout">Use Classic</button>
+      
       <button class="btn secondary" id="zoomBtn" onclick="cycleZoom()">Text: M</button>
       <button class="btn secondary" onclick="openDraftBoard()">Draft Board</button>
       <button class="btn secondary" onclick="openCompetitionBoard()">Competition</button>
@@ -4697,7 +4697,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
       <div class="barrel" id="barrelCount">Barrel: 0 teams</div>
     </section>
 
-    <section class="screen draft-board-screen" id="draftBoardScreen"><div class="board-hub-heading"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" class="active" aria-current="page" onclick="openDraftBoard()">DRAFT BOARD</button><button type="button" class="editorial-style-toggle" aria-pressed="false" onclick="toggleEditorialStyle()">Classic style</button></nav></div>
+    <section class="screen draft-board-screen" id="draftBoardScreen"><div class="board-hub-heading"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" class="active" aria-current="page" onclick="openDraftBoard()">DRAFT BOARD</button></nav></div>
       <div class="broadcast-top"><span class="live-dot">Draft Board</span><span id="boardTopStatus">League overview</span></div>
       <div class="board-shell">
         <div class="board-head">
@@ -4737,7 +4737,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
     </section>
 
     <section class="screen competition-screen" id="competitionScreen">
-      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button onclick="refreshCompetitionBoard(true)">REFRESH</button><button onclick="clearTestMode()">LIVE DATA</button><span class="competition-hub-updated" id="competitionUpdated">NOT LOADED</span><button type="button" class="editorial-style-toggle" aria-pressed="false" onclick="toggleEditorialStyle()">Classic style</button></nav>
+      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button onclick="refreshCompetitionBoard(true)">REFRESH</button><span class="competition-hub-updated" id="competitionUpdated">NOT LOADED</span></nav>
         <header class="comp-topbar">
           <div class="comp-brand-lockup">
             <div class="comp-eyebrow">COURTVISION DAILY · AUSTRALIA/SYDNEY</div>
@@ -4768,11 +4768,15 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 
         <section class="comp-games-feature">          <article class="comp-slate-panel">
             <div class="comp-section-head">
-              <div><span class="comp-section-kicker">TODAY</span><strong>TODAY'S GAMES</strong></div>
+              <div><span class="comp-section-kicker">TODAY</span><strong id="competitionSlateTitle">TODAY’S GAMES</strong></div>
               <small id="competitionSlateDate">SYDNEY TIME</small>
             </div>
-            <div class="comp-slate-tools"><span>Win chance · team projections + home advantage</span><button type="button" id="competitionSampleDay" aria-pressed="false" onclick="toggleSampleGameDay()">Try sample day</button></div>
-            <div class="comp-sample-note" id="competitionSampleNote" hidden>SAMPLE DAY · Fictional games, scores and records for tomorrow's preview. Only these game tiles use sample data.</div>
+            <div class="comp-day-controls" aria-label="Game day">
+              <button type="button" id="competitionDayPrevious" aria-label="Previous day: today" onclick="changeCompetitionDay(0)">←</button>
+              <div class="comp-day-tabs"><button type="button" id="competitionDay0" aria-pressed="true" onclick="changeCompetitionDay(0)">Today</button><button type="button" id="competitionDay1" aria-pressed="false" onclick="changeCompetitionDay(1)">Tomorrow</button></div>
+              <button type="button" id="competitionDayNext" aria-label="Next day: tomorrow" onclick="changeCompetitionDay(1)">→</button>
+              <span id="competitionDayHint">Times shown in Sydney time</span>
+            </div>
             <div class="comp-games" id="competitionGames">
               <div class="comp-empty">Today's NBA games will appear here.</div>
             </div>
@@ -4805,7 +4809,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 
     <section class="screen teams-hub-screen" id="teamsHubScreen">
   <div class="teams-hub-shell" style="width:100%!important;max-width:none!important;margin:0!important">
-    <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" class="active" aria-current="page" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button type="button" class="editorial-style-toggle" aria-pressed="false" onclick="toggleEditorialStyle()">Classic style</button></nav>
+    <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" class="active" aria-current="page" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
     <header class="teams-hub-head"><div class="comp-eyebrow">2026–27 NBA · FRANCHISE DIRECTORY</div><h2>TEAM STATS</h2><p>Rosters, injuries, recent results and upcoming games.</p></header>
     <div class="teams-hub-filter"><label for="teamsHubSearch">FIND A TEAM</label><input id="teamsHubSearch" type="search" placeholder="Search team or owner…" oninput="renderTeamsHub()" autocomplete="off"></div>
     <div id="teamsHubDetail" class="teams-hub-detail" hidden></div>
@@ -4820,10 +4824,10 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
             <h2>STATS FOR NERDS</h2>
             <p id="nerdStatus">Loading the unnecessarily specific stuff…</p>
           </div>
-          <div class="nerd-actions"><button type="button" id="nerdLayoutToggle" class="comp-icon-btn" aria-pressed="false" onclick="window.cvNerdStudio.toggle()">Classic view</button>
+          <div class="nerd-actions">
             <button class="comp-icon-btn" onclick="refreshStatsForNerds(true)">REFRESH</button>
-            <button class="comp-icon-btn" onclick="openCompetitionBoard()">COMPETITION</button>
-            <button class="comp-icon-btn primary" onclick="openDraftBoard()">DRAFT BOARD</button>
+            
+            
           </div>
         </header>
 
@@ -4997,15 +5001,6 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
         <button class="btn secondary" onclick="restoreAdminPassedTeam()">Restore Passed Team</button>
         <button class="btn secondary" onclick="reassignAdminTeam()">Reassign Team</button>
         <button class="btn secondary" onclick="editAdminBid()">Edit Bid</button>
-      </div>
-    </div>
-
-    <div class="section" style="margin-top:18px">
-      <h3>Competition testing</h3>
-      <div class="tiny" style="margin-bottom:8px">Loads a complete mock draft using your current player names, assigns all 30 NBA teams, and enables DEMO competition records/results so you can test the post-draft board before the real draft.</div>
-      <div class="admin-correction-actions">
-        <button class="btn" onclick="closeSettings();loadTestDraft()">Load Test Draft + Demo Competition</button>
-        <button class="btn secondary" onclick="openCompetitionBoard();closeSettings()">Open Competition Board</button>
       </div>
     </div>
 
@@ -6951,7 +6946,7 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp34"></script>
+<script src="/competition.js?v=comp35"></script>
 <script src="/nerd-studio.js?v=2"></script>
 <script src="/nba-insights.js?v=1"></script>
 <script src="/nba-news.js?v=1" defer></script>

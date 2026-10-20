@@ -23,7 +23,7 @@
   const moneyText=n=>typeof money==="function"?money(n):Number(n||0).toFixed(0);
   const teamMeta=name=>typeof teamByName==="function"?teamByName(name):TEAM_DATA.find(t=>t[0]===name);
   const teamOwner=name=>state.assignments?.[name]?.player||null;
-  const isTestDraft=()=>Array.isArray(state.history)&&state.history.some(x=>String(x).startsWith("TEST DRAFT"));
+  const isTestDraft=()=>false; // Production uses live data regardless of legacy test markers.
 
   function sydneyParts(date=new Date()){
     const p=new Intl.DateTimeFormat("en-AU",{timeZone:TZ,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false})
@@ -420,7 +420,7 @@
 
   async function fetchScoreboards(){
     const now=new Date(),keys=[];
-    for(let d=-8;d<=1;d++)keys.push(compactDate(addDays(now,d)));
+    for(let d=-8;d<=2;d++)keys.push(compactDate(addDays(now,d)));
     const all=[];
     await runPool([...new Set(keys)],async key=>{
       try{
@@ -433,6 +433,7 @@
     const todayKey=sydneyKey(now);
     return {
       games:dedupe.filter(g=>sydneyKey(g.date)===todayKey).sort((a,b)=>a.date-b.date),
+      tomorrow:dedupe.filter(g=>sydneyKey(g.date)===nextSydneyKey(now)).sort((a,b)=>a.date-b.date),
       recent:dedupe.filter(g=>g.status==="FINAL"&&sydneyKey(g.date)<=todayKey).sort((a,b)=>b.date-a.date)
     };
   }
@@ -440,7 +441,7 @@
 
   async function fetchTodayScoreboardLite(){
     const now=new Date();
-    const keys=[compactDate(addDays(now,-1)),compactDate(now)];
+    const keys=[compactDate(addDays(now,-1)),compactDate(now),compactDate(addDays(now,1))];
     const all=[];
     await Promise.all([...new Set(keys)].map(async key=>{
       try{
@@ -463,6 +464,7 @@
     if(autoUpdateRunning||document.hidden)return;
     const active=document.querySelector(".screen.active")?.id;
     if(active!=="competitionScreen"&&active!=="statsForNerdsScreen")return;
+    if(cache.dayKey!==sydneyKey()||Date.now()-cache.at>=CACHE_MS){await refreshCompetitionBoard(true);return;}
     if(isTestDraft())return;
     autoUpdateRunning=true;
     try{
@@ -796,20 +798,29 @@
   }
 
 
-  // Presentation-only sample slate: never changes picks, records, or saved history.
-  let sampleDayEnabled=new URLSearchParams(window.location.search).get("sampleDay")==="1";
-  function sampleDaySlate(){
-    const key=new Date(Date.parse(sydneyKey()+"T00:00:00Z")+86400000).toISOString().slice(0,10);
-    const base=Date.parse(key+"T00:00:00Z");
-    const pairs=[[1,8],[20,6],[9,21],[27,19]];
-    return pairs.map(([h,a],i)=>({
-      id:"sample-day-"+i,home:TEAM_DATA[h][0],away:TEAM_DATA[a][0],
-      date:new Date(base+i*45*60000),status:i===0?"FINAL":i===1?"IN":"SCHEDULED",
-      homeScore:i===0?112:i===1?78:0,awayScore:i===0?106:i===1?81:0,
-      homeWinner:i===0,awayWinner:false,detail:i===1?"Q3 04:32":"",sample:true
-    }));
-  }
 
+  let slateOffset=null,slateDayKey="",slateToday=[],slateRecords={};
+  function nextSydneyKey(now=new Date()){
+    return new Date(Date.parse(sydneyKey(now)+"T12:00:00Z")+86400000).toISOString().slice(0,10);
+  }
+  function chooseSlate(today,tomorrow){
+    if(slateOffset===null)slateOffset=today.length?0:tomorrow.length?1:0;
+    return slateOffset===1?tomorrow:today;
+  }
+  window.changeCompetitionDay=function(offset){
+    slateOffset=Math.max(0,Math.min(1,Number(offset)||0));
+    renderGames(slateToday,slateRecords);
+  };
+  function bindSlateSwipe(el){
+    if(el.dataset.swipeBound)return;el.dataset.swipeBound="true";
+    let start=null,suppressClickUntil=0;
+    el.addEventListener("click",e=>{if(Date.now()<suppressClickUntil){e.preventDefault();e.stopPropagation();}},true);
+    el.addEventListener("touchstart",e=>{const t=e.touches[0];start={x:t.clientX,y:t.clientY}},{passive:true});
+    el.addEventListener("touchend",e=>{
+      if(!start)return;const t=e.changedTouches[0],dx=t.clientX-start.x,dy=t.clientY-start.y;start=null;
+      if(Math.abs(dx)>=60&&Math.abs(dx)>Math.abs(dy)*1.5){suppressClickUntil=Date.now()+500;window.changeCompetitionDay(dx<0?1:0);}
+    },{passive:true});
+  }
   function gameWinChance(g){
     if(g.status==="FINAL")return null;
     const homeLine=winLineFor(g.home),awayLine=winLineFor(g.away);
@@ -839,12 +850,6 @@
       '<div class="comp-game-prob-track" aria-hidden="true"><i style="width:'+p.away+'%"></i></div>'+
       '<small>'+(g.sample?'SAMPLE · ':'')+'PREGAME ESTIMATE'+(g.status==="IN"?' · NOT LIVE ODDS':'')+'</small></div>';
   }
-
-  window.toggleSampleGameDay=function(){
-    sampleDayEnabled=!sampleDayEnabled;
-    renderGames(cache.games||[],cache.records||{});
-  };
-
 
   let gameStatsOpen=null;
   const gameStatsCache=new Map();
@@ -938,14 +943,20 @@
 
   function renderGames(games,records={}){
     const el=$("competitionGames");if(!el)return;
-    const toggle=$("competitionSampleDay");
-    if(toggle){toggle.setAttribute("aria-pressed",String(sampleDayEnabled));toggle.textContent=sampleDayEnabled?"Return to today":"Try sample day";}
-    const note=$("competitionSampleNote");
-    if(note)note.hidden=!sampleDayEnabled;
-    if(sampleDayEnabled){games=sampleDaySlate();records=demoCompetitionData().records;}
+    const todayKey=sydneyKey();
+    if(slateDayKey!==todayKey){slateDayKey=todayKey;slateOffset=null;}
+    slateToday=games;slateRecords=records;
+    games=chooseSlate(games,cache.tomorrow||[]);
+    const selectedKey=slateOffset===1?nextSydneyKey():todayKey;
+    const title=$("competitionSlateTitle");if(title)title.textContent=slateOffset===1?"TOMORROW’S GAMES":"TODAY’S GAMES";
     const dateEl=$("competitionSlateDate");
-    if(dateEl)dateEl.textContent=(sampleDayEnabled?"SAMPLE · ":"")+daySydney(sampleDayEnabled?games[0].date:new Date()).toUpperCase()+" · SYDNEY";
-    if(!games.length){el.innerHTML='<div class="comp-empty">No NBA games on today\'s Sydney slate. Check back tomorrow — the table still updates from completed games.</div>';return}
+    if(dateEl)dateEl.textContent=daySydney(new Date(selectedKey+"T01:00:00Z")).toUpperCase()+" · SYDNEY";
+    const previous=$("competitionDayPrevious"),next=$("competitionDayNext");
+    if(previous)previous.disabled=slateOffset===0;if(next)next.disabled=slateOffset===1;
+    for(const offset of [0,1]){const tab=$("competitionDay"+offset);if(tab)tab.setAttribute("aria-pressed",String(slateOffset===offset));}
+    const hint=$("competitionDayHint");if(hint)hint.textContent=slateOffset===1&&!slateToday.length?"No games today · showing tomorrow’s slate":"Times shown in Sydney time";
+    bindSlateSwipe(el);
+    if(!games.length){el.innerHTML='<div class="comp-empty">No NBA games listed for '+(slateOffset===1?'tomorrow':'today')+' in Sydney time. Use the day controls to check the other slate.</div>';return}
     const teamLine=name=>{
       const r=records[name]||{w:0,l:0,rank:null};
       return "#"+(r.rank||"—")+"\u00a0·\u00a0"+r.w+"-"+r.l;
@@ -1346,11 +1357,10 @@
         players=(roster.length?roster.slice(0,5):[{name:"Sample player A"},{name:"Sample player B"},{name:"Sample player C"}]).map((p,i)=>({name:p.name,photo:p.headshot||"",gp:5,pts:27-i*3.6,reb:9-i*.9,ast:7-i*.8}));
         records=Object.fromEntries(TEAM_DATA.map((t,i)=>[t[0],{w:10+i%9}]));
       }
-      host.innerHTML='<div class="team-charts-top"><div><span class="team-section-label">THE NUMBERS BEHIND THE TEAM</span><h3>A closer look</h3><p>'+(sample?'SAMPLE CHARTS · Fictional results and statistics.':'2026–27 regular season · ESPN results and box scores.')+'</p></div><button type="button" class="team-chart-sample">'+(sample?'Show real data':'Try sample charts')+'</button></div>'+
+      host.innerHTML='<div class="team-charts-top"><div><span class="team-section-label">THE NUMBERS BEHIND THE TEAM</span><h3>A closer look</h3><p>'+(sample?'SAMPLE CHARTS · Fictional results and statistics.':'2026–27 regular season · ESPN results and box scores.')+'</p></div></div>'+
         '<div class="team-charts-grid"><section class="team-journey"><h4>Season journey</h4>'+(sample||scheduleOk?seasonJourney(name,chartGames):'<p class="team-chart-empty">Schedule unavailable. Try reopening this team later.</p>')+'</section>'+
         '<section class="team-player-leaders"><h4>Who’s delivering?</h4><p class="team-chart-caption">'+(sample?'Sample per-game averages':esc(playerNote))+'</p><div class="team-metric-tabs" role="group" aria-label="Player statistic">'+[["pts","Points"],["reb","Rebounds"],["ast","Assists"]].map(([key,label])=>'<button type="button" data-metric="'+key+'" aria-pressed="'+(metric===key)+'">'+label+'</button>').join("")+'</div><div class="team-player-bars">'+playerLeaderBars(players,metric)+'</div></section>'+
         '<section class="team-contribution"><h4>Your owner’s wins</h4>'+(records?ownerContribution(name,records,sample):'<p class="team-chart-empty">Loading owner standings…</p>')+'</section></div>';
-      host.querySelector(".team-chart-sample").addEventListener("click",()=>{sample=!sample;render()});
       host.querySelectorAll("[data-metric]").forEach(b=>b.addEventListener("click",()=>{metric=b.dataset.metric;render()}));
     }
     render();
@@ -1412,9 +1422,9 @@
   async function getCompetitionData(force=false){
     const demo=isTestDraft();
     if(demo)return demoCompetitionData();
-    if(!force&&cache.records&&Date.now()-cache.at<CACHE_MS)return cache;
+    if(!force&&cache.records&&cache.dayKey===sydneyKey()&&Date.now()-cache.at<CACHE_MS)return cache;
     const [records,score]=await Promise.all([fetchRecords(force),fetchScoreboards()]);
-    cache={at:Date.now(),records,games:score.games,recent:score.recent,demo:false};
+    cache={at:Date.now(),dayKey:sydneyKey(),records,games:score.games,tomorrow:score.tomorrow,recent:score.recent,demo:false};
     return cache;
   }
 
@@ -1491,39 +1501,6 @@
   window.openCompetitionBoard=openCompetitionBoard;
   window.refreshCompetitionBoard=refreshCompetitionBoard;
 
-  function loadTestDraft(skipConfirm=false){
-    if(!skipConfirm&&!confirm("Load a complete TEST draft? This replaces current picks/spending so you can test the Competition Board. Player names are kept."))return;
-    if(!state.players?.length)return toast("Add players first");
-    const sorted=[...TEAM_DATA].sort((a,b)=>(winLineFor(b[0])||0)-(winLineFor(a[0])||0));
-    const order=[];let round=0;
-    while(order.length<sorted.length){
-      const inds=[...state.players.keys()];
-      if(round%2)inds.reverse();
-      for(const i of inds){if(order.length<sorted.length)order.push(i)}
-      round++;
-    }
-    state.teamCap=Math.ceil(30/state.players.length);
-    state.assignments={};state.available=[];state.passed=[];state.barrelQueue=[];state.barrelCurrent=null;state.onTheBoard=null;state.liveSpin=null;state.undoStack=[];
-    state.players.forEach(p=>{p.teams=[];p.remaining=p.budget});
-    sorted.forEach((t,idx)=>{
-      const p=state.players[order[idx]],amount=idx%6===0?0:Math.max(.5,Math.min(p.remaining,1+(idx%5)));
-      state.assignments[t[0]]={player:p.name,amount,barrel:amount===0};
-      p.teams.push(t[0]);if(amount)p.remaining=Math.max(0,p.remaining-amount);
-    });
-    state.history=["TEST DRAFT · DEMO COMPETITION DATA",...Object.entries(state.assignments).map(([n,a])=>`TEST: ${n} → ${a.player}`)];
-    state.lastAction="Test draft loaded";
-    state.lastScreen="competitionScreen";
-    reconcileState();saveState();renderAll();toast("Test draft loaded · Competition Board ready");openCompetitionBoard();
-  }
-  window.loadTestDraft=loadTestDraft;
-
-  function clearTestMode(){
-    state.history=(state.history||[]).filter(x=>!String(x).startsWith("TEST DRAFT"));
-    saveState();cache={at:0,records:null,games:null,recent:null,demo:false};
-    toast("Demo data off · using live NBA results");refreshCompetitionBoard(true);
-  }
-  window.clearTestMode=clearTestMode;
-
   // Extend the existing ticker router without changing the draft ticker behavior.
   const baseTicker=window.updateTickerForScreen||updateTickerForScreen;
   window.updateTickerForScreen=function(id){
@@ -1570,7 +1547,8 @@
     demoCompetitionData,
     renderTeamDetail,
     gameWinChance,
-    sampleDaySlate,
+    chooseSlate,
+    nextSydneyKey,
     ownerSummaries,
     calculateProbabilities,
     competitionTidbits,

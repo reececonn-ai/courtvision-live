@@ -3115,3 +3115,12 @@ body:not(.classic-main-style) #draftBoardScreen .board-team:hover{
 #competitionGames .comp-game.final:has(.game-youtube-highlights) .comp-game-stats-toggle span{bottom:64px}
 #teamsHubDetail .team-fixtures article:has(.game-youtube-highlights){flex-wrap:wrap}
 #teamsHubDetail .team-fixtures .game-youtube-highlights{flex-basis:100%;margin-top:5px;border-radius:6px;border:1px solid #744354;padding:9px 12px}
+
+.comp-day-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 0 18px}
+.comp-day-controls button{min-width:44px;min-height:44px;padding:10px 16px;border:1px solid #496a87;border-radius:7px;background:#132a40;color:#eaf5ff;font:700 14px/1.4 Arial,sans-serif;cursor:pointer}
+.comp-day-controls button:disabled{opacity:.35;cursor:default}
+.comp-day-tabs{display:flex;gap:6px}
+.comp-day-tabs button[aria-pressed="true"]{background:#dbedfc;color:#092136;border-color:#dbedfc}
+#competitionDayHint{color:#abc4db;font:12px/1.5 Arial,sans-serif;margin-left:8px}
+#competitionGames{touch-action:pan-y}
+@media(max-width:600px){.comp-day-controls{gap:6px}.comp-day-controls button{padding:10px 12px}#competitionDayHint{flex-basis:100%;margin:5px 0 0}}
