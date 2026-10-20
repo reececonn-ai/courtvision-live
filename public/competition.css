@@ -1104,7 +1104,7 @@ body[data-screen="competitionScreen"] .scanlines{
 
 /* Slightly reduce horizontal spread so the whole board reads larger on wide TVs. */
 .competition-shell{
-  width:min(1600px,100%)!important;
+  width:100%!important;max-width:none!important;
 }
 
 /* Reveal screen: make text boxes genuinely solid. */
@@ -1386,7 +1386,7 @@ body[data-screen="competitionScreen"] .scanlines{
 }
 .nerd-screen.active{display:block}
 .nerd-shell{
-  width:min(1600px,100%);
+  width:100%;max-width:none;
   margin:0 auto;
   padding:20px 18px 90px;
 }
@@ -1984,7 +1984,7 @@ body[data-screen="statsForNerdsScreen"] .nerd-screen{
   min-height:100vh!important;
 }
 body[data-screen="statsForNerdsScreen"] .nerd-shell{
-  width:min(1760px,100%)!important;
+  width:100%!important;max-width:none!important;
 }
 body.tv-mode[data-screen="statsForNerdsScreen"] .shell{
   grid-template-columns:minmax(0,1fr)!important;
@@ -2602,7 +2602,7 @@ body.tv-mode[data-screen="competitionScreen"] .broadcast-ticker{
 
 /* Post-draft teams directory */
 .teams-hub-screen.active{display:block!important;min-height:100vh;width:100%;overflow:visible}
-.teams-hub-shell{max-width:1500px;margin:auto;padding:0 22px 65px}
+.teams-hub-shell{width:100%;max-width:none;margin:0;padding:0 22px 65px}
 .teams-hub-head{padding:18px 0;border-bottom:1px solid #263750}
 .teams-hub-head h2{font:normal clamp(40px,5vw,65px)/1 Impact,"Arial Narrow",sans-serif}
 .teams-hub-head p{color:#9caec4;font-size:13px;margin-top:6px}
@@ -2718,7 +2718,7 @@ body[data-screen="competitionScreen"] #broadcastTicker{display:flex!important}
 body[data-screen="teamsHubScreen"] .sidebar{display:none!important}
 body[data-screen="teamsHubScreen"] .shell{grid-template-columns:minmax(0,1fr)!important}
 body[data-screen="teamsHubScreen"] #broadcastTicker{display:none!important}
-#teamsHubScreen .teams-hub-shell{max-width:1500px;margin:auto}
+#teamsHubScreen .teams-hub-shell{width:100%;max-width:none;margin:0}
 #teamsHubScreen .teams-hub-detail{border:0;background:transparent}
 #teamsHubScreen .team-club-hero{position:relative;isolation:isolate;display:grid;grid-template-columns:110px minmax(0,1fr);gap:24px;align-items:center;overflow:hidden;padding:36px;border:1px solid #34485f;border-radius:22px;background:linear-gradient(125deg,var(--club-primary),#0b1726 75%);margin:18px 0 28px}
 #teamsHubScreen .team-club-hero>img{width:110px;height:110px;object-fit:contain;filter:drop-shadow(0 10px 16px #0006)}
