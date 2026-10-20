@@ -3253,3 +3253,22 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 #nerdStudio .ns-compare-table .ns-gap-ahead{color:#f2bb63}
 #nerdStudio .ns-compare-table .ns-gap-behind{color:#77d8b6}
 @media(max-width:600px){#nerdStudio .ns-compare-names button{flex:1 0 28%;padding:10px}#nerdStudio .ns-compare-table{font-size:12px;min-width:510px}}
+
+/* Rival detail remains closed until the owner is clicked or tapped. */
+#nerdStudio .ns-rival-button{font:inherit;font-weight:700;color:#e5f2ff;background:transparent;border:0;padding:8px 4px;min-height:44px;cursor:pointer;text-align:left}
+#nerdStudio .ns-rival-button span{color:#63c8ff;margin-left:8px}
+#nerdStudio .ns-rival-button:focus-visible{outline:2px solid #63c8ff;outline-offset:2px}
+#nerdStudio .ns-compare-table .ns-face-row>td{white-space:normal;padding:0}
+#nerdStudio .ns-face{padding:20px;background:#0c1b2a;border-block:1px solid #36516b}
+#nerdStudio .ns-face h4{font-size:22px;color:#fff;margin:0 0 16px}
+#nerdStudio .ns-face h5{font-size:16px;color:#d7eaff;margin:20px 0 10px}
+#nerdStudio .ns-face p{font-size:13px;line-height:1.6}
+#nerdStudio .ns-face .ns-table{width:100%;font-size:13px}
+#nerdStudio .ns-face .ns-table th,#nerdStudio .ns-face .ns-table td{white-space:normal}
+#nerdStudio .ns-face caption{text-align:left;color:#a6bbcf;padding-bottom:8px}
+#nerdStudio .ns-face-teams{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+#nerdStudio .ns-face-logo{width:25px;height:25px;object-fit:contain;vertical-align:middle;margin-right:6px}
+#nerdStudio .ns-face-results{list-style:none;padding:0;margin:0}
+#nerdStudio .ns-face-results li{display:flex;justify-content:space-between;gap:16px;font-size:12px;padding:10px 0;border-bottom:1px solid #25394d}
+#nerdStudio .ns-face-results b{white-space:nowrap;color:#b7d8ef}
+@media(max-width:700px){#nerdStudio .ns-face-teams{grid-template-columns:1fr;gap:8px}#nerdStudio .ns-face{padding:12px}#nerdStudio .ns-face .ns-table{font-size:12px}}
