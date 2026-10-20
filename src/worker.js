@@ -124,6 +124,7 @@ async function cachedNbaResponse(request, upstreamUrl, ttl, ctx, bypass = false)
   }
 
   const upstream = await fetch(upstreamUrl, {
+    signal: AbortSignal.timeout(7500),
     headers: { "accept": "application/json" },
     cf: { cacheTtl: 0, cacheEverything: false },
   });
@@ -427,6 +428,29 @@ export default {
       if (!/^[a-z0-9]{2,4}$/.test(team) || !["roster", "schedule", "injuries"].includes(kind)) return json({ ok: false, error: "Invalid team detail request" }, 400);
       const upstream = kind === "injuries" ? "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries" : "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/" + encodeURIComponent(team) + "/" + kind + "?season=2027";
       return cachedNbaResponse(request, upstream, 120, ctx);
+    }
+
+    if (url.pathname === "/api/nba/extra") {
+      if (request.method !== "GET") return json({ ok: false, error: "Method not allowed" }, 405);
+      const kind = url.searchParams.get("kind");
+      const team = String(url.searchParams.get("team") || "").toLowerCase();
+      const game = String(url.searchParams.get("game") || "");
+      let upstream, ttl = 120;
+      if (["teamstats", "teamnews"].includes(kind)) {
+        if (!/^[a-z0-9]{2,4}$/.test(team)) return json({ ok: false, error: "Invalid team" }, 400);
+        upstream = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/" + team + (kind === "teamstats" ? "/statistics?season=2027&seasontype=2" : "/news");
+        ttl = kind === "teamnews" ? 1800 : 900;
+      } else if (kind === "nbaschedule") {
+        upstream = "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json"; ttl = 3600;
+      } else if (["nbabox", "nbaplays"].includes(kind)) {
+        if (!/^\d{10}$/.test(game)) return json({ ok: false, error: "Invalid NBA game" }, 400);
+        upstream = "https://cdn.nba.com/static/json/liveData/" + (kind === "nbabox" ? "boxscore/boxscore_" : "playbyplay/playbyplay_") + game + ".json"; ttl = 60;
+      } else if (kind === "leagueteams") {
+        const params = new URLSearchParams({ Season: "2026-27", SeasonType: "Regular Season", LeagueID: "00", PerMode: "PerGame", MeasureType: "Advanced", LastNGames: "0", Month: "0", OpponentTeamID: "0", PaceAdjust: "N", PlusMinus: "N", Rank: "N", Period: "0", TeamID: "0", PORound: "0", Conference: "", DateFrom: "", DateTo: "", Division: "", GameScope: "", GameSegment: "", Location: "", Outcome: "", PlayerExperience: "", PlayerPosition: "", SeasonSegment: "", ShotClockRange: "", StarterBench: "", VsConference: "", VsDivision: "", TwoWay: "" });
+        upstream = "https://stats.nba.com/stats/leaguedashteamstats?" + params; ttl = 3600;
+      } else return json({ ok: false, error: "Unknown statistics feed" }, 400);
+      try { return await cachedNbaResponse(request, upstream, ttl, ctx); }
+      catch (_) { return json({ ok: false, error: "Optional statistics feed unavailable" }, 502); }
     }
 
     if (url.pathname === "/api/nba/summary") {

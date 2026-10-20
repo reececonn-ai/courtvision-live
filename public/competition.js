@@ -859,6 +859,7 @@
         .sort((a,b)=>(parseFloat(cell(b,"PTS"))||0)-(parseFloat(cell(a,"PTS"))||0)).slice(0,3);
       if(players.length)html+='<h4>'+esc(shortTeam(name))+' · scoring leaders</h4>'+statsTable(["Player","PTS","REB","AST"],players.map(a=>[a.athlete?.displayName||"Player",cell(a,"PTS"),cell(a,"REB"),cell(a,"AST")]));
     }
+    if(window.cvInsights)html+=window.cvInsights.espnGameExtras(data,g);
     return html;
   }
 
@@ -895,7 +896,10 @@
         gameStatsCache.set(key,item);
       }
       const data=await item.promise;
-      if(panel.isConnected)panel.innerHTML='<p class="comp-game-stats-note">ESPN · '+(g.status==="FINAL"?"FINAL BOX SCORE":"LIVE SNAPSHOT · "+esc(g.detail||"IN PROGRESS"))+'</p>'+gameStatsMarkup(data,g);
+      if(panel.isConnected){
+        panel.innerHTML='<p class="comp-game-stats-note">ESPN · '+(g.status==="FINAL"?"FINAL BOX SCORE":"LIVE SNAPSHOT · "+esc(g.detail||"IN PROGRESS"))+'</p>'+gameStatsMarkup(data,g);
+        window.cvInsights?.bindGames(panel,g);
+      }
     }catch(e){
       gameStatsCache.delete(key);
       if(panel.isConnected)panel.innerHTML='<p>Stats temporarily unavailable. Close and reopen to try again.</p>';

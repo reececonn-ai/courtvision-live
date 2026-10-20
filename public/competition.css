@@ -2790,3 +2790,22 @@ body[data-screen="teamsHubScreen"] #broadcastTicker{display:none!important}
 .team-player-track i{background:#66c8ff}
 @media(max-width:720px){.team-charts-grid{grid-template-columns:minmax(0,1fr)}.team-charts-top{align-items:flex-start;flex-direction:column}.team-detail-content>.team-charts{padding:18px}}
 @media(pointer:coarse){.team-metric-tabs button,.team-chart-sample{min-height:44px}}
+
+.cv-team-extras{grid-column:1/-1}.cv-team-extras h4{font-size:22px;margin:26px 0 14px}.cv-team-extras h5,.comp-game-stats h5{font-size:15px;margin:20px 0 10px}
+.cv-extra-caption,.cv-extra-empty{color:#b8ccdf;font:12px/1.6 Arial,sans-serif;margin:10px 0}
+.cv-extra-table{width:100%;border-collapse:collapse;table-layout:fixed;font:13px/1.5 Arial,sans-serif}
+.cv-extra-table th,.cv-extra-table td{padding:8px 5px;border-bottom:1px solid #30465b;text-align:right;overflow-wrap:anywhere}
+.cv-extra-table th:first-child{text-align:left;width:46%}
+.cv-shot-bar{display:grid;grid-template-columns:110px minmax(0,1fr) 55px;gap:12px;align-items:center;margin:14px 0;font-size:13px}
+.cv-shot-bar>div{height:8px;background:#2e4359;border-radius:5px;overflow:hidden}.cv-shot-bar i{display:block;height:100%;background:#68c5f5}
+.cv-extra-button{background:#1a344c;color:#e8f6ff;border:1px solid #4b6d89;border-radius:7px;padding:10px 14px;font:13px/1.4 Arial,sans-serif;cursor:pointer}
+.cv-team-extras details,.cv-nba-game{margin:18px 0;padding:14px;border:1px solid #36516b;border-radius:10px}
+.cv-team-extras summary,.cv-nba-game summary{cursor:pointer;color:#d6edff;font:700 14px/1.5 Arial,sans-serif;min-height:30px}
+.cv-league-load{margin:12px 0}
+.cv-team-news{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.cv-team-news-item{display:flex;gap:14px;align-items:center;color:#eef7ff;text-decoration:none;background:#192d41;border-radius:12px;overflow:hidden;padding:12px}
+.cv-team-news-item img{width:110px;height:80px;object-fit:cover;border-radius:7px}
+.cv-team-news-item span{min-width:0}.cv-team-news-item strong{font-size:15px;line-height:1.4;display:block}.cv-team-news-item small{display:block;color:#acc5db;font-size:11px;margin-top:8px}
+.cv-momentum{display:block;width:100%;height:auto}.cv-momentum text{fill:#bcd2e7;font:12px Arial,sans-serif}.cv-zero{stroke:#637b91;stroke-width:1}.cv-margin{stroke:#6bc9ff;stroke-width:2;fill:none;stroke-linejoin:round}
+.cv-play-list{padding-left:20px;font-size:12px}.cv-play-list li{padding:7px 0;border-bottom:1px solid #30465b}.cv-play-list small{color:#a6c4dc}
+@media(max-width:650px){.cv-team-news{grid-template-columns:1fr}.cv-team-news-item img{width:80px;height:70px}.cv-shot-bar{grid-template-columns:90px minmax(0,1fr) 50px;gap:8px}}
