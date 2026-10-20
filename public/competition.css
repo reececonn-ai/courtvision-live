@@ -2906,3 +2906,110 @@ body[data-screen="draftBoardScreen"] #draftBoardScreen .board-hub-heading{
 .ns-owner-detail summary>span:first-child{display:flex;gap:10px;align-items:center}.ns-owner-detail summary small{color:#aabfd3;font-size:12px}
 .ns-owner-inside{padding:0 8px 20px}.ns-owner-inside p{font-size:13px;color:#b7ccdf}
 @media(max-width:750px){#nerdStudio{padding:0 3px 20px}.ns-story{grid-template-columns:1fr;gap:20px;padding-top:28px}.ns-value-row{grid-template-columns:32px minmax(0,1fr) 80px 50px;gap:9px}.ns-value-row img{width:30px;height:30px}.ns-value-row strong{font-size:12px}.ns-value-row small{font-size:11px}.ns-owner-detail summary{grid-template-columns:1fr 1fr;gap:8px}.ns-section{padding:27px 0}.ns-story p{font-size:15px}}
+
+/* Editorial main tabs: optional Classic style restores existing visual rules. */
+body:not(.classic-main-style) :is(#competitionScreen,#teamsHubScreen,#draftBoardScreen){
+  --editorial-line:#304355;--editorial-ink:#edf5fc;--editorial-muted:#b4c7da;
+}
+body:not(.classic-main-style) :is(#competitionScreen,#teamsHubScreen,#draftBoardScreen) .competition-hub-tabs{
+  padding-top:12px!important;padding-bottom:18px!important;gap:8px!important;border-bottom:1px solid #304355;
+}
+body:not(.classic-main-style) :is(#competitionScreen,#teamsHubScreen,#draftBoardScreen) .competition-hub-tabs button{
+  font:700 12px/1.4 Arial,sans-serif!important;letter-spacing:.04em!important;
+  border-radius:7px!important;padding:11px 16px!important;
+}
+body:not(.classic-main-style) .editorial-style-toggle{margin-left:auto;color:#a8c2d9!important}
+body:not(.classic-main-style) :is(#competitionScreen .comp-topbar,#teamsHubScreen .teams-hub-head,#draftBoardScreen .board-head){
+  padding:30px 4px 26px!important;min-height:0!important;border-bottom:1px solid #304355!important;
+  background:transparent!important;box-shadow:none!important;
+}
+body:not(.classic-main-style) :is(#competitionScreen .comp-title-row h2,#teamsHubScreen .teams-hub-head h2,#draftBoardScreen .board-head h2){
+  font:800 clamp(34px,4.3vw,66px)/1.05 Arial,sans-serif!important;letter-spacing:-.045em!important;
+  text-transform:none!important;color:#edf5fc!important;
+}
+body:not(.classic-main-style) :is(#competitionScreen .comp-eyebrow,#teamsHubScreen .teams-hub-head .comp-eyebrow,#draftBoardScreen .board-head .kicker){
+  font:700 11px/1.5 Arial,sans-serif!important;letter-spacing:.15em!important;color:#79cfff!important;
+}
+body:not(.classic-main-style) :is(#competitionScreen .comp-data-status,#teamsHubScreen .teams-hub-head p){
+  font:14px/1.6 Arial,sans-serif!important;color:#b4c7da!important;margin-top:12px!important;
+}
+/* Competition: keep its leader, race, games and owner breakdowns, with quieter framing. */
+body:not(.classic-main-style) #competitionScreen .comp-lead-grid{gap:30px!important;margin:28px 0!important}
+body:not(.classic-main-style) #competitionScreen .comp-spotlight{border-radius:14px!important;box-shadow:none!important;border:0!important}
+body:not(.classic-main-style) #competitionScreen .comp-race-panel{background:transparent!important;border:0!important;box-shadow:none!important}
+body:not(.classic-main-style) #competitionScreen .comp-race-row{background:transparent!important;border-bottom:1px solid #263a4c!important;padding:13px 8px!important}
+body:not(.classic-main-style) #competitionScreen :is(.comp-slate-panel,.comp-table-panel,.comp-stories-panel){
+  background:transparent!important;border:0!important;border-top:1px solid #304355!important;
+  border-radius:0!important;box-shadow:none!important;margin-top:26px!important;padding-top:18px!important;
+}
+body:not(.classic-main-style) #competitionScreen .comp-section-head{
+  padding:8px 0 18px!important;background:transparent!important;border:0!important;min-height:0!important;
+}
+body:not(.classic-main-style) #competitionScreen .comp-section-head strong{
+  font:700 27px/1.15 Arial,sans-serif!important;letter-spacing:-.03em!important;
+}
+body:not(.classic-main-style) #competitionScreen .comp-section-kicker{
+  font:700 11px/1.5 Arial,sans-serif!important;letter-spacing:.14em!important;margin-bottom:5px!important;
+}
+body:not(.classic-main-style) #competitionScreen .comp-section-head small{font-size:11px!important}
+body:not(.classic-main-style) #competitionScreen .comp-slate-tools{padding:10px 0 14px!important;border:0!important}
+body:not(.classic-main-style) #competitionScreen .comp-games{padding:0!important;gap:16px!important;background:transparent!important}
+body:not(.classic-main-style) #competitionScreen #competitionGames .comp-game{border-radius:11px!important;border-left-width:1px!important}
+body:not(.classic-main-style) #competitionScreen .comp-leaderboard{
+  grid-template-columns:minmax(0,1fr)!important;gap:0!important;padding:0!important;background:transparent!important;
+}
+body:not(.classic-main-style) #competitionScreen .comp-player-card{
+  background:transparent!important;border:0!important;border-bottom:1px solid #304355!important;
+  border-radius:0!important;box-shadow:none!important;padding:20px 0!important;
+}
+body:not(.classic-main-style) #competitionScreen .comp-player-head>strong{font:700 23px/1.2 Arial,sans-serif!important}
+body:not(.classic-main-style) #competitionScreen .comp-card-meta{font-size:12px!important;line-height:1.5!important}
+body:not(.classic-main-style) #competitionScreen .comp-team-chip{border-radius:7px!important}
+body:not(.classic-main-style) #competitionScreen .cv-news{background:transparent!important;padding:0!important;gap:18px!important}
+/* Team Stats: a photo-led directory, then open sections inside each club profile. */
+body:not(.classic-main-style) #teamsHubScreen .teams-hub-filter{padding:24px 0!important}
+body:not(.classic-main-style) #teamsHubScreen .teams-hub-grid{gap:0 28px!important}
+body:not(.classic-main-style) #teamsHubScreen .teams-hub-card{
+  background:transparent!important;border:0!important;border-bottom:1px solid #304355!important;
+  border-radius:0!important;box-shadow:none!important;padding:22px 6px!important;min-height:100px!important;
+}
+body:not(.classic-main-style) #teamsHubScreen .teams-hub-card:hover{background:#14283b!important}
+body:not(.classic-main-style) #teamsHubScreen .teams-hub-card strong{font:700 17px/1.3 Arial,sans-serif!important}
+body:not(.classic-main-style) #teamsHubScreen .teams-hub-card small{font:12px/1.5 Arial,sans-serif!important;margin-top:7px!important}
+body:not(.classic-main-style) #teamsHubScreen .teams-hub-card img{width:60px!important;height:60px!important}
+body:not(.classic-main-style) #teamsHubScreen .team-detail-content{gap:28px!important}
+body:not(.classic-main-style) #teamsHubScreen .team-detail-content>section{
+  background:transparent!important;border:0!important;border-top:1px solid #304355!important;
+  box-shadow:none!important;border-radius:0!important;padding:24px 0!important;
+}
+body:not(.classic-main-style) #teamsHubScreen .team-detail-content h3{
+  font:700 30px/1.15 Arial,sans-serif!important;letter-spacing:-.035em!important;
+}
+body:not(.classic-main-style) #teamsHubScreen .team-charts-grid{gap:32px!important}
+body:not(.classic-main-style) #teamsHubScreen .team-player-card{background:#13283a!important}
+body:not(.classic-main-style) #teamsHubScreen .cv-team-news-item{background:transparent!important;border-bottom:1px solid #304355!important;border-radius:0!important;padding:14px 0!important}
+/* Draft Board: compact ownership rows; secondary draft analytics open on demand. */
+body:not(.classic-main-style) #draftBoardScreen .board-player-summary{gap:0 22px!important;padding:15px 0!important}
+body:not(.classic-main-style) #draftBoardScreen .board-player-card{
+  background:transparent!important;border:0!important;border-bottom:1px solid #304355!important;
+  border-radius:0!important;box-shadow:none!important;padding:16px 0!important;
+}
+body:not(.classic-main-style) #draftBoardScreen .board-player-card strong{font:700 21px/1.2 Arial,sans-serif!important}
+body:not(.classic-main-style) #draftBoardScreen .board-player-card span{font:12px/1.6 Arial,sans-serif!important;margin-top:6px!important}
+body:not(.classic-main-style) #draftBoardScreen .board-grid{gap:0 28px!important;padding:0!important}
+body:not(.classic-main-style) #draftBoardScreen .board-team{
+  background:transparent!important;border:0!important;border-bottom:1px solid #304355!important;
+  border-radius:0!important;box-shadow:none!important;padding:20px 5px!important;min-height:90px!important;
+}
+body:not(.classic-main-style) #draftBoardScreen .board-team:hover{background:#14283b!important}
+body:not(.classic-main-style) #draftBoardScreen .board-team-name{font:700 16px/1.3 Arial,sans-serif!important}
+body:not(.classic-main-style) #draftBoardScreen .board-team-status{font:12px/1.5 Arial,sans-serif!important;margin-top:5px!important}
+.editorial-draft-detail{margin:16px 0;padding:14px 0;border-bottom:1px solid #304355}
+.editorial-draft-detail>summary{cursor:pointer;color:#b9d3e9;font:14px/1.5 Arial,sans-serif;min-height:30px}
+@media(max-width:750px){
+ body:not(.classic-main-style) #competitionScreen .comp-lead-grid{gap:20px!important}
+ body:not(.classic-main-style) :is(#competitionScreen,#teamsHubScreen,#draftBoardScreen) .competition-hub-tabs button{font-size:11px!important;padding:10px 12px!important}
+ body:not(.classic-main-style) #teamsHubScreen .teams-hub-card{min-height:85px!important;padding:15px 3px!important}
+ body:not(.classic-main-style) #teamsHubScreen .teams-hub-card strong{font-size:15px!important}
+ body:not(.classic-main-style) #teamsHubScreen .teams-hub-card img{width:45px!important;height:45px!important}
+}

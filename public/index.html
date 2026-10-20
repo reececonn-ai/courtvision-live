@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp36">
+<link rel="stylesheet" href="/competition.css?v=comp37">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -4697,7 +4697,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
       <div class="barrel" id="barrelCount">Barrel: 0 teams</div>
     </section>
 
-    <section class="screen draft-board-screen" id="draftBoardScreen"><div class="board-hub-heading"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" class="active" aria-current="page" onclick="openDraftBoard()">DRAFT BOARD</button></nav></div>
+    <section class="screen draft-board-screen" id="draftBoardScreen"><div class="board-hub-heading"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" class="active" aria-current="page" onclick="openDraftBoard()">DRAFT BOARD</button><button type="button" class="editorial-style-toggle" aria-pressed="false" onclick="toggleEditorialStyle()">Classic style</button></nav></div>
       <div class="broadcast-top"><span class="live-dot">Draft Board</span><span id="boardTopStatus">League overview</span></div>
       <div class="board-shell">
         <div class="board-head">
@@ -4709,7 +4709,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
           </div>
         </div>
         <div class="board-player-summary" id="boardPlayerSummary"></div>
-        <div class="draft-pulse" id="draftPulse"></div>
+        <details class="editorial-draft-detail"><summary>Draft room detail · budget, demand and available teams</summary><div class="draft-pulse" id="draftPulse"></div></details>
         <div class="board-grid" id="draftBoardGrid"></div>
       </div>
     </section>
@@ -4737,7 +4737,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
     </section>
 
     <section class="screen competition-screen" id="competitionScreen">
-      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button onclick="refreshCompetitionBoard(true)">REFRESH</button><button onclick="clearTestMode()">LIVE DATA</button><span class="competition-hub-updated" id="competitionUpdated">NOT LOADED</span></nav>
+      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button onclick="refreshCompetitionBoard(true)">REFRESH</button><button onclick="clearTestMode()">LIVE DATA</button><span class="competition-hub-updated" id="competitionUpdated">NOT LOADED</span><button type="button" class="editorial-style-toggle" aria-pressed="false" onclick="toggleEditorialStyle()">Classic style</button></nav>
         <header class="comp-topbar">
           <div class="comp-brand-lockup">
             <div class="comp-eyebrow">COURTVISION DAILY · AUSTRALIA/SYDNEY</div>
@@ -4805,7 +4805,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 
     <section class="screen teams-hub-screen" id="teamsHubScreen">
   <div class="teams-hub-shell" style="width:100%!important;max-width:none!important;margin:0!important">
-    <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" class="active" aria-current="page" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
+    <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" class="active" aria-current="page" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button type="button" class="editorial-style-toggle" aria-pressed="false" onclick="toggleEditorialStyle()">Classic style</button></nav>
     <header class="teams-hub-head"><div class="comp-eyebrow">2026–27 NBA · FRANCHISE DIRECTORY</div><h2>TEAM STATS</h2><p>Rosters, injuries, recent results and upcoming games.</p></header>
     <div class="teams-hub-filter"><label for="teamsHubSearch">FIND A TEAM</label><input id="teamsHubSearch" type="search" placeholder="Search team or owner…" oninput="renderTeamsHub()" autocomplete="off"></div>
     <div id="teamsHubDetail" class="teams-hub-detail" hidden></div>
@@ -6293,6 +6293,14 @@ function draftTickerItems(){
   if(cash)out.push({tag:"MOST CASH",text:cash.name.toUpperCase()+" · $"+money(cash.remaining)+" LEFT · "+cash.teams.length+"/"+state.teamCap+" TEAMS",kind:"draft"});
   state.players.forEach(p=>out.push({tag:p.teams.length>=state.teamCap?"ROSTER FULL":"DRAFT",text:p.name.toUpperCase()+" · "+p.teams.length+"/"+state.teamCap+" TEAMS · $"+money(p.remaining)+" LEFT",kind:"draft"}));
   return out;
+}
+function toggleEditorialStyle(){
+  const classic=document.body.classList.toggle("classic-main-style");
+  document.querySelectorAll(".editorial-draft-detail").forEach(detail=>{detail.open=classic});
+  document.querySelectorAll(".editorial-style-toggle").forEach(button=>{
+    button.textContent=classic?"Clean style":"Classic style";
+    button.setAttribute("aria-pressed",String(classic));
+  });
 }
 function setTicker(items,brand="NBA DRAFT"){
   // Dashboard tickers must escape the filtered/clipped draft stage.
