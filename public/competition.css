@@ -2870,3 +2870,39 @@ body[data-screen="draftBoardScreen"] #draftBoardScreen .board-hub-heading{
   body[data-screen="draftBoardScreen"] #draftBoardScreen .board-shell,
   body[data-screen="draftBoardScreen"] #draftBoardScreen .board-hub-heading{padding-left:7px!important;padding-right:7px!important}
 }
+
+/* Stats for Nerds editorial trial. Classic view is preserved behind the view switch. */
+#nerdClassic[hidden],#nerdStudio[hidden]{display:none!important}
+#nerdStudio{color:#edf5fc;font:15px/1.6 Arial,sans-serif;padding:8px 12px 30px}
+#nerdStudio h3{font:700 clamp(25px,2.6vw,42px)/1.1 Arial,sans-serif;letter-spacing:-.035em;margin:8px 0 18px}
+.ns-kicker{font:700 11px/1.5 Arial,sans-serif;letter-spacing:.16em;color:#78cfff}
+.ns-story{display:grid;grid-template-columns:1fr 1fr;gap:60px;padding:42px 0 46px;border-bottom:1px solid #344758;align-items:center}
+#nerdStudio .ns-story h3{font-size:clamp(32px,4vw,66px);max-width:760px}
+.ns-story p{max-width:640px;color:#b8cadc;font-size:17px}
+.ns-story a{display:inline-block;color:#a6ddff;font-size:14px;margin-top:20px;text-underline-offset:5px}
+.ns-owner-bar{display:grid;grid-template-columns:minmax(70px,110px) minmax(0,1fr) 60px;gap:14px;align-items:center;margin:15px 0;font-size:14px}
+.ns-owner-bar>div,.ns-value-track{height:8px;background:#26394b;overflow:hidden}.ns-owner-bar i,.ns-value-track i{display:block;height:100%}.ns-owner-bar b{text-align:right}
+.ns-section{padding:34px 0 38px;border-bottom:1px solid #344758}
+.ns-section-title{margin-bottom:18px}
+.ns-note{color:#aabfd3;font-size:13px;max-width:1000px;margin:10px 0 20px}
+.ns-section svg{display:block;width:100%;height:auto}
+.ns-section svg text{fill:#b7ccdf;font:12px Arial,sans-serif}
+.ns-gridline{stroke:#2b3f50;stroke-width:1}
+.ns-legend{display:flex;flex-wrap:wrap;gap:10px 24px;font-size:13px;margin:12px 0}
+.ns-legend span{display:flex;align-items:center;gap:7px}
+.ns-legend i,.ns-owner-detail summary i{display:inline-block;width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.ns-value-row{display:grid;grid-template-columns:44px minmax(180px,1fr) minmax(100px,2fr) 65px;align-items:center;gap:18px;padding:13px 0;border-bottom:1px solid #233748}
+.ns-value-row img{width:40px;height:40px;object-fit:contain}.ns-value-row strong{display:block;font-size:14px}.ns-value-row small{display:block;color:#aabfd3;font-size:12px}.ns-value-row b{text-align:right;font-variant-numeric:tabular-nums}
+.ns-diverge{position:relative;height:20px;background:linear-gradient(to right,transparent calc(50% - .5px),#62778b calc(50% - .5px),#62778b calc(50% + .5px),transparent calc(50% + .5px))}
+.ns-diverge i{position:absolute;top:6px;height:8px}
+.ns-table-scroll{overflow-x:auto;max-width:100%}
+.ns-table{width:100%;border-collapse:collapse;font:14px/1.5 Arial,sans-serif}
+.ns-table th,.ns-table td{text-align:right;padding:13px 10px;border-bottom:1px solid #293d50;white-space:nowrap}
+.ns-table th:first-child{text-align:left}.ns-table thead th{color:#aabfd3;font-size:12px}
+.ns-controls{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:15px}.ns-controls label{display:flex;gap:10px;align-items:center;font-size:13px;color:#bdd0e1}
+.ns-controls select{background:#13283b;color:#f0f7ff;border:1px solid #45647e;border-radius:6px;padding:10px;font:14px Arial,sans-serif}
+.ns-owner-detail{border-bottom:1px solid #344758}
+.ns-owner-detail summary{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:15px;padding:19px 6px;cursor:pointer}
+.ns-owner-detail summary>span:first-child{display:flex;gap:10px;align-items:center}.ns-owner-detail summary small{color:#aabfd3;font-size:12px}
+.ns-owner-inside{padding:0 8px 20px}.ns-owner-inside p{font-size:13px;color:#b7ccdf}
+@media(max-width:750px){#nerdStudio{padding:0 3px 20px}.ns-story{grid-template-columns:1fr;gap:20px;padding-top:28px}.ns-value-row{grid-template-columns:32px minmax(0,1fr) 80px 50px;gap:9px}.ns-value-row img{width:30px;height:30px}.ns-value-row strong{font-size:12px}.ns-value-row small{font-size:11px}.ns-owner-detail summary{grid-template-columns:1fr 1fr;gap:8px}.ns-section{padding:27px 0}.ns-story p{font-size:15px}}

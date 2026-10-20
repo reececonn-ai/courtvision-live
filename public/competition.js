@@ -1036,6 +1036,7 @@
   }
 
   function renderStatsForNerds(rows,games,recent,demo){
+    window.cvNerdStudio?.render(rows,games,recent,demo);
     const status=$("nerdStatus");if(status)status.textContent=(demo?"DEMO DATA · ":"")+"Deep stats from current records, recent results and saved daily snapshots · auto-checking every 2 minutes.";
 
     const form=ownerRecentStats(recent,10);

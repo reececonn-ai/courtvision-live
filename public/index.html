@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp35">
+<link rel="stylesheet" href="/competition.css?v=comp36">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -4820,13 +4820,15 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
             <h2>STATS FOR NERDS</h2>
             <p id="nerdStatus">Loading the unnecessarily specific stuff…</p>
           </div>
-          <div class="nerd-actions">
+          <div class="nerd-actions"><button type="button" id="nerdLayoutToggle" class="comp-icon-btn" aria-pressed="false" onclick="window.cvNerdStudio.toggle()">Classic view</button>
             <button class="comp-icon-btn" onclick="refreshStatsForNerds(true)">REFRESH</button>
             <button class="comp-icon-btn" onclick="openCompetitionBoard()">COMPETITION</button>
             <button class="comp-icon-btn primary" onclick="openDraftBoard()">DRAFT BOARD</button>
           </div>
         </header>
 
+        <div id="nerdStudio" aria-label="Competition analysis"><p class="ns-note">Loading competition analysis…</p></div>
+        <div id="nerdClassic" hidden>
         <section class="nerd-hero" id="nerdHero">
           <div class="nerd-hero-copy">
             <span class="nerd-hero-kicker">NERD STAT OF THE DAY</span>
@@ -4896,6 +4898,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
             <div class="nerd-list" id="nerdHistory"><div class="comp-empty">History starts building from daily snapshots.</div></div>
           </article>
         </section>
+        </div>
       </div>
     </section>
 
@@ -6938,7 +6941,8 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp30"></script>
+<script src="/competition.js?v=comp31"></script>
+<script src="/nerd-studio.js?v=1"></script>
 <script src="/nba-insights.js?v=1"></script>
 <script src="/nba-news.js?v=1" defer></script>
 
