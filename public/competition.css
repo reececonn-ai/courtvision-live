@@ -2820,3 +2820,18 @@ body[data-screen="teamsHubScreen"] #broadcastTicker{display:none!important}
 
 @media(prefers-reduced-motion:reduce){body[data-screen="competitionScreen"] #tickerTrack{animation:none!important}}
 body[data-screen="competitionScreen"] #broadcastTicker:hover #tickerTrack{animation-play-state:paused!important}
+
+/* Keep the Competition feed visible outside the old filtered draft canvas. */
+body[data-screen="competitionScreen"] #broadcastTicker{
+  display:flex!important;visibility:visible!important;opacity:1!important;
+  position:fixed!important;left:0!important;right:0!important;bottom:0!important;
+  width:100%!important;height:44px!important;z-index:1000!important;
+  background:#02060d!important;border-top:2px solid #315979!important;
+}
+body[data-screen="competitionScreen"] #tickerTrack{font-size:13px!important}
+@media(max-width:820px){
+  body[data-screen="competitionScreen"] #broadcastTicker{
+    bottom:calc(58px + env(safe-area-inset-bottom))!important;
+    height:40px!important;padding-bottom:0!important;
+  }
+}

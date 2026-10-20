@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp32">
+<link rel="stylesheet" href="/competition.css?v=comp33">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -6292,6 +6292,12 @@ function draftTickerItems(){
   return out;
 }
 function setTicker(items,brand="NBA DRAFT"){
+  // Dashboard tickers must escape the filtered/clipped draft stage.
+  const ticker=document.getElementById("broadcastTicker");
+  const screen=document.body.dataset.screen;
+  const dashboard=screen==="competitionScreen"||screen==="statsForNerdsScreen";
+  const tickerParent=dashboard?document.body:document.querySelector(".stage");
+  if(ticker&&tickerParent&&ticker.parentElement!==tickerParent)tickerParent.appendChild(ticker);
   const track=document.getElementById("tickerTrack"),brandEl=document.getElementById("tickerBrand");if(!track)return;
   brandEl.textContent=brand;const safe=(items||[]).length?items:[{tag:"NBA",text:"DRAFT NIGHT",kind:""}];
   track.innerHTML=[...safe,...safe].map(x=>`<div class="ticker-item ${escapeAttr(x.kind||"")}"><span class="ticker-tag">${escapeHtml(x.tag)}</span>${escapeHtml(x.text)}</div>`).join("");
