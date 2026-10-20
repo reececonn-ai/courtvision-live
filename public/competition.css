@@ -3013,3 +3013,41 @@ body:not(.classic-main-style) #draftBoardScreen .board-team-status{font:12px/1.5
  body:not(.classic-main-style) #teamsHubScreen .teams-hub-card strong{font-size:15px!important}
  body:not(.classic-main-style) #teamsHubScreen .teams-hub-card img{width:45px!important;height:45px!important}
 }
+
+/* NBA identity: saturated primary-colour rails and restrained tinted surfaces. */
+body:not(.classic-main-style) #teamsHubScreen .teams-hub-card,
+body:not(.classic-main-style) #draftBoardScreen .board-team{
+ border-left:5px solid var(--team1,#2d78c7)!important;
+ background:linear-gradient(100deg,color-mix(in srgb,var(--team1,#2d78c7) 25%,#091522),#091522 85%)!important;
+ padding-left:15px!important;border-radius:9px!important;margin:7px 0!important;
+}
+body:not(.classic-main-style) #teamsHubScreen .teams-hub-card:hover,
+body:not(.classic-main-style) #draftBoardScreen .board-team:hover{
+ background:linear-gradient(100deg,color-mix(in srgb,var(--team1,#2d78c7) 42%,#091522),#132b41)!important;
+}
+#competitionScreen .comp-team-chip{
+ border-top:4px solid var(--team1,#2d78c7)!important;
+ background:linear-gradient(140deg,color-mix(in srgb,var(--team1,#2d78c7) 35%,#081522),#081522)!important;
+}
+#competitionGames .comp-game-side{
+ border-top:4px solid var(--team1,#2d78c7)!important;
+ background:linear-gradient(110deg,color-mix(in srgb,var(--team1,#2d78c7) 28%,#081522),#081522)!important;
+}
+#teamsHubDetail .team-hero-player,#teamsHubDetail .team-player-photo{
+ background:linear-gradient(145deg,color-mix(in srgb,var(--club-primary,#235b90) 65%,#152438),#14273c)!important;
+}
+#teamsHubDetail .team-player-card{border-bottom:3px solid var(--club-primary,#235b90)!important}
+#teamsHubDetail .team-section-label{color:color-mix(in srgb,var(--club-primary,#235b90) 40%,white)!important}
+#teamsHubDetail .team-journey .chart-actual{stroke:color-mix(in srgb,var(--club-primary,#235b90) 65%,white)!important}
+#teamsHubDetail .team-journey .chart-dot{fill:color-mix(in srgb,var(--club-primary,#235b90) 65%,white)!important}
+#teamsHubDetail .team-player-track i{background:color-mix(in srgb,var(--club-primary,#235b90) 75%,white)!important}
+#teamsHubDetail .team-owner-bar i{background:var(--team1,#66c8ff)!important}
+#teamsHubDetail .team-fixtures article{
+ border-left:4px solid var(--team1,#2d78c7);padding-left:12px;
+ background:linear-gradient(90deg,color-mix(in srgb,var(--team1,#2d78c7) 15%,transparent),transparent);
+}
+#teamsHubDetail .team-owner-bar.selected{font-weight:700}
+@media(max-width:750px){
+ body:not(.classic-main-style) #teamsHubScreen .teams-hub-card,
+ body:not(.classic-main-style) #draftBoardScreen .board-team{padding-left:10px!important}
+}

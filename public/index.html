@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp37">
+<link rel="stylesheet" href="/competition.css?v=comp38">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -6006,7 +6006,7 @@ function renderDraftBoard(){
     const cls=a?"assigned":passed?"passed":"available";
     const line=winLine(name);
     const status=a?`${escapeHtml(a.player)}${a.barrel?" · BARREL":` · $${money(a.amount)}`}`:passed?"PASSED → BARREL":available?`AVAILABLE${line!=null?` · ${line}`:""}`:"UNASSIGNED";
-    return `<div class="board-team ${cls}" onclick="previewTeamFromBoard('${escapeAttr(name)}')"><img src="${logoUrl(t[1])}" alt=""><div class="board-team-copy"><div class="board-team-name">${escapeHtml(name)}</div><div class="board-team-status">${status}</div></div><div class="board-team-price">${a&&!a.barrel?`$${money(a.amount)}`:""}</div></div>`;
+    return `<div class="board-team ${cls}" style="--team1:${escapeAttr(t[2]||"#2d78c7")};--team2:${escapeAttr(t[3]||"#ffffff")};" onclick="previewTeamFromBoard('${escapeAttr(name)}')"><img src="${logoUrl(t[1])}" alt=""><div class="board-team-copy"><div class="board-team-name">${escapeHtml(name)}</div><div class="board-team-status">${status}</div></div><div class="board-team-price">${a&&!a.barrel?`$${money(a.amount)}`:""}</div></div>`;
   }).join("");
   const top=document.getElementById("boardTopStatus");if(top)top.textContent=`${Object.keys(state.assignments).length} assigned · ${state.available.length} available · ${state.passed.length} passed`;
   renderDraftPulse();
@@ -6729,7 +6729,7 @@ function renderTeamsHub(){
   const teams=TEAM_DATA.filter(t=>!q||t[0].toLowerCase().includes(q)||(state.assignments?.[t[0]]?.player||"").toLowerCase().includes(q));
   grid.innerHTML=teams.map(t=>{
     const name=t[0],a=state.assignments?.[name],line=winLine(name);
-    return '<button type="button" class="teams-hub-card" onclick="openTeamFromHub('+JSON.stringify(name).replace(/"/g,'&quot;')+')"><img src="'+logoUrl(t[1])+'" alt=""><span><strong>'+escapeHtml(name)+'</strong><small>'+(a?'OWNED BY '+escapeHtml(a.player):'UNASSIGNED')+'</small></span><b>'+(line==null?'—':line+' W')+'</b></button>';
+    return '<button type="button" class="teams-hub-card" style="--team1:'+escapeAttr(t[2]||"#2d78c7")+';--team2:'+escapeAttr(t[3]||"#ffffff")+';" onclick="openTeamFromHub('+JSON.stringify(name).replace(/"/g,'&quot;')+')"><img src="'+logoUrl(t[1])+'" alt=""><span><strong>'+escapeHtml(name)+'</strong><small>'+(a?'OWNED BY '+escapeHtml(a.player):'UNASSIGNED')+'</small></span><b>'+(line==null?'—':line+' W')+'</b></button>';
   }).join("")||'<p class="teams-hub-empty">No teams match that search.</p>';
   if(teamsHubSelected&&teamByName(teamsHubSelected)){
     const t=teamByName(teamsHubSelected),a=state.assignments?.[teamsHubSelected];
@@ -6949,8 +6949,8 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp31"></script>
-<script src="/nerd-studio.js?v=1"></script>
+<script src="/competition.js?v=comp32"></script>
+<script src="/nerd-studio.js?v=2"></script>
 <script src="/nba-insights.js?v=1"></script>
 <script src="/nba-news.js?v=1" defer></script>
 

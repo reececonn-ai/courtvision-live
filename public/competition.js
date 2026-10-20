@@ -1296,7 +1296,7 @@
     const rows=(player.teams||[]).map(team=>({team,w:records[team]?.w}));
     if(rows.some(r=>!Number.isFinite(r.w)))return '<p class="team-chart-empty">Complete owner standings are not available yet. No contribution is estimated from missing records.</p>';
     const total=rows.reduce((n,r)=>n+r.w,0),mine=rows.find(r=>r.team===name)?.w||0,max=Math.max(1,...rows.map(r=>r.w));
-    return '<p class="team-chart-summary">'+esc(owner)+' · '+(total?mine+' of '+total+' wins ('+Math.round(mine/total*100)+'%)':'No regular-season wins yet')+'</p><div class="team-owner-bars">'+rows.sort((a,b)=>b.w-a.w).map(r=>'<div class="team-owner-bar '+(r.team===name?'selected':'')+'"><img src="'+teamLogo(r.team)+'" alt=""><span>'+esc(shortTeam(r.team))+'</span><div><i style="width:'+(r.w/max*100)+'%"></i></div><b>'+r.w+' W</b></div>').join("")+'</div>';
+    return '<p class="team-chart-summary">'+esc(owner)+' · '+(total?mine+' of '+total+' wins ('+Math.round(mine/total*100)+'%)':'No regular-season wins yet')+'</p><div class="team-owner-bars">'+rows.sort((a,b)=>b.w-a.w).map(r=>'<div class="team-owner-bar '+(r.team===name?'selected':'')+'" style="'+teamStyle(r.team)+'"><img src="'+teamLogo(r.team)+'" alt=""><span>'+esc(shortTeam(r.team))+'</span><div><i style="width:'+(r.w/max*100)+'%"></i></div><b>'+r.w+' W</b></div>').join("")+'</div>';
   }
 
   function playerChartRows(data,name){
@@ -1390,7 +1390,7 @@
       const won=g=>g.home===name?g.homeWinner:g.awayWinner;
       const wins=recent.filter(won).length;
       html+='<section class="team-form-section"><span class="team-section-label">THE LAST FIVE</span><h3>How they’re travelling</h3><p class="team-detail-source">'+(recent.length?'Last '+recent.length+' regular-season games · '+wins+'W–'+(recent.length-wins)+'L':'No completed regular-season games yet.')+'</p>';
-      html+=recent.length?'<div class="team-form-strip">'+recent.map(g=>'<span class="'+(won(g)?'is-win':'is-loss')+'">'+(won(g)?'W':'L')+'</span>').join("")+'</div><div class="team-fixtures">'+recent.map(g=>{const opponent=g.home===name?g.away:g.home;return '<article><img src="'+teamLogo(opponent)+'" alt=""><div><strong>'+esc(shortTeam(opponent))+'</strong><small>'+esc(daySydney(g.date))+'</small></div><b>'+(won(g)?'W ':'L ')+(g.home===name?g.homeScore+'–'+g.awayScore:g.awayScore+'–'+g.homeScore)+'</b></article>';}).join("")+'</div>':'';
+      html+=recent.length?'<div class="team-form-strip">'+recent.map(g=>'<span class="'+(won(g)?'is-win':'is-loss')+'">'+(won(g)?'W':'L')+'</span>').join("")+'</div><div class="team-fixtures">'+recent.map(g=>{const opponent=g.home===name?g.away:g.home;return '<article style="'+teamStyle(opponent)+'"><img src="'+teamLogo(opponent)+'" alt=""><div><strong>'+esc(shortTeam(opponent))+'</strong><small>'+esc(daySydney(g.date))+'</small></div><b>'+(won(g)?'W ':'L ')+(g.home===name?g.homeScore+'–'+g.awayScore:g.awayScore+'–'+g.homeScore)+'</b></article>';}).join("")+'</div>':'';
       html+='</section><section class="team-next-section"><span class="team-section-label">MARK YOUR CALENDAR</span><h3>Up next</h3>';
       html+=upcoming.length?'<div class="team-fixtures">'+upcoming.map(g=>{const opponent=g.home===name?g.away:g.home;return '<article><img src="'+teamLogo(opponent)+'" alt=""><div><strong>'+(g.home===name?'vs ':'@ ')+esc(shortTeam(opponent))+'</strong><small>'+esc(daySydney(g.date))+' · Sydney</small></div><b>'+esc(g.status==="IN"?'LIVE':timeSydney(g.date))+'</b></article>';}).join("")+'</div>':'<p>No upcoming regular-season games listed.</p>';
       html+='</section>';
