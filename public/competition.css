@@ -3051,3 +3051,57 @@ body:not(.classic-main-style) #draftBoardScreen .board-team:hover{
  body:not(.classic-main-style) #teamsHubScreen .teams-hub-card,
  body:not(.classic-main-style) #draftBoardScreen .board-team{padding-left:10px!important}
 }
+
+/* Team Stats: deliberate reading order and consistent spacing. */
+#teamsHubScreen.has-team-detail .teams-hub-head,
+#teamsHubScreen.has-team-detail .teams-hub-filter{display:none!important}
+#teamsHubScreen .teams-hub-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;align-items:stretch}
+#teamsHubScreen .teams-hub-card{min-height:104px!important;gap:14px!important}
+#teamsHubScreen .teams-hub-card strong{white-space:normal!important}
+#teamsHubScreen .teams-hub-card b{font-variant-numeric:tabular-nums;font-size:16px}
+#teamsHubDetail .team-club-hero{margin-bottom:14px!important}
+.team-section-nav{display:flex;gap:8px;flex-wrap:wrap;padding:4px 0 22px;border-bottom:1px solid #304355;margin-bottom:26px}
+.team-section-nav a{color:#d6e8f7;text-decoration:none;padding:9px 15px;background:#172c40;border:1px solid #344e65;border-radius:7px;font:13px/1.4 Arial,sans-serif}
+.team-section-nav a:hover,.team-section-nav a:focus-visible{background:#27435c;color:#fff}
+#teamsHubDetail :is(#team-overview,#team-statistics,#team-squad,#team-availability,#team-fixtures){scroll-margin-top:85px}
+#teamsHubDetail .team-detail-content{
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ grid-template-areas:"charts charts charts" "roster roster roster" "health form next" "extras extras extras";
+ gap:28px!important;align-items:start!important;
+}
+#teamsHubDetail .team-charts{grid-area:charts}
+#teamsHubDetail .team-roster-section{grid-area:roster!important}
+#teamsHubDetail .team-health-section{grid-area:health}
+#teamsHubDetail .team-form-section{grid-area:form}
+#teamsHubDetail .team-next-section{grid-area:next}
+#teamsHubDetail .cv-team-extras{grid-area:extras}
+#teamsHubDetail .team-detail-content>section{margin:0!important;min-width:0;align-self:start}
+#teamsHubDetail .team-roster-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:16px!important}
+#teamsHubDetail .team-player-photo{height:155px!important}
+#teamsHubDetail .team-player-card{height:100%;display:flex;flex-direction:column}
+#teamsHubDetail .team-player-card>div:last-child{padding:14px!important;min-height:76px}
+#teamsHubDetail .team-player-card strong{font-size:15px!important;line-height:1.35!important}
+#teamsHubDetail .team-player-card small{font-size:12px!important}
+#teamsHubDetail .team-charts-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:28px!important}
+#teamsHubDetail .team-contribution{grid-column:1/-1;border-top:1px solid #304355;padding-top:22px}
+#teamsHubDetail .team-owner-bars{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 30px}
+#teamsHubDetail .team-fixtures article{align-items:center;padding:13px 8px!important;gap:9px}
+#teamsHubDetail .team-fixtures img{width:32px;height:32px;flex-shrink:0}
+#teamsHubDetail .team-fixtures small{line-height:1.5}
+#teamsHubDetail .team-fixtures b{font-size:12px}
+@media(min-width:1600px){#teamsHubScreen .teams-hub-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(max-width:1050px){
+ #teamsHubDetail .team-detail-content{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-areas:"charts charts" "roster roster" "health form" "next next" "extras extras"}
+ #teamsHubDetail .team-roster-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+ #teamsHubScreen .teams-hub-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:700px){
+ #teamsHubScreen .teams-hub-grid{grid-template-columns:minmax(0,1fr)!important}
+ #teamsHubDetail .team-detail-content{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"charts" "roster" "health" "form" "next" "extras";gap:22px!important}
+ #teamsHubDetail .team-roster-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+ #teamsHubDetail .team-player-photo{height:130px!important}
+ #teamsHubDetail .team-charts-grid{grid-template-columns:minmax(0,1fr)!important}
+ #teamsHubDetail .team-owner-bars{grid-template-columns:minmax(0,1fr)}
+ .team-section-nav{gap:6px;padding-bottom:16px;margin-bottom:18px}
+ .team-section-nav a{padding:11px 12px;min-height:44px}
+}

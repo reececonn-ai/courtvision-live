@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp38">
+<link rel="stylesheet" href="/competition.css?v=comp39">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -6725,6 +6725,7 @@ function leaveTeamProfile(destination){
 function renderTeamsHub(){
   const grid=document.getElementById("teamsHubGrid"),detail=document.getElementById("teamsHubDetail");
   if(!grid||!detail)return;
+  document.getElementById("teamsHubScreen")?.classList.toggle("has-team-detail",!!(teamsHubSelected&&teamByName(teamsHubSelected)));
   const q=(document.getElementById("teamsHubSearch")?.value||"").trim().toLowerCase();
   const teams=TEAM_DATA.filter(t=>!q||t[0].toLowerCase().includes(q)||(state.assignments?.[t[0]]?.player||"").toLowerCase().includes(q));
   grid.innerHTML=teams.map(t=>{
@@ -6738,8 +6739,9 @@ function renderTeamsHub(){
     detail.style.setProperty("--club-primary",t[2]||"#235b90");
     detail.style.setProperty("--club-secondary",t[3]||"#71b8ee");
     detail.innerHTML='<button type="button" class="teams-hub-back" onclick="openTeamsHub()">← ALL TEAMS</button>'
-      +'<div class="teams-hub-profile team-club-hero"><img src="'+logoUrl(t[1])+'" alt=""><div class="team-club-title"><span class="comp-eyebrow">YOUR CLUB, UP CLOSE</span><h3>'
+      +'<div class="teams-hub-profile team-club-hero" id="team-overview"><img src="'+logoUrl(t[1])+'" alt=""><div class="team-club-title"><span class="comp-eyebrow">YOUR CLUB, UP CLOSE</span><h3>'
       +escapeHtml(t[0])+'</h3><p>'+escapeHtml(a?'Owned by '+a.player:'Unassigned')+'</p></div></div>'
+      +'<nav class="team-section-nav" aria-label="Team page sections"><a href="#team-overview">Overview</a><a href="#team-statistics">Charts</a><a href="#team-squad">Squad</a><a href="#team-availability">Availability</a><a href="#team-fixtures">Fixtures</a></nav>'
       +'<div class="team-detail-content" aria-live="polite">Loading roster, injuries and schedule…</div>';
     if(window.cvCompetition?.renderTeamDetail)void window.cvCompetition.renderTeamDetail(teamsHubSelected,detail);
     grid.hidden=true;
@@ -6949,7 +6951,7 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp32"></script>
+<script src="/competition.js?v=comp33"></script>
 <script src="/nerd-studio.js?v=2"></script>
 <script src="/nba-insights.js?v=1"></script>
 <script src="/nba-news.js?v=1" defer></script>
