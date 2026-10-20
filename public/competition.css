@@ -3124,3 +3124,14 @@ body:not(.classic-main-style) #draftBoardScreen .board-team:hover{
 #competitionDayHint{color:#abc4db;font:12px/1.5 Arial,sans-serif;margin-left:8px}
 #competitionGames{touch-action:pan-y}
 @media(max-width:600px){.comp-day-controls{gap:6px}.comp-day-controls button{padding:10px 12px}#competitionDayHint{flex-basis:100%;margin:5px 0 0}}
+
+/* Readable tip-off times on game tiles and team fixture lists. */
+#competitionGames .comp-game-state{
+  font-size:15px!important;line-height:1.2!important;padding:5px 10px!important;
+  font-variant-numeric:tabular-nums;letter-spacing:.02em!important;
+}
+#teamsHubDetail .team-fixtures b{font-size:15px!important}
+@media(max-width:820px){
+  #competitionGames .comp-game-state{font-size:13px!important;padding:5px 8px!important}
+  #teamsHubDetail .team-fixtures b{font-size:14px!important}
+}
