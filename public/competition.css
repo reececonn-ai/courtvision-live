@@ -2701,7 +2701,7 @@ body.tv-mode[data-screen="competitionScreen"] .broadcast-ticker{
 @media(pointer:coarse){#competitionGames .comp-game-stats-close{min-height:44px}}
 
 /* Competition shows one set of standings; team pages show basketball detail. */
-body[data-screen="competitionScreen"] #broadcastTicker{display:none!important}
+body[data-screen="competitionScreen"] #broadcastTicker{display:flex!important}
 .team-detail-content{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;color:#e5edf7;font:14px/1.5 Arial,sans-serif}
 .team-detail-content>section{min-width:0;padding:18px;background:#0a1726;border:1px solid #29405a}
 .team-detail-content h3{font-size:20px;margin:0 0 10px}
@@ -2817,3 +2817,6 @@ body[data-screen="teamsHubScreen"] #broadcastTicker{display:none!important}
 #competitionRace .comp-race-record{color:#fff;font:800 20px/1.15 Arial,Helvetica,sans-serif!important;font-variant-numeric:tabular-nums;white-space:nowrap}
 #competitionRace .comp-race-name small{font-size:11px!important;margin-top:5px}
 @media(max-width:600px){#competitionRace .comp-race-name{font-size:16px!important}#competitionRace .comp-race-record{font-size:18px!important}#competitionRace .comp-race-name-line{column-gap:10px}}
+
+@media(prefers-reduced-motion:reduce){body[data-screen="competitionScreen"] #tickerTrack{animation:none!important}}
+body[data-screen="competitionScreen"] #broadcastTicker:hover #tickerTrack{animation-play-state:paused!important}

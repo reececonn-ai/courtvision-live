@@ -480,6 +480,7 @@
       cache.games=latest;
       if(active==="competitionScreen"){
         renderGames(latest,cache.records||{});
+        updateCompetitionTicker(competitionTickerRows,latest,cache.recent||[],false);
         const status=$("competitionDataStatus");
         if(status&&!finalTransition)status.textContent="Auto-updated live scores · full refresh runs when a game goes final";
       }
@@ -1407,6 +1408,48 @@
     return cache;
   }
 
+
+  let competitionTickerRows=[];
+  function competitionTickerItems(rows,games=[],recent=[],demo=false){
+    const items=[],add=(tag,text,kind="team")=>items.push({tag,text,kind});
+    const cleanRecent=recent.filter(g=>!teamOwner(g.home)||teamOwner(g.home)!==teamOwner(g.away));
+    const bits=competitionTidbits(rows,games,cleanRecent).filter(x=>!["LEADER","TIGHT RACE","BUSY NIGHT","RIVALRY"].includes(x.tag));
+    const priority={IN:0,FINAL:1,SCHEDULED:2};
+    for(const g of [...games].filter(g=>teamOwner(g.home)||teamOwner(g.away)).sort((a,b)=>(priority[a.status]??3)-(priority[b.status]??3)).slice(0,6)){
+      const away=teamOwner(g.away),home=teamOwner(g.home);if(!away&&!home)continue;
+      const match=shortTeam(g.away)+" vs "+shortTeam(g.home);
+      if(away&&home&&away===home){
+        add("ALL IN-HOUSE",away+" owns both sides of "+match+". One win and one loss stay in the same portfolio.");
+      }else if(g.status==="IN"){
+        add("LIVE",match+": "+g.awayScore+"–"+g.homeScore+" · "+(g.detail||"in progress")+". "+(away||"Unowned")+" vs "+(home||"Unowned")+".");
+      }else if(g.status==="FINAL"){
+        const winner=g.homeWinner?g.home:g.awayWinner?g.away:null;
+        if(winner){const owner=teamOwner(winner);add("FINAL",shortTeam(winner)+" won "+g.awayScore+"–"+g.homeScore+" ("+shortTeam(g.away)+"–"+shortTeam(g.home)+"). "+(owner?owner+" banks a win.":"The winner is unowned."));}
+      }else add("OWNER MATCHUP",(away||"Unowned")+" vs "+(home||"Unowned")+": "+match+" tips off at "+timeSydney(g.date)+" Sydney time.");
+    }
+    const played=rows.some(r=>r.w+r.l>0);
+    if(played){
+      const ranked=[...rows].sort((a,b)=>b.w-a.w||b.projected-a.projected),lead=ranked[0],second=ranked[1];
+      if(lead&&second){const gap=lead.w-second.w;add("THE CHASE",gap?lead.name+" is "+gap+" win"+(gap===1?"":"s")+" ahead of "+second.name+" on actual results.":lead.name+" and "+second.name+" are level on "+lead.w+" wins; projected finish breaks the tie.","draft");}
+    }else{
+      const projected=[...rows].sort((a,b)=>b.probability-a.probability);
+      if(projected[0])add("PRESEASON PICK",projected[0].name+" has the highest projected title chance at "+projected[0].probability.toFixed(1)+"%. No regular-season wins are on the board yet.","draft");
+      for(const row of rows.slice(0,3)){
+        const best=[...(row.teams||[])].filter(t=>Number.isFinite(t.line)).sort((a,b)=>b.line-a.line)[0];
+        if(best)add("ONE TO WATCH",shortTeam(best.name)+" is "+row.name+"'s highest preseason win projection at "+best.line+" wins.","draft");
+      }
+    }
+    for(const x of bits)add(x.tag,x.text,["COLD","ROUGH DAY","PAIN","WEAK LINK"].includes(x.tag)?"alert":"draft");
+    if(!items.length)add("COMPETITION","Owner matchups, team form and results will appear here as competition data arrives.","draft");
+    const unique=[...new Map(items.map(x=>[x.tag+"|"+x.text,x])).values()].slice(0,12);
+    return demo?unique.map(x=>({...x,tag:"SAMPLE · "+x.tag})):unique;
+  }
+  function updateCompetitionTicker(rows,games,recent,demo=false){
+    competitionTickerRows=rows;
+    window.cvCompetitionTicker=competitionTickerItems(rows,games,recent,demo);
+    if(document.querySelector(".screen.active")?.id==="competitionScreen")setTicker(window.cvCompetitionTicker,"COMP BOARD");
+  }
+
   async function refreshCompetitionBoard(force=false){
     const token=++refreshToken;
     const status=$("competitionDataStatus");
@@ -1420,6 +1463,7 @@
       saveCompetitionSnapshot(rows,data.demo);
       renderLeaderboard(rows,data.demo,data.games||[]);
       renderGames(data.games||[],data.records||{});
+      updateCompetitionTicker(rows,data.games||[],data.recent||[],data.demo);
       const stamp=$("competitionUpdated");
       if(stamp)stamp.textContent=(data.demo?"DEMO · ":regularSeasonStarted()?"UPDATED ":"PRESEASON PROJECTION · ")+new Intl.DateTimeFormat("en-AU",{timeZone:TZ,day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}).format(new Date());
       if(status)status.textContent=data.demo?"Test draft · seeded competition results for troubleshooting":regularSeasonStarted()?"Regular-season NBA results · auto-checking every 2 minutes":"2026–27 SEASON PROJECTIONS · reset at opening tip, then live records take over";
@@ -1520,6 +1564,7 @@
     ownerSummaries,
     calculateProbabilities,
     competitionTidbits,
+    competitionTickerItems,
     health:competitionHealth,
     refresh:refreshCompetitionBoard
   };
