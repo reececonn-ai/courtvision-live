@@ -940,8 +940,15 @@
     return item.promise;
   }
   async function populateGameStats(panel,g,records){
-    panel.innerHTML='<div class="game-lineup-slot" aria-live="polite"></div><div class="game-box-slot"></div>';
-    const lineup=panel.querySelector(".game-lineup-slot"),box=panel.querySelector(".game-box-slot");
+    // The open panel is rebuilt by the slate refresh, including the tip-off transition.
+    const started=["IN","FINAL"].includes(g.status);
+    panel.innerHTML=(started?'':'<div class="game-lineup-slot" aria-live="polite"></div>')+'<div class="game-box-slot" aria-live="polite"></div>';
+    const box=panel.querySelector(".game-box-slot");
+    if(started){
+      await populateGameBoxStats(box,g,records);
+      return;
+    }
+    const lineup=panel.querySelector(".game-lineup-slot");
     await Promise.allSettled([window.cvAvailability?.renderGame(lineup,g,loadGameSummary),populateGameBoxStats(box,g,records)]);
   }
   async function populateGameBoxStats(panel,g,records){
