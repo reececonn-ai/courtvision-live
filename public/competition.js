@@ -770,6 +770,8 @@
   function renderLeaderboard(rows,demo,games=[]){
     const el=$("competitionLeaderboard");if(!el)return;
     const today=todaysOwnerResults(games||[]);
+    renderSpotlight(rows);
+    renderRace(rows);
     el.innerHTML=rows.map((r,i)=>{
       const teams=r.teams.map(t=>'<button class="comp-team-chip" style="'+teamStyle(t.name)+'" onclick="previewTeamFromCompetition(\''+esc(t.name).replace(/'/g,"&#39;")+'\')"><img src="'+teamLogo(t.name)+'" alt=""><span>'+esc(shortTeam(t.name))+'</span><b>#'+(t.rank||"—")+' · '+t.w+"-"+t.l+'</b></button>').join("");
       const d=today[r.name]||{w:0,l:0,games:0};

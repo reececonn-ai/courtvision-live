@@ -4750,6 +4750,22 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 
         </header>
 
+        <section class="comp-lead-grid">
+          <article class="comp-spotlight" id="competitionSpotlight">
+            <div class="comp-loading">BUILDING THE RACE…</div>
+          </article>
+
+          <article class="comp-race-panel">
+            <div class="comp-section-head">
+              <div><span class="comp-section-kicker">RIGHT NOW</span><strong>THE TITLE RACE</strong></div>
+              <small>PROJECTED CHANCE TO WIN</small>
+            </div>
+            <div class="comp-race" id="competitionRace">
+              <div class="comp-empty">Title probabilities will appear here.</div>
+            </div>
+          </article>
+        </section>
+
         <section class="comp-games-feature">          <article class="comp-slate-panel">
             <div class="comp-section-head">
               <div><span class="comp-section-kicker">TODAY</span><strong>TODAY'S GAMES</strong></div>
@@ -6921,7 +6937,7 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp27"></script>
+<script src="/competition.js?v=comp28"></script>
 <script src="/nba-insights.js?v=1"></script>
 <script src="/nba-news.js?v=1" defer></script>
 
