@@ -2809,3 +2809,11 @@ body[data-screen="teamsHubScreen"] #broadcastTicker{display:none!important}
 .cv-momentum{display:block;width:100%;height:auto}.cv-momentum text{fill:#bcd2e7;font:12px Arial,sans-serif}.cv-zero{stroke:#637b91;stroke-width:1}.cv-margin{stroke:#6bc9ff;stroke-width:2;fill:none;stroke-linejoin:round}
 .cv-play-list{padding-left:20px;font-size:12px}.cv-play-list li{padding:7px 0;border-bottom:1px solid #30465b}.cv-play-list small{color:#a6c4dc}
 @media(max-width:650px){.cv-team-news{grid-template-columns:1fr}.cv-team-news-item img{width:80px;height:70px}.cv-shot-bar{grid-template-columns:90px minmax(0,1fr) 50px;gap:8px}}
+
+/* Keep actual W–L beside the owner name and readable at a glance. */
+#competitionRace .comp-race-name{min-width:0;font-size:18px!important}
+#competitionRace .comp-race-name-line{display:flex;align-items:baseline;flex-wrap:wrap;gap:5px 14px}
+#competitionRace .comp-race-name-line>span{overflow-wrap:anywhere}
+#competitionRace .comp-race-record{color:#fff;font:800 20px/1.15 Arial,Helvetica,sans-serif!important;font-variant-numeric:tabular-nums;white-space:nowrap}
+#competitionRace .comp-race-name small{font-size:11px!important;margin-top:5px}
+@media(max-width:600px){#competitionRace .comp-race-name{font-size:16px!important}#competitionRace .comp-race-record{font-size:18px!important}#competitionRace .comp-race-name-line{column-gap:10px}}

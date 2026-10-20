@@ -761,7 +761,7 @@
     el.innerHTML=race.map((r,i)=>
       '<div class="comp-race-row '+(i===0?'leader':'')+'" style="--prob:'+Math.max(1,r.probability)+'%">'+
         '<div class="comp-race-rank">'+(i+1)+'</div>'+
-        '<div class="comp-race-name">'+esc(r.name)+'<small>'+r.w+'-'+r.l+' actual · '+r.projected.toFixed(1)+' projected</small></div>'+
+        '<div class="comp-race-name"><div class="comp-race-name-line"><span>'+esc(r.name)+'</span><b class="comp-race-record" aria-label="'+r.w+' wins, '+r.l+' losses">'+r.w+'–'+r.l+'</b></div><small>'+r.projected.toFixed(1)+' projected wins</small></div>'+
         '<div class="comp-race-pct">'+r.probability.toFixed(1)+'<span>%</span></div>'+
       '</div>'
     ).join("");
