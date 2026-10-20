@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp26">
+<link rel="stylesheet" href="/competition.css?v=comp27">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -4745,26 +4745,10 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
               <h2>THE COMPETITION</h2>
               <span class="comp-mode-badge" id="competitionModeBadge">LIVE NBA DATA</span>
             </div>
-            <div class="comp-data-status" id="competitionDataStatus">Loading the race, today's games and daily stories…</div>
+            <div class="comp-data-status" id="competitionDataStatus">Loading today's games and standings…</div>
           </div>
 
         </header>
-
-        <section class="comp-lead-grid">
-          <article class="comp-spotlight" id="competitionSpotlight">
-            <div class="comp-loading">BUILDING THE RACE…</div>
-          </article>
-
-          <article class="comp-race-panel">
-            <div class="comp-section-head">
-              <div><span class="comp-section-kicker">RIGHT NOW</span><strong>THE TITLE RACE</strong></div>
-              <small>PROJECTED CHANCE TO WIN</small>
-            </div>
-            <div class="comp-race" id="competitionRace">
-              <div class="comp-empty">Title probabilities will appear here.</div>
-            </div>
-          </article>
-        </section>
 
         <section class="comp-games-feature">          <article class="comp-slate-panel">
             <div class="comp-section-head">
@@ -4780,17 +4764,6 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 
         </section>
 
-        <section class="comp-paper-feature">          <article class="comp-stories-panel">
-            <div class="comp-section-head">
-              <div><span class="comp-section-kicker">THE MORNING PAPER</span><strong>WHAT YOU NEED TO KNOW</strong></div>
-              <small>STREAKS · RIVALRIES · PAIN</small>
-            </div>
-            <div class="cv-news" id="cvMorningNews" aria-live="polite"><p class="cv-news-status">Checking NBA headlines…</p></div><div class="comp-tidbits" id="competitionTidbits">
-              <div class="comp-empty">Daily competition stories will appear here.</div>
-            </div>
-          </article>
-        </section>
-
         <section class="comp-table-panel">
           <div class="comp-section-head">
             <div><span class="comp-section-kicker">EVERY TEAM · EVERY OWNER</span><strong>THE FULL TABLE</strong></div>
@@ -4801,32 +4774,16 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
           </div>
         </section>
 
-        <section class="comp-intel-grid">
-          <article class="comp-intel-panel">
+        <section class="comp-paper-feature">          <article class="comp-stories-panel">
             <div class="comp-section-head">
-              <div><span class="comp-section-kicker">SINCE YESTERDAY</span><strong>WHAT CHANGED</strong></div>
-              <small>RANK · RECORD · TITLE %</small>
+              <div><span class="comp-section-kicker">AROUND THE LEAGUE</span><strong>NBA NEWS</strong></div>
+              <small>LATEST HEADLINES</small>
             </div>
-            <div class="comp-movement" id="competitionMovement">
-              <div class="comp-empty">Season memory is loading.</div>
-            </div>
-          </article>
-
-          <article class="comp-intel-panel">
-            <div class="comp-section-head">
-              <div><span class="comp-section-kicker">SWING WATCH</span><strong>GAMES THAT CAN MOVE THE RACE</strong></div>
-              <small>ESTIMATED TITLE-PROBABILITY SWING</small>
-            </div>
-            <div class="comp-impact" id="competitionImpact">
-              <div class="comp-empty">Calculating today's leverage games.</div>
-            </div>
-          </article>
+            <div class="cv-news" id="cvMorningNews" aria-live="polite"><p class="cv-news-status">Checking NBA headlines…</p></div>          </article>
         </section>
 
-        <footer class="comp-method">
-          <strong>HOW THE % WORKS</strong>
-          <span>Actual wins are locked in. Remaining games are simulated from each team's current record and preseason market line. It is a CourtVision projection — not a betting market.</span>
-        </footer>
+
+
       </div>
     </section>
 
@@ -4838,7 +4795,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
       <button class="active" aria-current="page" onclick="openTeamsHub()">TEAMS</button>
       <button onclick="openStatsForNerds()">STATS FOR NERDS</button>
     </nav>
-    <header class="teams-hub-head"><div class="comp-eyebrow">2026–27 NBA · FRANCHISE DIRECTORY</div><h2>TEAMS</h2><p>Every franchise, its draft owner and season outlook.</p></header>
+    <header class="teams-hub-head"><div class="comp-eyebrow">2026–27 NBA · FRANCHISE DIRECTORY</div><h2>TEAMS</h2><p>Rosters, injuries, recent results and upcoming games.</p></header>
     <div class="teams-hub-filter"><label for="teamsHubSearch">FIND A TEAM</label><input id="teamsHubSearch" type="search" placeholder="Search team or owner…" oninput="renderTeamsHub()" autocomplete="off"></div>
     <div id="teamsHubDetail" class="teams-hub-detail" hidden></div>
     <div id="teamsHubGrid" class="teams-hub-grid"></div>
@@ -6718,18 +6675,14 @@ function showReveal(name,options={}){
 let teamsHubSelected=null;
 function openTeamsHub(name){
   document.body.classList.remove("teams-profile-view");
-  if(name&&teamByName(name))teamsHubSelected=name;
+  teamsHubSelected=name&&teamByName(name)?name:null;
   showScreenLocal("teamsHubScreen");
   renderTeamsHub();
   window.scrollTo(0,0);
 }
 function openTeamFromHub(name){
   if(!teamByName(name))return;
-  teamsHubSelected=name;
-  teamPreviewReturnScreen="teamsHubScreen";
-  document.body.classList.add("teams-profile-view");
-  showReveal(name,{preview:true});
-  window.scrollTo(0,0);
+  openTeamsHub(name);
 }
 function leaveTeamProfile(destination){
   document.body.classList.remove("teams-profile-view");
@@ -6751,13 +6704,14 @@ function renderTeamsHub(){
     return '<button type="button" class="teams-hub-card" onclick="openTeamFromHub('+JSON.stringify(name).replace(/"/g,'&quot;')+')"><img src="'+logoUrl(t[1])+'" alt=""><span><strong>'+escapeHtml(name)+'</strong><small>'+(a?'OWNED BY '+escapeHtml(a.player):'UNASSIGNED')+'</small></span><b>'+(line==null?'—':line+' W')+'</b></button>';
   }).join("")||'<p class="teams-hub-empty">No teams match that search.</p>';
   if(teamsHubSelected&&teamByName(teamsHubSelected)){
-    const t=teamByName(teamsHubSelected),a=state.assignments?.[teamsHubSelected],line=winLine(teamsHubSelected);
+    const t=teamByName(teamsHubSelected),a=state.assignments?.[teamsHubSelected];
     detail.hidden=false;
-    const ownerLine=a ? ("Drafted by "+escapeHtml(a.player)+(a.barrel?" · Barrel pick":" · $"+money(a.amount))) : "Not assigned in draft";
-    detail.innerHTML='<button type="button" class="teams-hub-back" onclick="teamsHubSelected=null;renderTeamsHub()">← ALL TEAMS</button>'
-      +'<div class="teams-hub-profile"><img src="'+logoUrl(t[1])+'" alt=""><div><span class="comp-eyebrow">TEAM PROFILE</span><h3>'
-      +escapeHtml(t[0])+'</h3><p>'+ownerLine+'</p><strong>'
-      +(line==null?"Season projection pending":line+" projected wins")+'</strong></div></div>';
+    detail.dataset.team=teamsHubSelected;
+    detail.innerHTML='<button type="button" class="teams-hub-back" onclick="openTeamsHub()">← ALL TEAMS</button>'
+      +'<div class="teams-hub-profile"><img src="'+logoUrl(t[1])+'" alt=""><div><span class="comp-eyebrow">TEAM DETAIL</span><h3>'
+      +escapeHtml(t[0])+'</h3><p>'+escapeHtml(a?'Owned by '+a.player:'Unassigned')+'</p></div></div>'
+      +'<div class="team-detail-content" aria-live="polite">Loading roster, injuries and schedule…</div>';
+    if(window.cvCompetition?.renderTeamDetail)void window.cvCompetition.renderTeamDetail(teamsHubSelected,detail);
     grid.hidden=true;
   }else{
     detail.hidden=true;
@@ -6965,7 +6919,7 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp23"></script>
+<script src="/competition.js?v=comp24"></script>
 <script src="/nba-news.js?v=1" defer></script>
 
 <nav class="mobile-nav" aria-label="Mobile draft navigation">

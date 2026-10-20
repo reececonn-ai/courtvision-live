@@ -770,8 +770,6 @@
   function renderLeaderboard(rows,demo,games=[]){
     const el=$("competitionLeaderboard");if(!el)return;
     const today=todaysOwnerResults(games||[]);
-    renderSpotlight(rows);
-    renderRace(rows);
     el.innerHTML=rows.map((r,i)=>{
       const teams=r.teams.map(t=>'<button class="comp-team-chip" style="'+teamStyle(t.name)+'" onclick="previewTeamFromCompetition(\''+esc(t.name).replace(/'/g,"&#39;")+'\')"><img src="'+teamLogo(t.name)+'" alt=""><span>'+esc(shortTeam(t.name))+'</span><b>#'+(t.rank||"—")+' · '+t.w+"-"+t.l+'</b></button>').join("");
       const d=today[r.name]||{w:0,l:0,games:0};
@@ -1255,6 +1253,57 @@
     return originalClose();
   };
 
+
+  const teamDetailCache=new Map();
+  async function teamDetailFeed(key,kind){
+    const cacheKey=key+":"+kind,old=teamDetailCache.get(cacheKey);
+    if(old&&Date.now()-old.at<120000)return old.promise;
+    const direct=kind==="injuries"?"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries":
+      "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/"+encodeURIComponent(key)+"/"+kind+"?season="+SEASON_YEAR;
+    const promise=fetchNbaJson("/api/nba/team-detail?team="+encodeURIComponent(key)+"&kind="+kind,direct,8000);
+    teamDetailCache.set(cacheKey,{at:Date.now(),promise});
+    try{return await promise}catch(e){teamDetailCache.delete(cacheKey);throw e}
+  }
+
+  async function renderTeamDetail(name,detail){
+    const team=teamMeta(name);if(!team)return;
+    const key=typeof espnTeamKey==="function"?espnTeamKey(team[1]):String(team[1]).toLowerCase();
+    const results=await Promise.allSettled(["roster","injuries","schedule"].map(kind=>teamDetailFeed(key,kind)));
+    if(!detail.isConnected||detail.dataset.team!==name||detail.hidden)return;
+    const target=detail.querySelector(".team-detail-content");if(!target)return;
+    const [rosterResult,injuryResult,scheduleResult]=results;
+    const rosterData=rosterResult.status==="fulfilled"?rosterResult.value:null;
+    const athletes=[];
+    const walk=items=>{for(const p of items||[]){if(p.items)walk(p.items);else if(p.displayName)athletes.push(p)}};
+    walk(rosterData?.athletes);
+    const roster=athletes.map(p=>({name:p.displayName,position:p.position?.abbreviation||"—",jersey:p.jersey||"—"}));
+    const cached=state.liveRosters?.[name]||[];
+    const shown=roster.length?roster:cached;
+    let html='<section><h3>Roster</h3><p class="team-detail-source">'+(roster.length?'ESPN · current roster':cached.length?'Cached roster · '+esc(state.liveSyncAt?daySydney(new Date(state.liveSyncAt)):'last sync unknown'):'Roster unavailable · try again later')+'</p>';
+    if(shown.length)html+=statsTable(["Player","Pos","No."],shown.map(p=>[p.name,p.position||"—",p.jersey||"—"]));
+    html+='</section><section><h3>Injuries & availability</h3>';
+    if(injuryResult.status==="fulfilled"){
+      const entry=(injuryResult.value.injuries||[]).find(t=>teamNameFromEspn(t)===name);
+      const injuries=entry?.injuries||[];
+      html+='<p class="team-detail-source">ESPN · latest available report</p>';
+      html+=injuries.length?injuries.map(x=>'<article class="team-injury"><strong>'+esc(x.athlete?.displayName||"Player")+' · '+esc(x.status||"Status pending")+'</strong><p>'+esc(x.shortComment||x.longComment||"No additional detail.")+'</p>'+(x.date?'<small>Reported '+esc(daySydney(new Date(x.date)))+'</small>':'')+'</article>').join(''):'<p>No injuries listed by ESPN. Availability can change before tip-off.</p>';
+    }else html+='<p>Injury report unavailable · try again later.</p>';
+    html+='</section>';
+    if(scheduleResult.status==="fulfilled"){
+      const games=parseScoreboard(scheduleResult.value).filter(g=>g.home===name||g.away===name);
+      const recent=games.filter(g=>g.status==="FINAL").sort((a,b)=>b.date-a.date).slice(0,5);
+      const upcoming=games.filter(g=>g.status!=="FINAL"&&g.date>=new Date(Date.now()-6*3600000)).sort((a,b)=>a.date-b.date).slice(0,5);
+      const won=g=>g.home===name?g.homeWinner:g.awayWinner;
+      const wins=recent.filter(won).length;
+      html+='<section><h3>Recent form</h3><p class="team-detail-source">'+(recent.length?'Last '+recent.length+' regular-season games · '+wins+'W–'+(recent.length-wins)+'L':'No completed regular-season games yet.')+'</p>';
+      html+=recent.length?statsTable(["Date","Opponent","Result"],recent.map(g=>[daySydney(g.date),shortTeam(g.home===name?g.away:g.home),(won(g)?'W ':'L ')+(g.home===name?g.homeScore+'–'+g.awayScore:g.awayScore+'–'+g.homeScore)])):'';
+      html+='</section><section><h3>Upcoming games</h3>';
+      html+=upcoming.length?statsTable(["Sydney date","Opponent","Time"],upcoming.map(g=>[daySydney(g.date),(g.home===name?'vs ':'@ ')+shortTeam(g.home===name?g.away:g.home),g.status==="IN"?'LIVE':timeSydney(g.date)])):'<p>No upcoming regular-season games listed.</p>';
+      html+='</section>';
+    }else html+='<section><h3>Recent form & upcoming games</h3><p>Schedule unavailable · try again later.</p></section>';
+    target.innerHTML=html;
+  }
+
   async function getCompetitionData(force=false){
     const demo=isTestDraft();
     if(demo)return demoCompetitionData();
@@ -1277,22 +1326,9 @@
       saveCompetitionSnapshot(rows,data.demo);
       renderLeaderboard(rows,data.demo,data.games||[]);
       renderGames(data.games||[],data.records||{});
-      const movement=renderMovement(rows,data.demo);
-      const impacts=renderGameImpact(data.games||[],data.records||{},rows);
-      const bits=competitionTidbits(rows,data.games||[],data.recent||[]);
-      renderTidbits(bits);
-      const intelTicker=[];
-      const mover=movement.items?.[0];
-      if(mover)intelTicker.push({tag:"SINCE YESTERDAY",text:mover.name+" "+(mover.probMove>=0?"+":"")+mover.probMove.toFixed(1)+" title pts · rank "+(mover.rankMove>0?"up "+mover.rankMove:mover.rankMove<0?"down "+Math.abs(mover.rankMove):"unchanged")+".",kind:mover.probMove<0?"alert":"draft"});
-      const impact=impacts?.[0];
-      if(impact)intelTicker.push({tag:"SWING WATCH",text:shortTeam(impact.away)+" vs "+shortTeam(impact.home)+" carries about "+impact.swing.toFixed(1)+" title-probability points of swing.",kind:"team"});
-      window.cvCompetitionTicker=[...intelTicker,...(window.cvCompetitionTicker||[])];
       const stamp=$("competitionUpdated");
       if(stamp)stamp.textContent=(data.demo?"DEMO · ":regularSeasonStarted()?"UPDATED ":"PRESEASON PROJECTION · ")+new Intl.DateTimeFormat("en-AU",{timeZone:TZ,day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}).format(new Date());
       if(status)status.textContent=data.demo?"Test draft · seeded competition results for troubleshooting":regularSeasonStarted()?"Regular-season NBA results · auto-checking every 2 minutes":"2026–27 SEASON PROJECTIONS · reset at opening tip, then live records take over";
-      if(document.querySelector(".screen.active")?.id==="competitionScreen"){
-        setTicker(window.cvCompetitionTicker?.length?window.cvCompetitionTicker:[{tag:"COMPETITION",text:"Daily rivalry board",kind:"draft"}],"COMP BOARD");
-      }
     }catch(e){
       console.warn("Competition refresh failed",e);
       if(status)status.textContent="Live competition data unavailable · try Refresh";
@@ -1384,6 +1420,7 @@
 
   window.cvCompetition={
     demoCompetitionData,
+    renderTeamDetail,
     gameWinChance,
     sampleDaySlate,
     ownerSummaries,

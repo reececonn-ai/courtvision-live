@@ -420,6 +420,15 @@ export default {
       return cachedNbaResponse(request, upstream, nbaCacheTtl("standings", season), ctx, bypass);
     }
 
+    if (url.pathname === "/api/nba/team-detail") {
+      if (request.method !== "GET") return json({ ok: false, error: "Method not allowed" }, 405);
+      const team = String(url.searchParams.get("team") || "").toLowerCase();
+      const kind = String(url.searchParams.get("kind") || "");
+      if (!/^[a-z0-9]{2,4}$/.test(team) || !["roster", "schedule", "injuries"].includes(kind)) return json({ ok: false, error: "Invalid team detail request" }, 400);
+      const upstream = kind === "injuries" ? "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries" : "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/" + encodeURIComponent(team) + "/" + kind + "?season=2027";
+      return cachedNbaResponse(request, upstream, 120, ctx);
+    }
+
     if (url.pathname === "/api/nba/summary") {
       if (request.method !== "GET") return json({ ok: false, error: "Method not allowed" }, 405);
       const event = String(url.searchParams.get("event") || "");
