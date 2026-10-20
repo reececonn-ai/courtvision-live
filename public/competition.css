@@ -3319,3 +3319,18 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 #nerdClassic .ns-archive-head h3{font-size:30px;margin:10px 0;color:#fff}
 #nerdClassic .ns-archive-head p{font-size:14px;color:#b5cade}
 @media(max-width:700px){#nerdStudio .ns-deep-group table{font-size:12px}#nerdStudio .ns-deep-group th,#nerdStudio .ns-deep-group td{padding:10px}#nerdStudio .ns-deep-group tbody th{min-width:140px}}
+
+/* Compact expectation graph. */
+#nerdStudio .ns-performance-graph{max-width:900px}
+#nerdStudio .ns-performance-axis{display:flex;justify-content:space-between;margin-left:240px;margin-right:65px;font-size:11px;color:#abc1d6}
+#nerdStudio .ns-performance-graph ul{list-style:none;padding:0;margin:10px 0}
+#nerdStudio .ns-performance-graph li{display:grid;grid-template-columns:225px minmax(70px,1fr) 55px;gap:15px;align-items:center;padding:7px 0}
+#nerdStudio .ns-performance-name{display:flex;align-items:center;gap:8px;font-size:13px;color:#e8f2ff}
+#nerdStudio .ns-performance-name img{width:29px;height:29px;object-fit:contain}
+#nerdStudio .ns-performance-graph small{display:block;font-size:10px;color:#a4bcd3;font-weight:400;margin-top:3px}
+#nerdStudio .ns-performance-track{position:relative;height:22px;background:#152a3c}
+#nerdStudio .ns-performance-track:after{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:#8fa6bb}
+#nerdStudio .ns-performance-track i{position:absolute;top:4px;height:14px;border-radius:2px}
+#nerdStudio .ns-performance-graph li>b{text-align:right;font-size:17px;color:#fff}
+#nerdStudio #nerdClassic{margin-top:28px}
+@media(max-width:600px){#nerdStudio .ns-performance-graph li{grid-template-columns:140px minmax(50px,1fr) 45px;gap:8px}#nerdStudio .ns-performance-axis{margin-left:148px;margin-right:53px;font-size:9px;gap:10px}#nerdStudio .ns-performance-name{font-size:11px}#nerdStudio .ns-performance-name img{width:23px;height:23px}}
