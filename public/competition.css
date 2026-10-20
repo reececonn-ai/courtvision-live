@@ -3214,3 +3214,8 @@ body:not(.classic-main-style) #competitionScreen .comp-paper-feature .comp-secti
 #competitionGames .game-availability-player small{color:#a9c2d7}
 @media(max-width:1000px){#competitionScreen .cv-editorial-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:550px){#competitionScreen .cv-editorial-story,#competitionScreen .cv-editorial-story.is-lead{display:grid;grid-template-columns:75px minmax(0,1fr);gap:10px}#competitionScreen .cv-editorial-grid{grid-template-columns:1fr;gap:12px}#competitionScreen .cv-editorial-media,#competitionScreen .cv-editorial-story.is-lead .cv-editorial-media{aspect-ratio:1;height:65px}#competitionGames .availability-lineup,#competitionGames .game-availability-columns{grid-template-columns:1fr}}
+
+.cv-editorial-media .cv-news-logo-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;padding:10px;background:#11283c}
+.cv-editorial-media .cv-news-logo-fallback img{position:static;width:auto;max-width:44%;height:100%;max-height:78px;object-fit:contain;flex:0 1 auto}
+.cv-editorial-media>img{z-index:1}
+@media(max-width:550px){.cv-editorial-media .cv-news-logo-fallback{padding:6px;gap:3px}}
