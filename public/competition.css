@@ -3105,3 +3105,13 @@ body:not(.classic-main-style) #draftBoardScreen .board-team:hover{
  .team-section-nav{gap:6px;padding-bottom:16px;margin-bottom:18px}
  .team-section-nav a{padding:11px 12px;min-height:44px}
 }
+
+/* Completed-game highlights are an explicit external action, separate from stats. */
+#competitionGames .comp-game.final .comp-game-main{grid-template-areas:"away home" "probability probability" "highlights highlights";grid-template-rows:minmax(110px,1fr) auto auto}
+.game-youtube-highlights{display:flex;flex-direction:column;gap:3px;color:#f5f8fc;text-decoration:none;padding:12px 14px;background:#35202a;border-top:1px solid #744354;font:700 13px/1.4 Arial,sans-serif}
+.game-youtube-highlights small{color:#d4bec7;font:11px/1.4 Arial,sans-serif}
+.game-youtube-highlights:hover,.game-youtube-highlights:focus-visible{background:#542638;text-decoration:underline;text-underline-offset:3px}
+#competitionGames .game-youtube-highlights{grid-area:highlights;position:relative;z-index:5;min-height:55px}
+#competitionGames .comp-game.final:has(.game-youtube-highlights) .comp-game-stats-toggle span{bottom:64px}
+#teamsHubDetail .team-fixtures article:has(.game-youtube-highlights){flex-wrap:wrap}
+#teamsHubDetail .team-fixtures .game-youtube-highlights{flex-basis:100%;margin-top:5px;border-radius:6px;border:1px solid #744354;padding:9px 12px}

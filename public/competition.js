@@ -822,6 +822,15 @@
     return {home,away:100-home};
   }
 
+
+  function gameHighlightsLink(g){
+    if(g.status!=="FINAL"||g.sample||String(g.id).startsWith("demo-"))return "";
+    const date=new Date(g.date);if(!Number.isFinite(date.getTime()))return "";
+    const gameDay=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"long",day:"numeric"}).format(date);
+    const query="NBA "+g.away+" vs "+g.home+" full game highlights "+gameDay;
+    return '<a class="game-youtube-highlights" href="https://www.youtube.com/results?search_query='+encodeURIComponent(query)+'" target="_blank" rel="noopener noreferrer" aria-label="Search YouTube highlights for '+esc(g.away)+' vs '+esc(g.home)+' on '+esc(gameDay)+'"><span>YouTube highlights ↗</span><small>Search this game · videos may appear after final</small></a>';
+  }
+
   function gameWinChanceMarkup(g){
     if(g.status==="FINAL")return '<div class="comp-game-probability"><span>FINAL RESULT</span><strong>'+esc(shortTeam(g.homeWinner?g.home:g.awayWinner?g.away:g.home))+(g.homeWinner||g.awayWinner?' WON':' · FINAL')+'</strong></div>';
     const p=gameWinChance(g);
@@ -961,7 +970,7 @@
         side(g.home,ho,g.homeScore,"home",scores)+
         (status?'<div class="comp-game-state">'+esc(status)+'</div>':'')+
         gameWinChanceMarkup(g)+
-        '<button type="button" class="comp-game-stats-toggle" aria-expanded="false" aria-controls="compGameStats'+index+'" aria-label="Game stats: '+esc(shortTeam(g.away))+' vs '+esc(shortTeam(g.home))+'"><span>Click or tap for stats</span></button></div>'+
+        '<button type="button" class="comp-game-stats-toggle" aria-expanded="false" aria-controls="compGameStats'+index+'" aria-label="Game stats: '+esc(shortTeam(g.away))+' vs '+esc(shortTeam(g.home))+'"><span>Click or tap for stats</span></button>'+gameHighlightsLink(g)+'</div>'+
         '<section class="comp-game-stats" id="compGameStats'+index+'" aria-label="Game stats" hidden><div class="comp-game-stats-head"><strong>'+esc(shortTeam(g.away))+' vs '+esc(shortTeam(g.home))+'</strong><button type="button" class="comp-game-stats-close">Close stats</button></div><div class="comp-game-stats-body" aria-live="polite"></div></section>'+
       '</article>';
     }).join("");
@@ -1390,7 +1399,7 @@
       const won=g=>g.home===name?g.homeWinner:g.awayWinner;
       const wins=recent.filter(won).length;
       html+='<section class="team-form-section" id="team-form"><span class="team-section-label">THE LAST FIVE</span><h3>How they’re travelling</h3><p class="team-detail-source">'+(recent.length?'Last '+recent.length+' regular-season games · '+wins+'W–'+(recent.length-wins)+'L':'No completed regular-season games yet.')+'</p>';
-      html+=recent.length?'<div class="team-form-strip">'+recent.map(g=>'<span class="'+(won(g)?'is-win':'is-loss')+'">'+(won(g)?'W':'L')+'</span>').join("")+'</div><div class="team-fixtures">'+recent.map(g=>{const opponent=g.home===name?g.away:g.home;return '<article style="'+teamStyle(opponent)+'"><img src="'+teamLogo(opponent)+'" alt=""><div><strong>'+esc(shortTeam(opponent))+'</strong><small>'+esc(daySydney(g.date))+'</small></div><b>'+(won(g)?'W ':'L ')+(g.home===name?g.homeScore+'–'+g.awayScore:g.awayScore+'–'+g.homeScore)+'</b></article>';}).join("")+'</div>':'';
+      html+=recent.length?'<div class="team-form-strip">'+recent.map(g=>'<span class="'+(won(g)?'is-win':'is-loss')+'">'+(won(g)?'W':'L')+'</span>').join("")+'</div><div class="team-fixtures">'+recent.map(g=>{const opponent=g.home===name?g.away:g.home;return '<article style="'+teamStyle(opponent)+'"><img src="'+teamLogo(opponent)+'" alt=""><div><strong>'+esc(shortTeam(opponent))+'</strong><small>'+esc(daySydney(g.date))+'</small></div><b>'+(won(g)?'W ':'L ')+(g.home===name?g.homeScore+'–'+g.awayScore:g.awayScore+'–'+g.homeScore)+'</b>'+gameHighlightsLink(g)+'</article>';}).join("")+'</div>':'';
       html+='</section><section class="team-next-section" id="team-fixtures"><span class="team-section-label">MARK YOUR CALENDAR</span><h3>Up next</h3>';
       html+=upcoming.length?'<div class="team-fixtures">'+upcoming.map(g=>{const opponent=g.home===name?g.away:g.home;return '<article><img src="'+teamLogo(opponent)+'" alt=""><div><strong>'+(g.home===name?'vs ':'@ ')+esc(shortTeam(opponent))+'</strong><small>'+esc(daySydney(g.date))+' · Sydney</small></div><b>'+esc(g.status==="IN"?'LIVE':timeSydney(g.date))+'</b></article>';}).join("")+'</div>':'<p>No upcoming regular-season games listed.</p>';
       html+='</section>';
