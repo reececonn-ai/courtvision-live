@@ -35,15 +35,53 @@
     for(const i of ticks)svg+='<text x="'+x(i)+'" y="260" text-anchor="'+(i===0?'start':i===snapshots.length-1?'end':'middle')+'">'+esc(snapshots[i].key.slice(5))+'</text>';
     return '<div class="ns-legend">'+rows.map(r=>'<span><i style="background:'+colour(r.name,rows)+'"></i>'+esc(r.name)+'</span>').join("")+'</div>'+svg+'</svg><p class="ns-note">Sydney day (MM-DD) · simulated title chances, not betting odds. Missing owner observations are left as gaps.</p>';
   }
-  function valueChart(rows){
-    const teams=rows.flatMap(r=>r.teams.map(t=>({...t,owner:r.name,played:t.w+t.l}))).filter(t=>t.played>0&&Number.isFinite(t.line)).map(t=>({...t,pace:t.w/(t.w+t.l)*82,delta:t.w/(t.w+t.l)*82-t.line}));
-    if(!teams.length){
-      const projected=rows.flatMap(r=>r.teams.filter(t=>Number.isFinite(t.line)).map(t=>({...t,owner:r.name}))).sort((a,b)=>b.line-a.line).slice(0,6),max=Math.max(1,...projected.map(t=>t.line));
-      return '<p class="ns-note">No regular-season results yet. Showing the highest preseason projections in this selection. Performance against expectations appears after games are played.</p>'+projected.map(t=>'<div class="ns-value-row"><img src="'+logoUrl(teamByName(t.name)?.[1]||"")+'" alt=""><div><strong>'+esc(t.name)+'</strong><small>'+esc(t.owner)+'</small></div><div class="ns-value-track"><i style="width:'+t.line/max*100+'%;background:'+(teamByName(t.name)?.[2]||colour(t.owner,rows))+'"></i></div><b>'+t.line.toFixed(1)+'</b></div>').join("");
-    }
-    const ordered=[...teams].sort((a,b)=>b.delta-a.delta),picked=[...ordered.slice(0,3),...ordered.slice(-3)].filter((t,i,all)=>all.findIndex(x=>x.name===t.name)===i),max=Math.max(1,...picked.map(t=>Math.abs(t.delta)));
-    return '<p class="ns-note">Largest gaps between current 82-game win pace and preseason expectation. Early-season pace is volatile; this is not a final-season forecast.</p>'+picked.map(t=>'<div class="ns-value-row"><img src="'+logoUrl(teamByName(t.name)?.[1]||"")+'" alt=""><div><strong>'+esc(t.name)+'</strong><small>'+esc(t.owner)+' · '+t.w+'–'+t.l+' · '+t.played+' games</small></div><div class="ns-diverge"><i style="left:'+(t.delta<0?50-Math.abs(t.delta)/max*50:50)+'%;width:'+Math.abs(t.delta)/max*50+'%;background:'+colour(t.owner,rows)+'"></i></div><b>'+(t.delta>=0?'+':'')+t.delta.toFixed(1)+'</b></div>').join("");
+
+  let teamMetric="delta",teamScope="all";
+  const plus=n=>(n>0?"+":"")+n.toFixed(1);
+  function teamNumbers(rows,recent){
+    const finals=[...recent].filter(g=>g.status==="FINAL"&&(g.homeWinner||g.awayWinner)).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    return rows.flatMap(r=>r.teams.map(t=>{
+      const seen=new Set(),games=finals.filter(g=>{
+        if(g.home!==t.name&&g.away!==t.name)return false;
+        const key=g.id||[g.date,g.home,g.away].join("|");if(seen.has(key))return false;seen.add(key);return true;
+      }).map(g=>{const h=g.home===t.name;return {won:!!g[h?"homeWinner":"awayWinner"],pf:Number(g[h?"homeScore":"awayScore"]),pa:Number(g[h?"awayScore":"homeScore"])}});
+      const scored=games.filter(g=>Number.isFinite(g.pf)&&Number.isFinite(g.pa)),last=games.slice(0,5),played=t.w+t.l;
+      return {...t,owner:r.name,played,delta:played&&Number.isFinite(t.line)?t.w-played*t.line/82:null,form:last.filter(g=>g.won).length,formN:last.length,n:games.length,scoredN:scored.length,pf:scored.length?scored.reduce((n,g)=>n+g.pf,0)/scored.length:null,pa:scored.length?scored.reduce((n,g)=>n+g.pa,0)/scored.length:null,margin:scored.length?scored.reduce((n,g)=>n+g.pf-g.pa,0)/scored.length:null,close:scored.filter(g=>Math.abs(g.pf-g.pa)<=5),blowouts:scored.filter(g=>g.pf-g.pa>=15).length};
+    }));
   }
+  function dailyBrief(rows,recent,demo){
+    const teams=teamNumbers(rows,recent),eligible=teams.filter(t=>t.delta!==null),items=[];
+    const high=[...eligible].sort((a,b)=>b.delta-a.delta)[0],low=[...eligible].sort((a,b)=>a.delta-b.delta)[0];
+    if(high&&high.delta>=.05)items.push(['BEATING THE LINE',high.name,plus(high.delta)+' wins above preseason pace through '+high.played+' games. '+high.owner+' gets the lift.']);
+    if(low&&low.delta<=-.05)items.push(['BELOW EXPECTATIONS',low.name,Math.abs(low.delta).toFixed(1)+' wins below preseason pace through '+low.played+' games. Owned by '+low.owner+'.']);
+    const hot=teams.filter(t=>t.formN>=3&&t.form/t.formN>=.6).sort((a,b)=>b.form/b.formN-a.form/a.formN||b.formN-a.formN)[0];
+    if(hot)items.push(['FORM CHECK',hot.name,hot.form+'–'+(hot.formN-hot.form)+' in its last '+hot.formN+' available games.']);
+    const key=new Date().toLocaleDateString("en-CA",{timeZone:"Australia/Sydney"});
+    const previous=(state.competitionSnapshots||[]).filter(s=>!!s.demo===!!demo&&s.key<key&&Array.isArray(s.rows)).sort((a,b)=>String(b.key).localeCompare(String(a.key)))[0];
+    const moves=rows.map(r=>({r,old:previous?.rows.find(p=>p.name===r.name)})).filter(x=>Number.isFinite(x.old?.probability)).map(x=>({...x,change:x.r.probability-x.old.probability})).sort((a,b)=>Math.abs(b.change)-Math.abs(a.change));
+    if(moves[0]&&Math.abs(moves[0].change)>=.1)items.push(['RACE MOVER',moves[0].r.name,plus(moves[0].change)+' percentage points of title chance since '+previous.key+'.']);
+    const stamp=new Date().toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",timeZone:"Australia/Sydney"});
+    return '<section class="ns-section ns-daily"><div class="ns-section-title"><span class="ns-kicker">THE DAILY TL;DR · '+esc(stamp)+(demo?' · SAMPLE DATA':'')+'</span><h3>Your numbers, in a minute.</h3></div>'+
+      (items.length?'<div class="ns-daily-grid">'+items.slice(0,4).map(([tag,name,copy])=>'<article><small>'+tag+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>').join("")+'</div>':'<p>No meaningful performance signals yet. The daily brief fills in as results arrive—no games means no hot takes.</p>')+
+      '<p class="ns-note">Refreshes with the competition data. Early-season signals can swing sharply; recent form uses the available results window.</p><a href="#nsTeamLab">Explore team performance ↓</a></section>';
+  }
+  function performanceLab(rows,recent){
+    const selected=teamScope==="mine"&&squadOwner?rows.filter(r=>r.name===squadOwner):rows;
+    const teams=teamNumbers(selected,recent),valid=teams.filter(t=>(teamMetric==="delta"||teamMetric==="cold")?t.delta!==null:teamMetric==="margin"?t.margin!==null:t.formN>0).sort((a,b)=>teamMetric==="cold"?a.delta-b.delta:teamMetric==="form"?b.form/b.formN-a.form/a.formN:teamMetric==="margin"?b.margin-a.margin:b.delta-a.delta);
+    const metric=t=>teamMetric==="form"?t.form+'–'+(t.formN-t.form):teamMetric==="margin"?plus(t.margin):plus(t.delta);
+    const label=teamMetric==="form"?'Recent W–L':teamMetric==="margin"?'Avg margin':'Wins vs expectation';
+    return '<div class="ns-controls"><label>Show <select id="nsTeamScope"><option value="all">All teams</option><option value="mine"'+(teamScope==="mine"?' selected':'')+(!squadOwner?' disabled':'')+'>My squad</option></select></label><label>Find <select id="nsTeamMetric">'+[['delta','Overachievers'],['cold','Underperformers'],['form','Hot hands'],['margin','Scoring power']].map(([v,n])=>'<option value="'+v+'"'+(v===teamMetric?' selected':'')+'>'+n+'</option>').join("")+'</select></label></div>'+
+      '<p class="ns-note">'+(teamMetric==="form"?'Last five available games per team; sample counts can differ.':teamMetric==="margin"?'Average points scored minus allowed in the loaded results window. This is not opponent-adjusted net rating.':'Actual wins minus preseason expected wins for games played. Positive means ahead; negative means behind. This is a pace check, not a new season forecast.')+'</p>'+
+      (valid.length?'<div class="ns-team-leaders">'+valid.map(t=>'<details class="ns-team-number"><summary><img src="'+logoUrl(teamByName(t.name)?.[1]||"")+'" alt=""><span><strong>'+esc(t.name)+'</strong><small>'+esc(t.owner)+' · '+t.w+'–'+t.l+' season · '+(teamMetric==="form"?t.formN+' recent games':teamMetric==="margin"?t.scoredN+' scored games':t.played+' games')+'</small></span><b>'+metric(t)+'<small>'+label+'</small></b></summary><div class="ns-team-deeper"><dl>'+
+        [['Season win rate',t.played?(100*t.w/t.played).toFixed(1)+'%':'—'],['Projected season wins',Number.isFinite(t.expected)?t.expected.toFixed(1):'—'],['Preseason win line',Number.isFinite(t.line)?t.line.toFixed(1):'—'],['Recent points per game',t.pf===null?'—':t.pf.toFixed(1)],['Recent points allowed',t.pa===null?'—':t.pa.toFixed(1)],['Recent scoring margin',t.margin===null?'—':plus(t.margin)],['Close games (≤5 pts)',t.close.length?t.close.filter(g=>g.won).length+'–'+t.close.filter(g=>!g.won).length:'—'],['Wins by 15+ points',t.scoredN?String(t.blowouts):'—']].map(([k,v])=>'<div><dt>'+k+'</dt><dd>'+v+'</dd></div>').join("")+'</dl><p class="ns-note">Scoring, close games and big wins cover '+t.scoredN+' available scored games, not necessarily the whole season. Tap again to close.</p></div></details>').join("")+'</div>':'<p class="ns-note">No completed data for this view yet. Try another metric after games finish.</p>');
+  }
+  function bindLab(root,rows,recent){
+    for(const id of ["nsTeamMetric","nsTeamScope"])root.querySelector("#"+id)?.addEventListener("change",e=>{
+      if(id==="nsTeamMetric")teamMetric=e.target.value;else teamScope=e.target.value;
+      root.querySelector("#nsValueContent").innerHTML=performanceLab(rows,recent);bindLab(root,rows,recent);
+    });
+  }
+
   let squadOwner="",rivalOwner="";
   const projectedOrder=rows=>[...rows].sort((a,b)=>b.projected-a.projected||a.name.localeCompare(b.name));
 
@@ -88,7 +126,7 @@
       squadOwner=rows[index].name;rivalOwner="";
       root.querySelector("#nsSquadContent").innerHTML=squadComparison(rows);
       bindSquad(root,rows);
-      const value=root.querySelector("#nsValueContent");if(value)value.innerHTML=valueChart(rows.filter(r=>r.name===squadOwner));
+      const value=root.querySelector("#nsValueContent");if(value)value.innerHTML=performanceLab(rows,latest?.recent||[]);bindLab(root,rows,latest?.recent||[]);
       root.querySelector('[data-owner-index="'+index+'"]')?.focus({preventScroll:true});
     }));
 
@@ -104,10 +142,11 @@
   function render(rows,games,recent,demo){
     latest={rows,games,recent,demo};
     const root=document.getElementById("nerdStudio");if(!root)return;
-    root.innerHTML='<section class="ns-section ns-squad"><div class="ns-section-title"><span class="ns-kicker">PICK YOUR NAME</span><h3>Compared with you</h3></div><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></section>'+
+    root.innerHTML=dailyBrief(rows,recent,demo)+'<section class="ns-section ns-squad"><div class="ns-section-title"><span class="ns-kicker">PICK YOUR NAME</span><h3>Compared with you</h3></div><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></section>'+
       '<section class="ns-section"><div class="ns-section-title"><span class="ns-kicker">FOLLOW THE RACE</span><h3>Every twist. Every contender.</h3></div>'+historyChart(rows,demo,root.clientWidth||960)+'</section>'+
-      '<section class="ns-section"><div class="ns-section-title"><span class="ns-kicker">TEAM PERFORMANCE</span><h3>Who’s beating expectations?</h3></div><div id="nsValueContent">'+valueChart(squadOwner?rows.filter(r=>r.name===squadOwner):rows)+'</div></section>';
+      '<section class="ns-section" id="nsTeamLab"><div class="ns-section-title"><span class="ns-kicker">TEAM PERFORMANCE</span><h3>Who’s beating expectations?</h3></div><div id="nsValueContent">'+performanceLab(rows,recent)+'</div></section>';
     bindSquad(root,rows,recent);
+    bindLab(root,rows,recent);
   }
   function toggle(){
     classic=!classic;

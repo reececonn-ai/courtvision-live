@@ -3272,3 +3272,26 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 #nerdStudio .ns-face-results li{display:flex;justify-content:space-between;gap:16px;font-size:12px;padding:10px 0;border-bottom:1px solid #25394d}
 #nerdStudio .ns-face-results b{white-space:nowrap;color:#b7d8ef}
 @media(max-width:700px){#nerdStudio .ns-face-teams{grid-template-columns:1fr;gap:8px}#nerdStudio .ns-face{padding:12px}#nerdStudio .ns-face .ns-table{font-size:12px}}
+
+/* Daily digest and progressively disclosed team statistics. */
+#nerdStudio .ns-daily{border-top:3px solid #f2bb63;background:linear-gradient(120deg,#142739,#0b1725);padding:22px}
+#nerdStudio .ns-daily-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:24px}
+#nerdStudio .ns-daily-grid small{display:block;color:#f2bb63;font-weight:700;font-size:11px;letter-spacing:1px}
+#nerdStudio .ns-daily-grid strong{display:block;font-size:21px;color:#fff;margin-top:8px}
+#nerdStudio .ns-daily-grid p{font-size:14px;line-height:1.6;color:#c4d4e4;margin:8px 0}
+#nerdStudio .ns-daily>a{color:#63c8ff;font-size:13px}
+#nerdStudio .ns-team-number{border-bottom:1px solid #2d4257}
+#nerdStudio .ns-team-number summary{display:flex;align-items:center;gap:14px;padding:14px 4px;cursor:pointer;list-style:none}
+#nerdStudio .ns-team-number summary::-webkit-details-marker{display:none}
+#nerdStudio .ns-team-number summary:after{content:"+";color:#63c8ff;margin-left:8px}
+#nerdStudio .ns-team-number[open] summary:after{content:"−"}
+#nerdStudio .ns-team-number summary>img{width:38px;height:38px;object-fit:contain}
+#nerdStudio .ns-team-number summary>span{flex:1;min-width:0}
+#nerdStudio .ns-team-number summary strong{color:#f0f6ff}
+#nerdStudio .ns-team-number small{display:block;font-size:11px;color:#adc2d7;margin-top:5px;font-weight:400}
+#nerdStudio .ns-team-number summary>b{text-align:right;color:#63c8ff;font-size:22px}
+#nerdStudio .ns-team-deeper{padding:10px 20px 18px;background:#102233}
+#nerdStudio .ns-team-deeper dl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin:10px 0}
+#nerdStudio .ns-team-deeper dt{font-size:12px;color:#b2c6db}
+#nerdStudio .ns-team-deeper dd{margin:6px 0 0;color:#fff;font-size:23px;font-weight:700}
+@media(max-width:700px){#nerdStudio .ns-team-deeper dl{grid-template-columns:repeat(2,minmax(0,1fr))}#nerdStudio .ns-daily{padding:16px}#nerdStudio .ns-team-number summary{gap:9px}#nerdStudio .ns-team-number summary strong{font-size:13px}}
