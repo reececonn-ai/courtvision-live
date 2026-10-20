@@ -3219,3 +3219,20 @@ body:not(.classic-main-style) #competitionScreen .comp-paper-feature .comp-secti
 .cv-editorial-media .cv-news-logo-fallback img{position:static;width:auto;max-width:44%;height:100%;max-height:78px;object-fit:contain;flex:0 1 auto}
 .cv-editorial-media>img{z-index:1}
 @media(max-width:550px){.cv-editorial-media .cv-news-logo-fallback{padding:6px;gap:3px}}
+
+/* Primary strips stay true to club colours; lighter logo wells keep dark brands legible. */
+#competitionScreen .comp-team-chip{
+ border-top:6px solid var(--team1,#2d78c7)!important;
+ border-bottom:2px solid var(--team2,#ffffff)!important;
+ background:linear-gradient(110deg,color-mix(in srgb,var(--team1,#2d78c7) 48%,#182b40),#0b1b2b)!important;
+}
+#competitionScreen .comp-team-chip:after{display:none!important;content:none!important}
+#competitionScreen .comp-team-chip img{
+ background:color-mix(in srgb,var(--team1,#2d78c7) 15%,#dce5ee)!important;
+ border-radius:9px!important;padding:5px!important;box-sizing:border-box!important;
+}
+body:not(.classic-main-style) #teamsHubScreen .teams-hub-card,
+body:not(.classic-main-style) #draftBoardScreen .board-team{
+ border-left:6px solid var(--team1,#2d78c7)!important;
+ background:linear-gradient(100deg,color-mix(in srgb,var(--team1,#2d78c7) 38%,#182b40),#0b1b2b 90%)!important;
+}

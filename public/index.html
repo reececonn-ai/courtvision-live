@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp47">
+<link rel="stylesheet" href="/competition.css?v=comp48">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -5044,17 +5044,18 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 const DATA_STAMP={season:"2026–27",lastSeason:"2025–26",espnSeasonYear:2027,espnLastSeasonYear:2026,curatedAt:"2026-09-18",curatedVersion:"2026-09-18a"};
 
 /* ---- 1. SOURCE DATA ---- */
+// Current club identities; Utah digital purple/sky-blue are artwork-matched approximations.
 const TEAM_DATA = [
 ["Atlanta Hawks","ATL","#E03A3E","#C1D32F"],["Boston Celtics","BOS","#007A33","#BA9653"],["Brooklyn Nets","BKN","#000000","#FFFFFF"],
-["Charlotte Hornets","CHA","#1D1160","#00788C"],["Chicago Bulls","CHI","#CE1141","#000000"],["Cleveland Cavaliers","CLE","#860038","#FDBB30"],
+["Charlotte Hornets","CHA","#00788C","#1D1160"],["Chicago Bulls","CHI","#CE1141","#000000"],["Cleveland Cavaliers","CLE","#860038","#FDBB30"],
 ["Dallas Mavericks","DAL","#00538C","#002B5E"],["Denver Nuggets","DEN","#0E2240","#FEC524"],["Detroit Pistons","DET","#C8102E","#1D42BA"],
 ["Golden State Warriors","GS","#1D428A","#FFC72C"],["Houston Rockets","HOU","#CE1141","#000000"],["Indiana Pacers","IND","#002D62","#FDBB30"],
-["LA Clippers","LAC","#C8102E","#1D428A"],["Los Angeles Lakers","LAL","#552583","#FDB927"],["Memphis Grizzlies","MEM","#5D76A9","#12173F"],
+["LA Clippers","LAC","#0C2340","#C8102E"],["Los Angeles Lakers","LAL","#552583","#FDB927"],["Memphis Grizzlies","MEM","#5D76A9","#12173F"],
 ["Miami Heat","MIA","#98002E","#F9A01B"],["Milwaukee Bucks","MIL","#00471B","#EEE1C6"],["Minnesota Timberwolves","MIN","#0C2340","#78BE20"],
 ["New Orleans Pelicans","NO","#0C2340","#C8102E"],["New York Knicks","NY","#006BB6","#F58426"],["Oklahoma City Thunder","OKC","#007AC1","#EF3B24"],
 ["Orlando Magic","ORL","#0077C0","#C4CED4"],["Philadelphia 76ers","PHI","#006BB6","#ED174C"],["Phoenix Suns","PHX","#1D1160","#E56020"],
 ["Portland Trail Blazers","POR","#E03A3E","#000000"],["Sacramento Kings","SAC","#5A2D81","#63727A"],["San Antonio Spurs","SA","#C4CED4","#000000"],
-["Toronto Raptors","TOR","#CE1141","#000000"],["Utah Jazz","UTAH","#002B5C","#F9A01B"],["Washington Wizards","WSH","#002B5C","#E31837"]
+["Toronto Raptors","TOR","#CE1141","#000000"],["Utah Jazz","UTAH","#5B2B82","#6CAEDF"],["Washington Wizards","WSH","#002B5C","#E31837"]
 ];
 // ESPN team ids (site/core API). Fetched live too, but this map is the offline fallback.
 const ESPN_TEAM_IDS={ATL:1,BOS:2,BKN:17,CHA:30,CHI:4,CLE:5,DAL:6,DEN:7,DET:8,GS:9,HOU:10,IND:11,LAC:12,LAL:13,MEM:29,MIA:14,MIL:15,MIN:16,NO:3,NY:18,OKC:25,ORL:19,PHI:20,PHX:21,POR:22,SAC:23,SA:24,TOR:28,UTAH:26,WSH:27};
