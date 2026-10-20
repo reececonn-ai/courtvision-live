@@ -6739,7 +6739,7 @@ function renderTeamsHub(){
     detail.style.setProperty("--club-primary",t[2]||"#235b90");
     detail.style.setProperty("--club-secondary",t[3]||"#71b8ee");
     detail.innerHTML='<button type="button" class="teams-hub-back" onclick="openTeamsHub()">← ALL TEAMS</button>'
-      +'<div class="teams-hub-profile team-club-hero" id="team-overview"><img src="'+logoUrl(t[1])+'" alt=""><div class="team-club-title"><span class="comp-eyebrow">YOUR CLUB, UP CLOSE</span><h3>'
+      +'<div class="teams-hub-profile team-club-hero" id="team-overview"><img src="'+logoUrl(t[1])+'" alt=""><div class="team-club-title"><h3>'
       +escapeHtml(t[0])+'</h3><p>'+escapeHtml(a?'Owned by '+a.player:'Unassigned')+'</p></div></div>'
       +'<nav class="team-section-nav" aria-label="Team page sections"><a href="#team-overview">Overview</a><a href="#team-statistics">Charts</a><a href="#team-squad">Squad</a><a href="#team-availability">Availability</a><a href="#team-fixtures">Fixtures</a></nav>'
       +'<div class="team-detail-content" aria-live="polite">Loading roster, injuries and schedule…</div>';
