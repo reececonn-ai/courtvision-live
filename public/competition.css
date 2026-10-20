@@ -3188,3 +3188,29 @@ body:not(.classic-main-style) #draftBoardScreen .board-team:hover{
 .availability-confirmed{color:#9ae1bd;font:12px/1.5 Arial,sans-serif}
 @media(max-width:850px){.availability-team-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.availability-matchups{grid-template-columns:1fr}}
 @media(max-width:550px){.availability-team-grid,.availability-lineup{grid-template-columns:1fr}.availability-heading{align-items:flex-start;flex-direction:column}}
+
+/* A quick morning roster wire, with game availability kept inside game details. */
+#competitionScreen .comp-paper-feature{margin-top:16px!important}
+body:not(.classic-main-style) #competitionScreen .comp-paper-feature .comp-stories-panel{margin-top:12px!important;padding-top:12px!important}
+body:not(.classic-main-style) #competitionScreen .comp-paper-feature .comp-section-head{padding:4px 0 12px!important}
+body:not(.classic-main-style) #competitionScreen .comp-paper-feature .comp-section-head strong{font-size:21px!important}
+#competitionScreen .cv-editorial-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+#competitionScreen .cv-editorial-support{display:contents}
+#competitionScreen .cv-editorial-story,#competitionScreen .cv-editorial-story.is-lead{display:block;padding:0 0 10px;border-bottom:1px solid #304355}
+#competitionScreen .cv-editorial-media,#competitionScreen .cv-editorial-story.is-lead .cv-editorial-media{aspect-ratio:16/6;max-height:100px;margin-bottom:9px;border-radius:6px}
+#competitionScreen .cv-editorial-story h3,#competitionScreen .cv-editorial-story.is-lead h3{font-size:15px!important;line-height:1.35!important;margin:5px 0 7px}
+#competitionScreen .cv-editorial-category{font-size:10px}
+#competitionScreen .cv-owner-labels{margin:6px 0}
+#competitionScreen .cv-owner-labels span{font-size:11px;padding:3px 6px}
+#competitionScreen .cv-more-news{margin-top:10px;padding-top:4px}
+#competitionGames .game-lineup-slot{border-bottom:1px solid #344c63;margin-bottom:18px;padding-bottom:16px}
+#competitionGames .game-lineup-heading{font:700 16px/1.4 Arial,sans-serif!important;margin:14px 0 8px!important}
+#competitionGames .availability-lineup,#competitionGames .game-availability-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:6px 0}
+#competitionGames .availability-lineup h4,#competitionGames .game-availability-columns h4{font-size:13px!important;line-height:1.5!important}
+#competitionGames .availability-lineup h4 small{display:block;color:#b3c8da}
+#competitionGames .availability-lineup ul{margin:8px 0;padding-left:18px}
+#competitionGames .game-availability-player{padding:8px 0;border-bottom:1px solid #263e54;font-size:12px}
+#competitionGames .game-availability-player p{margin:4px 0}
+#competitionGames .game-availability-player small{color:#a9c2d7}
+@media(max-width:1000px){#competitionScreen .cv-editorial-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){#competitionScreen .cv-editorial-story,#competitionScreen .cv-editorial-story.is-lead{display:grid;grid-template-columns:75px minmax(0,1fr);gap:10px}#competitionScreen .cv-editorial-grid{grid-template-columns:1fr;gap:12px}#competitionScreen .cv-editorial-media,#competitionScreen .cv-editorial-story.is-lead .cv-editorial-media{aspect-ratio:1;height:65px}#competitionGames .availability-lineup,#competitionGames .game-availability-columns{grid-template-columns:1fr}}

@@ -43,7 +43,7 @@
     const stamp=Number.isFinite(date.getTime())?new Intl.DateTimeFormat("en-AU",{timeZone:"Australia/Sydney",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}).format(date):"";
     const image=/^https:\/\/(?:[a-z0-9-]+\.)*espncdn\.com\//i.test(a.image||"")?a.image:"";
     const labels=ownerLabels(a);
-    return '<a class="cv-editorial-story '+(lead?'is-lead':'')+'" href="'+esc(a.url)+'" target="_blank" rel="noopener noreferrer"><div class="cv-editorial-media"><span>NBA WIRE</span>'+(image?'<img src="'+esc(image)+'" alt="" loading="'+(lead?'eager':'lazy')+'" onerror="this.remove()">':'')+'</div><div class="cv-editorial-copy"><span class="cv-editorial-category">'+esc(a.category||"NBA NEWS")+'</span><h3>'+esc(a.headline)+'</h3>'+(lead&&a.summary?'<p>'+esc(a.summary)+'</p>':'')+(labels?'<div class="cv-owner-labels">'+labels+'</div>':'')+'<small>ESPN'+(stamp?' · '+esc(stamp)+' Sydney':'')+' · Read original ↗</small></div></a>';
+    return '<a class="cv-editorial-story '+(lead?'is-lead':'')+'" href="'+esc(a.url)+'" target="_blank" rel="noopener noreferrer"><div class="cv-editorial-media"><span>NBA WIRE</span>'+(image?'<img src="'+esc(image)+'" alt="" loading="'+(lead?'eager':'lazy')+'" onerror="this.remove()">':'')+'</div><div class="cv-editorial-copy"><span class="cv-editorial-category">'+esc(a.category||"NBA NEWS")+'</span><h3>'+esc(a.headline)+'</h3>'+(false&&a.summary?'<p>'+esc(a.summary)+'</p>':'')+(labels?'<div class="cv-owner-labels">'+labels+'</div>':'')+'<small>ESPN'+(stamp?' · '+esc(stamp)+' Sydney':'')+' · Read original ↗</small></div></a>';
   }
 
   function competitionUpdate(a){

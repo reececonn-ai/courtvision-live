@@ -37,32 +37,30 @@
       (confirmed?'<p class="availability-confirmed">'+(status==="FINAL"?'Starting five · final box score':'Confirmed starters · game box score')+'</p><ul>'+starters.map(p=>'<li>'+esc(p.athlete?.displayName||"Player")+'</li>').join("")+'</ul>':
         historical?'<p>Historical starting five unavailable.</p>':projected(name))+'</section>';
   }
-  async function render(games,key,flags={}){
-    latestArgs=[games,key,flags];
-    const host=document.getElementById("competitionAvailability");if(!host)return;
-    const current=++token,today=keyNow(),historical=key<today,teams=[...new Set(games.flatMap(g=>[g.away,g.home]))];
-    if(!games.length){host.innerHTML=flags.loading?'<p class="availability-note">Availability follows the selected date’s games.</p>':flags.error?'<p class="availability-note">Load the schedule to see the relevant teams.</p>':"";return}
-    host.innerHTML='<div class="availability-heading"><div><span class="team-section-label">WHO’S IN · WHO’S OUT</span><h3>Injuries & lineups</h3></div><small>'+esc(key)+' · Sydney slate</small></div><div class="availability-injuries" aria-live="polite">'+(historical?'<p class="availability-note">Historical injury reports are not available from this feed. Game starters may be available below.</p>':'<p class="availability-note">Loading latest injury reports…</p>')+'</div><div class="availability-matchups">'+games.map((g,i)=>'<details class="availability-game"><summary>'+esc(g.away)+' vs '+esc(g.home)+'<small>'+esc(owner(g.away))+' vs '+esc(owner(g.home))+' · Tap for lineups</small></summary><div class="availability-lineup" data-game="'+i+'"><p>Open to load starting fives.</p></div></details>').join("")+'</div>';
-    const active=()=>token===current&&host.isConnected;
-    host.querySelectorAll(".availability-game").forEach((details,i)=>details.addEventListener("toggle",async()=>{
-      if(!details.open)return;
-      const g=games[i],body=details.querySelector(".availability-lineup");
-      if(["POSTPONED","CANCELLED"].includes(g.status)){body.innerHTML='<p>'+esc(g.status)+' · no confirmed lineup for this scheduled game.</p>';return}
-      body.innerHTML='<p>Loading lineup…</p>';
-      try{
-        const data=await summary(g.id);if(active()&&body.isConnected)body.innerHTML=lineupTeam(data,g.away,g.status,historical)+lineupTeam(data,g.home,g.status,historical)+'<p class="availability-note">ESPN · checked '+esc(dateText(Date.now()))+'. Pregame projections can change before tip-off.</p>';
-      }catch(_){if(active()&&body.isConnected)body.innerHTML='<p class="availability-note">Live lineup feed unavailable.</p>'+lineupTeam(null,g.away,g.status,historical)+lineupTeam(null,g.home,g.status,historical);}
-    }));
-    if(historical)return;
-    try{
-      const data=await injuries();if(!Array.isArray(data?.injuries))throw Error("Invalid injury report");if(!active())return;
-      const report=host.querySelector(".availability-injuries");
-      report.innerHTML='<p class="availability-note">Latest ESPN injury feed · checked '+esc(dateText(injuryCache.at))+'. '+(key!==today?'This is current availability, not a confirmed report for '+esc(key)+'. ':'')+'Only teams on this slate are listed. No listing does not confirm fitness.</p><div class="availability-team-grid">'+teams.map(name=>{
-        const entry=(data.injuries||[]).find(t=>teamName(t)===name);
-        const list=entry?.injuries||[];
-        return '<section><h4>'+esc(name)+' <small>· '+esc(owner(name))+'</small></h4>'+(list.length?list.map(x=>'<article><strong>'+esc(x.athlete?.displayName||"Player")+'</strong><span class="availability-status">'+esc(x.status||"Status not supplied")+'</span><p>'+esc(x.shortComment||x.longComment||"No additional detail.")+'</p><small>Reported '+esc(dateText(x.date))+'</small></article>').join(""):'<p class="availability-note">No injuries listed in the feed.</p>')+'</section>';
-      }).join("")+'</div>';
-    }catch(_){if(active())host.querySelector(".availability-injuries").innerHTML='<p class="availability-note">Injury report temporarily unavailable. No availability assumptions have been made.</p>'}
+
+  function injuryTeam(data,name){
+    const entry=(data?.injuries||[]).find(x=>teamName(x.team||x)===name);
+    return entry?entry.injuries||[]:null;
   }
-  window.cvAvailability={render,refresh:()=>latestArgs?render(...latestArgs):undefined};
+  function injuryList(name,list){
+    return '<section><h4>'+esc(name)+'</h4>'+(list?.length?list.map(x=>'<article class="game-availability-player"><strong>'+esc(x.athlete?.displayName||x.player||"Player")+'</strong> <span class="availability-status">'+esc(x.status||"Status not supplied")+'</span><p>'+esc(x.shortComment||x.longComment||x.details?.detail||"")+'</p>'+(x.date?'<small>Reported '+esc(dateText(x.date))+'</small>':'')+'</article>').join(""):'<p class="availability-note">No injuries listed. This does not confirm everyone is available.</p>')+'</section>';
+  }
+  async function renderGame(panel,g,summaryProvider){
+    if(g.sample||String(g.id).startsWith("demo-")){panel.innerHTML="";return}
+    const today=keyNow(),key=(()=>{const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Australia/Sydney",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(g.date)).reduce((o,p)=>(o[p.type]=p.value,o),{});return p.year+"-"+p.month+"-"+p.day})();
+    const historical=key<today,days=Math.round((Date.parse(key+"T12:00:00Z")-Date.parse(today+"T12:00:00Z"))/86400000);
+    if(["POSTPONED","CANCELLED"].includes(g.status)){panel.innerHTML='<p class="availability-note">'+esc(g.status)+' · no confirmed lineup for this scheduled game.</p>';return}
+    panel.innerHTML='<p class="availability-note">Loading starting fives and availability…</p>';
+    const results=await Promise.allSettled([summaryProvider?summaryProvider(g):summary(g.id),days>=0&&days<=1?injuries():Promise.resolve(null)]);
+    if(!panel.isConnected)return;
+    const data=results[0].status==="fulfilled"?results[0].value:null,current=results[1].status==="fulfilled"?results[1].value:null;
+    let html='<h4 class="game-lineup-heading">Starting lineups</h4><div class="availability-lineup">'+lineupTeam(data,g.away,g.status,historical||g.status==="FINAL")+lineupTeam(data,g.home,g.status,historical||g.status==="FINAL")+'</div><h4 class="game-lineup-heading">Who’s out / availability</h4>';
+    const gameSpecific=[g.away,g.home].some(name=>injuryTeam(data,name)!==null);
+    const source=gameSpecific?data:current;
+    if(source&&Array.isArray(source.injuries)){
+      html+='<p class="availability-note">'+(gameSpecific?'ESPN game injury report':'Latest ESPN injury report · '+(days===0?'today’s slate':'current statuses, not confirmed for tomorrow'))+' · checked '+esc(dateText(Date.now()))+'</p><div class="game-availability-columns">'+[g.away,g.home].map(name=>injuryList(name,injuryTeam(source,name))).join("")+'</div>';
+    }else html+='<p class="availability-note">'+(historical?'Historical injury reports unavailable.':days>1?'Game-day injury reports are not published this far ahead.':'Injury report temporarily unavailable. No availability assumptions made.')+'</p>';
+    panel.innerHTML=html;
+  }
+  window.cvAvailability={renderGame};
 })();

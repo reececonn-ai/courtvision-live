@@ -469,7 +469,6 @@
     if(isTestDraft())return;
     autoUpdateRunning=true;
     try{
-      if(active==="competitionScreen")void window.cvAvailability?.refresh();
       if(active==="competitionScreen"&&selectedSlateKey()!==sydneyKey())await loadDateSlate(selectedSlateKey(),true);
       const before=cache.games||[];
       const beforeById=new Map(before.map(g=>[g.id,g]));
@@ -928,7 +927,24 @@
     return {boxscore:{teams:[make(g.away,false),make(g.home,true)]}};
   }
 
+  function loadGameSummary(g){
+    const key=[g.id,g.status,g.homeScore,g.awayScore].join(":");
+    let item=gameStatsCache.get(key);
+    if(!item||Date.now()-item.at>60000){
+      if(!/^\d+$/.test(String(g.id)))return Promise.reject(new Error("Invalid game ID"));
+      const direct="https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event="+encodeURIComponent(g.id);
+      item={at:Date.now(),promise:fetchNbaJson("/api/nba/summary?event="+encodeURIComponent(g.id),direct,8000)};
+      gameStatsCache.set(key,item);
+      item.promise.catch(()=>{if(gameStatsCache.get(key)===item)gameStatsCache.delete(key)});
+    }
+    return item.promise;
+  }
   async function populateGameStats(panel,g,records){
+    panel.innerHTML='<div class="game-lineup-slot" aria-live="polite"></div><div class="game-box-slot"></div>';
+    const lineup=panel.querySelector(".game-lineup-slot"),box=panel.querySelector(".game-box-slot");
+    await Promise.allSettled([window.cvAvailability?.renderGame(lineup,g,loadGameSummary),populateGameBoxStats(box,g,records)]);
+  }
+  async function populateGameBoxStats(panel,g,records){
     if(!["FINAL","IN"].includes(g.status)){
       const record=name=>{const r=records[name];return r?r.w+"–"+r.l:"—"};
       panel.innerHTML='<p>'+esc(g.status==='SCHEDULED'?'Pregame matchup · game stats appear after tip-off.':g.status+' · check the schedule for a confirmed new time.')+'</p>'+statsTable(["Team",shortTeam(g.away),shortTeam(g.home)],[["Season record",record(g.away),record(g.home)],["Projected season wins",winLineFor(g.away)??"—",winLineFor(g.home)??"—"]]);
@@ -941,14 +957,7 @@
     panel.innerHTML='<p>Loading game stats…</p>';
     const key=[g.id,g.status,g.homeScore,g.awayScore].join(":");
     try{
-      let item=gameStatsCache.get(key);
-      if(!item||Date.now()-item.at>60000){
-        if(!/^\d+$/.test(String(g.id)))throw new Error("Invalid game ID");
-        const direct="https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event="+encodeURIComponent(g.id);
-        item={at:Date.now(),promise:fetchNbaJson("/api/nba/summary?event="+encodeURIComponent(g.id),direct,8000)};
-        gameStatsCache.set(key,item);
-      }
-      const data=await item.promise;
+      const data=await loadGameSummary(g);
       if(panel.isConnected){
         panel.innerHTML='<p class="comp-game-stats-note">ESPN · '+(g.status==="FINAL"?"FINAL BOX SCORE":"LIVE SNAPSHOT · "+esc(g.detail||"IN PROGRESS"))+'</p>'+gameStatsMarkup(data,g);
         window.cvInsights?.bindGames(panel,g);
@@ -994,7 +1003,6 @@
     for(const offset of [0,1]){const tab=$("competitionDay"+offset);if(tab)tab.setAttribute("aria-pressed",String(slateOffset===offset));}
     const hint=$("competitionDayHint");if(hint)hint.textContent=item?.error?item.error:item?.loading?"Refreshing selected date…":(item?.at?"Updated "+timeSydney(new Date(item.at))+" · ":"")+"Sydney time"+(selectedKey!==todayKey?" · records shown are current":"");
     bindSlateSwipe(el);
-    void window.cvAvailability?.render(games,selectedKey,{loading:!!item?.loading,error:!!item?.error});
     if(!games.length){el.innerHTML='<div class="comp-empty">'+(item?.loading?'Loading this date’s games…':item?.error?'Schedule unavailable. Use Refresh to try again.':'No regular-season or playoff games listed for this Sydney date. Pick another date or use the arrows.')+'</div>';return}
     const teamLine=name=>{
       const r=records[name]||{w:0,l:0,rank:null};
