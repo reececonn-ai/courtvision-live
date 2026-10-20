@@ -3165,3 +3165,26 @@ body:not(.classic-main-style) #draftBoardScreen .board-team:hover{
 .cv-extra-headlines{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px}
 @media(max-width:850px){.cv-editorial-grid{grid-template-columns:1fr;gap:20px}.cv-editorial-story.is-lead .cv-editorial-media{aspect-ratio:16/9}.cv-extra-headlines{grid-template-columns:1fr}}
 @media(max-width:450px){.cv-editorial-story{grid-template-columns:90px minmax(0,1fr);gap:12px}#competitionScreen .cv-editorial-story h3{font-size:16px}.cv-editorial-copy>small{font-size:11px}}
+
+.competition-availability{margin:28px 0;padding:24px 0;border-top:1px solid #304355}
+.competition-availability:empty{display:none}
+.availability-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px;color:#bdcee0}
+.availability-heading h3{font:700 28px/1.2 Arial,sans-serif;color:#f0f7ff;margin:5px 0}
+.availability-heading>small,.availability-note{font:12px/1.6 Arial,sans-serif;color:#afc5d9}
+.availability-team-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin:18px 0}
+.availability-team-grid>section{min-width:0;padding:14px;background:#112436;border-radius:9px}
+.competition-availability h4{font:700 15px/1.5 Arial,sans-serif;color:#edf6ff;margin:0 0 10px}
+.competition-availability h4 small{font-weight:400;color:#acc9df}
+.availability-team-grid article{padding:12px 0;border-top:1px solid #2c4358;font:13px/1.5 Arial,sans-serif;color:#d9e5f1}
+.availability-team-grid article p{margin:5px 0}.availability-team-grid article>small{color:#a9c2d7;font-size:11px}
+.availability-status{display:inline-block;margin-left:9px;color:#ffd299;font-weight:700}
+.availability-matchups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.availability-game{border-top:1px solid #354e65;padding:14px 0}
+.availability-game summary{cursor:pointer;font:700 15px/1.5 Arial,sans-serif;color:#edf6ff;min-height:44px}
+.availability-game summary small{display:block;font:12px/1.5 Arial,sans-serif;color:#adc5da}
+.availability-lineup{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:15px 0;color:#d2e1ee;font:13px/1.5 Arial,sans-serif}
+.availability-lineup>p{grid-column:1/-1;margin:0}
+.availability-lineup ul{padding-left:18px}.availability-lineup li{padding:4px 0}
+.availability-confirmed{color:#9ae1bd;font:12px/1.5 Arial,sans-serif}
+@media(max-width:850px){.availability-team-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.availability-matchups{grid-template-columns:1fr}}
+@media(max-width:550px){.availability-team-grid,.availability-lineup{grid-template-columns:1fr}.availability-heading{align-items:flex-start;flex-direction:column}}

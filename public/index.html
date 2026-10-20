@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp44">
+<link rel="stylesheet" href="/competition.css?v=comp45">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -4768,8 +4768,8 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 
         <section class="comp-paper-feature">          <article class="comp-stories-panel">
             <div class="comp-section-head">
-              <div><span class="comp-section-kicker">THE NBA WIRE</span><strong>NBA NEWS</strong></div>
-              <small>NBA NEWS · YOUR COMPETITION</small>
+              <div><span class="comp-section-kicker">THE NBA WIRE</span><strong>ROSTER & AVAILABILITY WIRE</strong></div>
+              <small>TRADES · WAIVERS · SIGNINGS · AVAILABILITY</small>
             </div>
             <div class="cv-news" id="cvMorningNews" aria-live="polite"><p class="cv-news-status">Checking NBA headlines…</p></div>          </article>
         </section>
@@ -4792,6 +4792,8 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
           </article>
 
         </section>
+
+        <section id="competitionAvailability" class="competition-availability" aria-label="Daily injuries and lineups"></section>
 
         <section class="comp-table-panel">
           <div class="comp-section-head">
@@ -6949,10 +6951,11 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp36"></script>
+<script src="/daily-availability.js?v=1"></script>
+<script src="/competition.js?v=comp37"></script>
 <script src="/nerd-studio.js?v=2"></script>
 <script src="/nba-insights.js?v=1"></script>
-<script src="/nba-news.js?v=2" defer></script>
+<script src="/nba-news.js?v=3" defer></script>
 
 <nav class="mobile-nav" aria-label="Main navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button type="button" onclick="openSettings()">MORE</button></nav>
 </body>

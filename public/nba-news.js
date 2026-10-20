@@ -11,7 +11,7 @@
     if(loading)return loading;
     loading=fetch("/api/nba/news",{credentials:"same-origin"}).then(r=>r.ok?r.json():null).then(data=>{
       if(data?.ok===false)throw new Error("News unavailable");
-      articles=Array.isArray(data?.articles)?data.articles.filter(clean).slice(0,20):[];
+      articles=Array.isArray(data?.articles)?data.articles.filter(clean).slice(0,50):[];
       last=Date.now();
       return articles;
     }).catch(()=>{last=0;return articles}).finally(()=>{loading=null});
@@ -45,11 +45,20 @@
     const labels=ownerLabels(a);
     return '<a class="cv-editorial-story '+(lead?'is-lead':'')+'" href="'+esc(a.url)+'" target="_blank" rel="noopener noreferrer"><div class="cv-editorial-media"><span>NBA WIRE</span>'+(image?'<img src="'+esc(image)+'" alt="" loading="'+(lead?'eager':'lazy')+'" onerror="this.remove()">':'')+'</div><div class="cv-editorial-copy"><span class="cv-editorial-category">'+esc(a.category||"NBA NEWS")+'</span><h3>'+esc(a.headline)+'</h3>'+(lead&&a.summary?'<p>'+esc(a.summary)+'</p>':'')+(labels?'<div class="cv-owner-labels">'+labels+'</div>':'')+'<small>ESPN'+(stamp?' · '+esc(stamp)+' Sydney':'')+' · Read original ↗</small></div></a>';
   }
+
+  function competitionUpdate(a){
+    const h=String(a.headline||"");
+    const action=/\b(?:trad(?:e|es|ed)|waiv(?:e|es|ed)|sign(?:s|ed|ing)?|re-sign(?:s|ed)?|acquir(?:e|es|ed)|releas(?:e|es|ed)|contract|extension|ruled out|questionable|doubtful|suspended|suspension|surgery|out for|out indefinitely|return(?:s|ing)? to (?:play|lineup))\b/i.test(h);
+    const commentary=/\b(?:rumou?r|mock|rankings?|grades?|predictions?|power rankings|could|should|might|trade ideas|trade targets|best|worst|signs of)\b/i.test(h);
+    const assigned=typeof state!=="undefined"?Object.keys(state.assignments||{}).length:0;
+    const owned=!assigned||relatedTeams(a).some(t=>state.assignments?.[t[0]]);
+    return action&&!commentary&&owned;
+  }
   async function morning(){
     const el=document.getElementById("cvMorningNews");if(!el)return;
     const list=await getNews();
-    const ranked=[...list].sort((a,b)=>Number(!!ownerLabels(b))-Number(!!ownerLabels(a))||(Date.parse(b.published)||0)-(Date.parse(a.published)||0));
-    el.innerHTML=ranked.length?'<div class="cv-editorial-grid">'+editorialCard(ranked[0],true)+'<div class="cv-editorial-support">'+ranked.slice(1,4).map(a=>editorialCard(a)).join("")+'</div></div>'+(ranked.length>4?'<details class="cv-more-news"><summary>More NBA news ('+(ranked.length-4)+')</summary><div class="cv-extra-headlines">'+ranked.slice(4).map(a=>editorialCard(a)).join("")+'</div></details>':''):'<p class="cv-news-status">NBA headlines are temporarily unavailable. Use Refresh or check back shortly.</p>';
+    const ranked=list.filter(competitionUpdate).sort((a,b)=>Number(!!ownerLabels(b))-Number(!!ownerLabels(a))||(Date.parse(b.published)||0)-(Date.parse(a.published)||0));
+    el.innerHTML=ranked.length?'<div class="cv-editorial-grid">'+editorialCard(ranked[0],true)+'<div class="cv-editorial-support">'+ranked.slice(1,4).map(a=>editorialCard(a)).join("")+'</div></div>'+(ranked.length>4?'<details class="cv-more-news"><summary>More roster updates ('+(ranked.length-4)+')</summary><div class="cv-extra-headlines">'+ranked.slice(4).map(a=>editorialCard(a)).join("")+'</div></details>':''):'<p class="cv-news-status">No new roster or availability updates for your competition in the current feed.</p>';
 
   }
   async function team(){

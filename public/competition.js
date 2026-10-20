@@ -469,6 +469,7 @@
     if(isTestDraft())return;
     autoUpdateRunning=true;
     try{
+      if(active==="competitionScreen")void window.cvAvailability?.refresh();
       if(active==="competitionScreen"&&selectedSlateKey()!==sydneyKey())await loadDateSlate(selectedSlateKey(),true);
       const before=cache.games||[];
       const beforeById=new Map(before.map(g=>[g.id,g]));
@@ -993,6 +994,7 @@
     for(const offset of [0,1]){const tab=$("competitionDay"+offset);if(tab)tab.setAttribute("aria-pressed",String(slateOffset===offset));}
     const hint=$("competitionDayHint");if(hint)hint.textContent=item?.error?item.error:item?.loading?"Refreshing selected date…":(item?.at?"Updated "+timeSydney(new Date(item.at))+" · ":"")+"Sydney time"+(selectedKey!==todayKey?" · records shown are current":"");
     bindSlateSwipe(el);
+    void window.cvAvailability?.render(games,selectedKey,{loading:!!item?.loading,error:!!item?.error});
     if(!games.length){el.innerHTML='<div class="comp-empty">'+(item?.loading?'Loading this date’s games…':item?.error?'Schedule unavailable. Use Refresh to try again.':'No regular-season or playoff games listed for this Sydney date. Pick another date or use the arrows.')+'</div>';return}
     const teamLine=name=>{
       const r=records[name]||{w:0,l:0,rank:null};

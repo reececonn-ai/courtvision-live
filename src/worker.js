@@ -381,18 +381,18 @@ export default {
     // Optional editorial feed: one upstream source, cached 30 minutes at the edge.
     // Never touches the draft Durable Object or triggers scheduled background work.
     if (url.pathname === "/api/nba/news") {
-      const key = new Request(url.origin + "/api/nba/news?layout=2", { method: "GET" });
+      const key = new Request(url.origin + "/api/nba/news?layout=3", { method: "GET" });
       const cache = caches.default;
       const hit = await cache.match(key);
       if (hit) return hit;
       try {
-        const upstream = await fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news?limit=20", {
+        const upstream = await fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news?limit=50", {
           headers: { accept: "application/json" },
           signal: AbortSignal.timeout(5500),
         });
         if (!upstream.ok) throw new Error("ESPN news unavailable");
         const data = await upstream.json();
-        const articles = (Array.isArray(data?.articles) ? data.articles : []).slice(0, 20).map(a => ({
+        const articles = (Array.isArray(data?.articles) ? data.articles : []).slice(0, 50).map(a => ({
           headline: String(a.headline || "").slice(0, 180),
           summary: String(a.description || a.story || "").replace(/<[^>]*>/g, "").slice(0, 260),
           published: String(a.published || a.lastModified || ""),
