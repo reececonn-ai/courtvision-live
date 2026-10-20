@@ -58,34 +58,30 @@
     return filtered.map(r=>'<details class="ns-owner-detail"><summary><span><i style="background:'+colour(r.name,rows)+'"></i><strong>'+esc(r.name)+'</strong></span><span>'+r.w+'–'+r.l+' <small>actual</small></span><span>'+r.projected.toFixed(1)+' <small>projected</small></span><span>'+r.probability.toFixed(1)+'% <small>title</small></span></summary><div class="ns-owner-inside"><p>Recent team results: '+(r.form.n?r.form.w+'–'+r.form.l+' over '+r.form.n+' games · scoring margin '+(r.form.margin>=0?'+':'')+r.form.margin:'No completed games loaded yet.')+'</p><div class="ns-table-scroll"><table class="ns-table"><thead><tr><th>Team</th><th>W–L</th><th>Preseason</th><th>Projected finish</th></tr></thead><tbody>'+r.teams.map(t=>'<tr><th>'+esc(t.name)+'</th><td>'+t.w+'–'+t.l+'</td><td>'+(Number.isFinite(t.line)?t.line.toFixed(1):'—')+'</td><td>'+(Number.isFinite(t.expected)?t.expected.toFixed(1):'—')+'</td></tr>').join("")+'</tbody></table></div></div></details>').join("");
   }
 
-  let squadOwner="",squadOpponent="";
+
+  let squadOwner="";
   const projectedOrder=rows=>[...rows].sort((a,b)=>b.projected-a.projected||a.name.localeCompare(b.name));
-  function squadComparison(rows,recent){
-    if(!rows.length)return '<p class="ns-note">Squad comparisons appear once owners have teams.</p>';
-    const ranked=projectedOrder(rows);
-    if(!rows.some(r=>r.name===squadOwner))squadOwner=ranked[0].name;
-    if(!rows.some(r=>r.name===squadOpponent&&r.name!==squadOwner))squadOpponent=ranked.find(r=>r.name!==squadOwner)?.name||"";
-    const mine=rows.find(r=>r.name===squadOwner),other=rows.find(r=>r.name===squadOpponent),place=ranked.indexOf(mine)+1,max=Math.max(1,...ranked.map(r=>r.projected));
-    const options=(chosen,exclude)=>rows.filter(r=>r.name!==exclude).map(r=>'<option value="'+esc(r.name)+'"'+(r.name===chosen?' selected':'')+'>'+esc(r.name)+'</option>').join("");
-    const gap=ranked[0].projected-mine.projected,behind=ranked[place],cushion=behind?mine.projected-behind.projected:null;
-    const teamList=r=>[...r.teams].sort((a,b)=>b.expected-a.expected||a.name.localeCompare(b.name)).map(t=>'<li style="--club:'+(teamByName(t.name)?.[2]||colour(r.name,rows))+'"><img src="'+logoUrl(teamByName(t.name)?.[1]||"")+'" alt=""><span>'+esc(t.name)+'<small>'+t.w+'–'+t.l+' actual</small></span><b>'+(Number.isFinite(t.expected)?t.expected.toFixed(1):'—')+'<small>projected wins</small></b></li>').join("");
-    const panel=r=>{const f=formFor(r.name,recent);return '<article class="ns-squad-side"><h4 style="color:'+colour(r.name,rows)+'">'+esc(r.name)+'</h4><div class="ns-squad-metrics"><span><b>'+r.projected.toFixed(1)+'</b>Projected wins</span><span><b>'+r.w+'–'+r.l+'</b>Actual record</span><span><b>'+r.probability.toFixed(1)+'%</b>Title chance</span><span><b>'+(f.n?f.w+'–'+f.l:'—')+'</b>'+(f.n?'Last '+f.n+' team results':'No recent results')+'</span></div><ol>'+teamList(r)+'</ol></article>'};
-    let edge="";
-    if(other){
-      const delta=mine.projected-other.projected;
-      edge=Math.abs(delta)<.05?'The squads are level on projected wins.':esc(mine.name)+(delta>0?' leads ':' trails ')+esc(other.name)+' by '+Math.abs(delta).toFixed(1)+' projected wins.';
-      const top=r=>[...r.teams].map(t=>t.expected).filter(Number.isFinite).sort((a,b)=>b-a).slice(0,2).reduce((a,b)=>a+b,0);
-      const depth=r=>[...r.teams].map(t=>t.expected).filter(Number.isFinite).sort((a,b)=>b-a).slice(2).reduce((a,b)=>a+b,0);
-      if(mine.teams.length===5&&other.teams.length===5){const topGap=top(mine)-top(other),depthGap=depth(mine)-depth(other);if(Math.abs(topGap)>=.1)edge+=' '+esc(topGap>0?mine.name:other.name)+' has the stronger top two by '+Math.abs(topGap).toFixed(1)+' projected wins.';if(Math.abs(depthGap)>=.1)edge+=' '+esc(depthGap>0?mine.name:other.name)+' gets more from the other three teams ('+Math.abs(depthGap).toFixed(1)+' wins).';}
-    }
-    return '<div class="ns-controls"><label>Your squad <select id="nsSquadOwner">'+options(squadOwner)+'</select></label>'+(other?'<label>Compare with <select id="nsSquadOpponent">'+options(squadOpponent,squadOwner)+'</select></label>':'')+'</div><div class="ns-squad-summary"><strong>Projected finish: '+place+' of '+ranked.length+'</strong><span>'+(gap<.05?'Setting the pace':gap.toFixed(1)+' projected wins behind '+esc(ranked[0].name))+(cushion!==null?' · '+cushion.toFixed(1)+' ahead of '+esc(behind.name):'')+'</span></div><div class="ns-squad-ranking" role="img" aria-label="Owners ranked by projected total wins">'+ranked.map((r,i)=>'<div class="ns-owner-bar'+(r===mine?' ns-squad-selected':'')+'"><strong>'+(i+1)+'. '+esc(r.name)+(r===mine?' · YOU':'')+'</strong><div><i style="width:'+Math.max(0,r.projected/max*100)+'%;background:'+colour(r.name,rows)+'"></i></div><b>'+r.projected.toFixed(1)+'</b></div>').join("")+'</div><p class="ns-note">Projected total wins across each owner’s teams, including actual wins already earned. This is a model estimate, not a guaranteed finish. Equal totals share the same outlook; ordering uses owner name.</p>'+(other?'<p class="ns-squad-edge">'+edge+'</p>':'')+'<div class="ns-squad-pair">'+panel(mine)+(other?panel(other):'')+'</div><p class="ns-note">Teams are ordered strongest to weakest by projected wins; rows are comparisons, not scheduled matchups. Recent form uses the latest available completed team games.</p>';
+  function squadComparison(rows){
+    if(!rows.length)return '<p class="ns-note">Comparisons appear once owners have teams.</p>';
+    if(!rows.some(r=>r.name===squadOwner))squadOwner="";
+    const buttons='<div class="ns-compare-names" aria-label="Choose your owner">'+rows.map((r,i)=>'<button type="button" data-owner-index="'+i+'" aria-pressed="'+(r.name===squadOwner)+'" style="--owner:'+colour(r.name,rows)+'">'+esc(r.name)+'</button>').join("")+'</div>';
+    const mine=rows.find(r=>r.name===squadOwner);
+    if(!mine)return buttons+'<p class="ns-note">Tap your name to see everyone compared with you.</p>';
+    const ranked=projectedOrder(rows),rank=1+rows.filter(r=>r.projected>mine.projected+.000001).length;
+    return buttons+'<div class="ns-compare-result" aria-live="polite"><div class="ns-compare-baseline"><strong>'+esc(mine.name)+'</strong><span>Projected #'+rank+' · '+mine.projected.toFixed(1)+' wins · '+mine.w+'–'+mine.l+' actual · '+mine.probability.toFixed(1)+'% title chance</span></div>'+
+      '<div class="ns-table-scroll"><table class="ns-table ns-compare-table"><caption>Everyone compared with '+esc(mine.name)+'</caption><thead><tr><th scope="col">Owner</th><th scope="col">Projected wins</th><th scope="col">Compared with you</th><th scope="col">Actual W–L</th><th scope="col">Title chance</th></tr></thead><tbody>'+
+      ranked.filter(r=>r.name!==mine.name).map(r=>{const gap=r.projected-mine.projected,label=Math.abs(gap)<.05?'Level':Math.abs(gap).toFixed(1)+' '+(gap>0?'ahead':'behind');return '<tr><th scope="row"><i style="background:'+colour(r.name,rows)+'"></i>'+esc(r.name)+'</th><td>'+r.projected.toFixed(1)+'</td><td class="'+(Math.abs(gap)<.05?'':gap>0?'ns-gap-ahead':'ns-gap-behind')+'">'+label+'</td><td>'+r.w+'–'+r.l+'</td><td>'+r.probability.toFixed(1)+'%</td></tr>'}).join("")+
+      '</tbody></table></div>'+(rows.length===1?'<p class="ns-note">Other owners will appear here when available.</p>':'')+'<p class="ns-note">Gaps are projected total wins across each squad. Forecasts include wins already earned and estimates for remaining games.</p></div>';
   }
-  function bindSquad(root,rows,recent){
-    for(const id of ["nsSquadOwner","nsSquadOpponent"])root.querySelector("#"+id)?.addEventListener("change",e=>{
-      if(id==="nsSquadOwner")squadOwner=e.target.value;else squadOpponent=e.target.value;
-      root.querySelector("#nsSquadContent").innerHTML=squadComparison(rows,recent);
-      bindSquad(root,rows,recent);
-    });
+  function bindSquad(root,rows){
+    root.querySelectorAll("[data-owner-index]").forEach(button=>button.addEventListener("click",()=>{
+      const index=Number(button.dataset.ownerIndex);
+      if(!rows[index])return;
+      squadOwner=rows[index].name;
+      root.querySelector("#nsSquadContent").innerHTML=squadComparison(rows);
+      bindSquad(root,rows);
+      root.querySelector('[data-owner-index="'+index+'"]')?.focus({preventScroll:true});
+    }));
   }
 
   function render(rows,games,recent,demo){
@@ -98,7 +94,7 @@
     const hot=[...today].filter(([,r])=>r.w+r.l>0).sort((a,b)=>(b[1].w-b[1].l)-(a[1].w-a[1].l))[0];
     let headline=hot?hot[0]+"’s day, in the numbers":leader?leader.name+" sets the benchmark":"The season’s story starts here";
     let story=hot?hot[0]+" has "+hot[1].w+" wins and "+hot[1].l+" losses from today’s completed team games.":leader?(played?'The model gives ':'Before the first results, the model gives ')+leader.name+" a "+leader.probability.toFixed(1)+"% title chance. Explore the assumptions and the teams behind that number.":"Owner comparisons will appear once draft and competition data are available.";
-    root.innerHTML='<section class="ns-section ns-squad"><div class="ns-section-title"><span class="ns-kicker">YOUR SQUAD VS THE FIELD</span><h3>How does my squad stack up?</h3></div><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></section><section class="ns-story"><div><span class="ns-kicker">'+(demo?'SAMPLE DATA · ':'')+'THE BIG STORY</span><h3>'+esc(headline)+'</h3><p>'+esc(story)+'</p><a href="#nsExplore">Explore the numbers ↓</a></div><div class="ns-story-race">'+currentRace(rows)+'</div></section>'+
+    root.innerHTML='<section class="ns-section ns-squad"><div class="ns-section-title"><span class="ns-kicker">PICK YOUR NAME</span><h3>Compared with you</h3></div><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></section><section class="ns-story"><div><span class="ns-kicker">'+(demo?'SAMPLE DATA · ':'')+'THE BIG STORY</span><h3>'+esc(headline)+'</h3><p>'+esc(story)+'</p><a href="#nsExplore">Explore the numbers ↓</a></div><div class="ns-story-race">'+currentRace(rows)+'</div></section>'+
       '<section class="ns-section"><div class="ns-section-title"><span class="ns-kicker">FOLLOW THE RACE</span><h3>Every twist. Every contender.</h3></div>'+historyChart(rows,demo,root.clientWidth||960)+'</section>'+
       '<section class="ns-section"><div class="ns-section-title"><span class="ns-kicker">DRAFT VALUE</span><h3>Who’s beating the expectation?</h3></div>'+valueChart(rows)+'</section>'+
       '<section class="ns-section"><div class="ns-section-title"><span class="ns-kicker">BRAGGING RIGHTS</span><h3>Head to head</h3></div>'+rivalry(rows,recent)+'</section>'+
