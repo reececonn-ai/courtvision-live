@@ -139,14 +139,50 @@
     }));
   }
 
+
+  const deepSort={};
+  function deepData(rows,recent){
+    return teamNumbers(rows,recent).map(t=>{
+      const seen=new Set();
+      const games=[...recent].filter(g=>g.status==="FINAL"&&(g.homeWinner||g.awayWinner)&&(g.home===t.name||g.away===t.name)).sort((a,b)=>new Date(b.date)-new Date(a.date)).filter(g=>{const k=g.id||[g.date,g.home,g.away].join("|");if(seen.has(k))return false;seen.add(k);return true}).map(g=>{const h=g.home===t.name,pf=Number(g[h?"homeScore":"awayScore"]),pa=Number(g[h?"awayScore":"homeScore"]);return {home:h,won:!!g[h?"homeWinner":"awayWinner"],margin:Number.isFinite(pf)&&Number.isFinite(pa)?pf-pa:null}});
+      const record=gs=>gs.length?gs.filter(g=>g.won).length+"–"+gs.filter(g=>!g.won).length:"—",margins=games.map(g=>g.margin).filter(Number.isFinite),avg=t.margin;
+      let streak=0;for(const g of games){if(g.won!==games[0].won)break;streak++}
+      return {...t,winPct:t.played?t.w/t.played*100:null,pace:t.played?t.w/t.played*82:null,remaining:Math.max(0,82-t.played),expectedNow:Number.isFinite(t.line)?t.played*t.line/82:null,
+        recentRecord:record(games),last5:record(games.slice(0,5)),last10:record(games.slice(0,10)),homeRecord:record(games.filter(g=>g.home)),awayRecord:record(games.filter(g=>!g.home)),streak:games.length?(games[0].won?"W":"L")+streak:"—",
+        closeRecord:record(games.filter(g=>g.margin!==null&&Math.abs(g.margin)<=5)),bigRecord:record(games.filter(g=>g.margin!==null&&Math.abs(g.margin)>=15)),best:margins.length?Math.max(...margins):null,worst:margins.length?Math.min(...margins):null,spread:margins.length?Math.sqrt(margins.reduce((n,m)=>n+(m-avg)**2,0)/margins.length):null};
+    });
+  }
+  function deepTable(id,title,note,columns,data){
+    const sort=deepSort[id]||{key:columns[0][0],dir:1};
+    const ordered=[...data].sort((a,b)=>{const av=a[sort.key],bv=b[sort.key];if(av===null||av===undefined)return bv==null?0:1;if(bv==null)return -1;return sort.dir*(typeof av==="number"?av-bv:String(av).localeCompare(String(bv)))});
+    return '<article class="ns-deep-group" id="'+id+'"><h4>'+title+'</h4><p class="ns-note">'+note+'</p><div class="ns-table-scroll" tabindex="0" role="region" aria-label="'+title+'"><table class="ns-table"><thead><tr>'+columns.map(([key,label])=>'<th scope="col"'+(key===sort.key?' aria-sort="'+(sort.dir===1?'ascending':'descending')+'"':'')+'><button type="button" data-deep-table="'+id+'" data-deep-key="'+key+'">'+label+(key===sort.key?(sort.dir===1?' ↑':' ↓'):' ↕')+'</button></th>').join("")+'</tr></thead><tbody>'+ordered.map(t=>'<tr>'+columns.map(([key,label],i)=>{let v=t[key];if(v===null||v===undefined)v="—";else if(typeof v==="number")v=Number.isInteger(v)?String(v):v.toFixed(1);return '<'+(i===0?'th scope="row"':'td')+'>'+esc(v)+'</'+(i===0?'th':'td')+'>'}).join("")+'</tr>').join("")+'</tbody></table></div></article>';
+  }
+  function deepStats(rows,recent){
+    const teams=deepData(rows,recent),id=[["name","Team"],["owner","Owner"]];
+    return '<section class="ns-section ns-deep" id="nsDeep"><div class="ns-section-title"><span class="ns-kicker">THE FULL SPREADSHEET ENERGY</span><h3>For the number addicts.</h3></div><p class="ns-note">Every owned team. Click a column heading to sort. Tables scroll sideways on smaller screens. — means unavailable, never zero. Season records and projections use the competition model; every recent statistic uses only the loaded final-game window.</p><nav class="ns-deep-nav" aria-label="Advanced statistics"><a href="#nsDeepSeason">Season &amp; expectations</a><a href="#nsDeepScore">Scoring</a><a href="#nsDeepForm">Form &amp; splits</a><a href="#nerdArchive">Records &amp; owner analysis</a></nav>'+
+      deepTable("nsDeepSeason","Season & expectations","Win pace = current win rate × 82. Expected wins so far = preseason line × games played ÷ 82. Gap = actual wins − expected wins so far. Pace is descriptive; projected finish is the existing competition forecast.",[...id,["played","GP"],["w","W"],["l","L"],["winPct","Win %"],["remaining","Left"],["line","Preseason"],["expectedNow","Expected so far"],["delta","Gap"],["pace","82-game pace"],["expected","Projected finish"]],teams)+
+      deepTable("nsDeepScore","Scoring & consistency","PPG and allowed are per scored game. Margin is points per game, not per 100 possessions. Margin SD measures game-to-game variation (lower = more consistent). Best and worst are single-game margins.",[...id,["scoredN","Scored GP"],["pf","PPG"],["pa","Allowed"],["margin","Avg margin"],["spread","Margin SD"],["best","Best margin"],["worst","Worst margin"],["blowouts","Wins by 15+"]],teams)+
+      deepTable("nsDeepForm","Form, venue & pressure games","All splits below cover available recent finals, not full-season splits. L5/L10 use up to five/ten available games. Close = decided by 5 or fewer; big = decided by at least 15. These are final-score categories, not NBA clutch-time statistics.",[...id,["n","Window GP"],["recentRecord","Window W–L"],["last5","L5"],["last10","L10"],["streak","Streak*"],["homeRecord","Home W–L"],["awayRecord","Away W–L"],["closeRecord","Close W–L"],["bigRecord","Big W–L"]],teams)+
+      '<details class="ns-deep-defs"><summary>How to read the numbers</summary><p>Streak* is the current run within the available window and may extend beyond it. A missing scoring result is excluded from scoring calculations. Margin SD uses the population standard deviation of available margins. Owner aggregates below may count both teams from an internal matchup because both results count towards their squad.</p><p>Possession-based offensive/defensive ratings, true shooting, effective field-goal percentage, turnover rate and lineup on/off need box-score or possession feeds. They are not inferred from final scores. Existing team-specific detailed feeds remain available in Team Stats.</p></details></section>';
+  }
+  function bindDeep(root,rows,recent){
+    root.querySelectorAll("[data-deep-table]").forEach(button=>button.addEventListener("click",()=>{
+      const id=button.dataset.deepTable,key=button.dataset.deepKey,old=deepSort[id];
+      deepSort[id]={key,dir:old?.key===key?-old.dir:1};
+      root.querySelector("#nsDeepSlot").innerHTML=deepStats(rows,recent);bindDeep(root,rows,recent);
+      root.querySelector('[data-deep-table="'+id+'"][data-deep-key="'+key+'"]')?.focus({preventScroll:true});
+    }));
+  }
+
   function render(rows,games,recent,demo){
     latest={rows,games,recent,demo};
     const root=document.getElementById("nerdStudio");if(!root)return;
     root.innerHTML=dailyBrief(rows,recent,demo)+'<section class="ns-section ns-squad"><div class="ns-section-title"><span class="ns-kicker">PICK YOUR NAME</span><h3>Compared with you</h3></div><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></section>'+
       '<section class="ns-section"><div class="ns-section-title"><span class="ns-kicker">FOLLOW THE RACE</span><h3>Every twist. Every contender.</h3></div>'+historyChart(rows,demo,root.clientWidth||960)+'</section>'+
-      '<section class="ns-section" id="nsTeamLab"><div class="ns-section-title"><span class="ns-kicker">TEAM PERFORMANCE</span><h3>Who’s beating expectations?</h3></div><div id="nsValueContent">'+performanceLab(rows,recent)+'</div></section>';
+      '<section class="ns-section" id="nsTeamLab"><div class="ns-section-title"><span class="ns-kicker">TEAM PERFORMANCE</span><h3>Who’s beating expectations?</h3></div><div id="nsValueContent">'+performanceLab(rows,recent)+'</div></section><div id="nsDeepSlot">'+deepStats(rows,recent)+'</div>';
     bindSquad(root,rows,recent);
     bindLab(root,rows,recent);
+    bindDeep(root,rows,recent);
   }
   function toggle(){
     classic=!classic;

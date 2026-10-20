@@ -3295,3 +3295,27 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 #nerdStudio .ns-team-deeper dt{font-size:12px;color:#b2c6db}
 #nerdStudio .ns-team-deeper dd{margin:6px 0 0;color:#fff;font-size:23px;font-weight:700}
 @media(max-width:700px){#nerdStudio .ns-team-deeper dl{grid-template-columns:repeat(2,minmax(0,1fr))}#nerdStudio .ns-daily{padding:16px}#nerdStudio .ns-team-number summary{gap:9px}#nerdStudio .ns-team-number summary strong{font-size:13px}}
+
+/* Advanced data tables: legible headings, sticky team names and explicit coverage. */
+#nerdStudio .ns-deep-nav{display:flex;flex-wrap:wrap;gap:10px 22px;padding:12px 0 20px}
+#nerdStudio .ns-deep-nav a{color:#63c8ff;font-size:14px}
+#nerdStudio .ns-deep-group{margin-top:30px}
+#nerdStudio .ns-deep-group h4{font-size:22px;color:#fff;margin:0 0 10px}
+#nerdStudio .ns-deep-group .ns-table-scroll{max-height:660px;overflow:auto;border:1px solid #2e455a;border-radius:5px}
+#nerdStudio .ns-deep-group table{width:100%;font-variant-numeric:tabular-nums;font-size:14px}
+#nerdStudio .ns-deep-group thead th{position:sticky;top:0;background:#162c40;z-index:2}
+#nerdStudio .ns-deep-group tbody th{position:sticky;left:0;background:#102235;z-index:1;text-align:left;min-width:165px}
+#nerdStudio .ns-deep-group th,#nerdStudio .ns-deep-group td{padding:12px 14px;white-space:nowrap}
+#nerdStudio .ns-deep-group tbody tr:nth-child(even){background:#102033}
+#nerdStudio .ns-deep-group tbody tr:hover{background:#1a344b}
+#nerdStudio .ns-deep-group th button{font:inherit;color:#dceafa;font-weight:700;background:none;border:0;cursor:pointer;padding:4px;min-height:35px;text-align:left}
+#nerdStudio .ns-deep-group th button:focus-visible{outline:2px solid #63c8ff}
+#nerdStudio .ns-deep-defs{margin:20px 0;color:#bbcee1;font-size:14px;line-height:1.65}
+#nerdStudio .ns-deep-defs summary{cursor:pointer;color:#63c8ff;padding:12px 0}
+#nerdClassic{margin-top:40px}
+#nerdClassic>#nerdHero,#nerdClassic>.nerd-memory-section{display:none!important}
+#nerdClassic .ns-archive-head{border-top:3px solid #63c8ff;padding:24px 0}
+#nerdClassic .ns-archive-head>span{font-size:12px;letter-spacing:2px;color:#63c8ff;font-weight:700}
+#nerdClassic .ns-archive-head h3{font-size:30px;margin:10px 0;color:#fff}
+#nerdClassic .ns-archive-head p{font-size:14px;color:#b5cade}
+@media(max-width:700px){#nerdStudio .ns-deep-group table{font-size:12px}#nerdStudio .ns-deep-group th,#nerdStudio .ns-deep-group td{padding:10px}#nerdStudio .ns-deep-group tbody th{min-width:140px}}
