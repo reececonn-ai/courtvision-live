@@ -1276,12 +1276,16 @@
     const athletes=[];
     const walk=items=>{for(const p of items||[]){if(p.items)walk(p.items);else if(p.displayName)athletes.push(p)}};
     walk(rosterData?.athletes);
-    const roster=athletes.map(p=>({name:p.displayName,position:p.position?.abbreviation||"—",jersey:p.jersey||"—"}));
+    const roster=athletes.map(p=>({id:p.id,name:p.displayName,position:p.position?.abbreviation||"—",jersey:p.jersey||"—",headshot:p.headshot?.href||""}));
     const cached=state.liveRosters?.[name]||[];
     const shown=roster.length?roster:cached;
-    let html='<section><h3>Roster</h3><p class="team-detail-source">'+(roster.length?'ESPN · current roster':cached.length?'Cached roster · '+esc(state.liveSyncAt?daySydney(new Date(state.liveSyncAt)):'last sync unknown'):'Roster unavailable · try again later')+'</p>';
-    if(shown.length)html+=statsTable(["Player","Pos","No."],shown.map(p=>[p.name,p.position||"—",p.jersey||"—"]));
-    html+='</section><section><h3>Injuries & availability</h3>';
+    const photo=p=>{const raw=p.headshot||(p.id?'https://a.espncdn.com/i/headshots/nba/players/full/'+encodeURIComponent(p.id)+'.png':'');return /^https:\/\//i.test(raw)?raw:"";};
+    const initials=p=>String(p.name||"?").split(/\s+/).map(x=>x[0]).slice(0,2).join("");
+    const portraits=shown.slice(0,5).map(p=>'<div class="team-hero-player"><span>'+esc(initials(p))+'</span>'+(photo(p)?'<img src="'+esc(photo(p))+'" alt="'+esc(p.name)+'" onerror="this.remove()">':'')+'<small>'+esc(p.name)+'</small></div>').join("");
+    const hero=detail.querySelector(".team-hero-lineup");if(hero)hero.innerHTML=portraits;
+    let html='<section class="team-roster-section"><span class="team-section-label">THE PEOPLE IN THE JERSEY</span><h3>Meet the squad</h3><p class="team-detail-source">'+(roster.length?'ESPN · current roster':cached.length?'Cached roster · '+esc(state.liveSyncAt?daySydney(new Date(state.liveSyncAt)):'last sync unknown'):'Roster unavailable · try again later')+'</p>';
+    if(shown.length)html+='<div class="team-roster-grid">'+shown.map(p=>'<article class="team-player-card"><div class="team-player-photo"><span>'+esc(initials(p))+'</span>'+(photo(p)?'<img src="'+esc(photo(p))+'" alt="'+esc(p.name)+'" loading="lazy" onerror="this.remove()">':'')+'</div><div><strong>'+esc(p.name)+'</strong><small>'+esc(p.position||"—")+' · #'+esc(p.jersey||"—")+'</small></div></article>').join("")+'</div>';
+    html+='</section><section class="team-health-section"><span class="team-section-label">WHO’S AVAILABLE?</span><h3>The injury room</h3>';
     if(injuryResult.status==="fulfilled"){
       const entry=(injuryResult.value.injuries||[]).find(t=>teamNameFromEspn(t)===name);
       const injuries=entry?.injuries||[];
@@ -1295,10 +1299,10 @@
       const upcoming=games.filter(g=>g.status!=="FINAL"&&g.date>=new Date(Date.now()-6*3600000)).sort((a,b)=>a.date-b.date).slice(0,5);
       const won=g=>g.home===name?g.homeWinner:g.awayWinner;
       const wins=recent.filter(won).length;
-      html+='<section><h3>Recent form</h3><p class="team-detail-source">'+(recent.length?'Last '+recent.length+' regular-season games · '+wins+'W–'+(recent.length-wins)+'L':'No completed regular-season games yet.')+'</p>';
-      html+=recent.length?statsTable(["Date","Opponent","Result"],recent.map(g=>[daySydney(g.date),shortTeam(g.home===name?g.away:g.home),(won(g)?'W ':'L ')+(g.home===name?g.homeScore+'–'+g.awayScore:g.awayScore+'–'+g.homeScore)])):'';
-      html+='</section><section><h3>Upcoming games</h3>';
-      html+=upcoming.length?statsTable(["Sydney date","Opponent","Time"],upcoming.map(g=>[daySydney(g.date),(g.home===name?'vs ':'@ ')+shortTeam(g.home===name?g.away:g.home),g.status==="IN"?'LIVE':timeSydney(g.date)])):'<p>No upcoming regular-season games listed.</p>';
+      html+='<section class="team-form-section"><span class="team-section-label">THE LAST FIVE</span><h3>How they’re travelling</h3><p class="team-detail-source">'+(recent.length?'Last '+recent.length+' regular-season games · '+wins+'W–'+(recent.length-wins)+'L':'No completed regular-season games yet.')+'</p>';
+      html+=recent.length?'<div class="team-form-strip">'+recent.map(g=>'<span class="'+(won(g)?'is-win':'is-loss')+'">'+(won(g)?'W':'L')+'</span>').join("")+'</div><div class="team-fixtures">'+recent.map(g=>{const opponent=g.home===name?g.away:g.home;return '<article><img src="'+teamLogo(opponent)+'" alt=""><div><strong>'+esc(shortTeam(opponent))+'</strong><small>'+esc(daySydney(g.date))+'</small></div><b>'+(won(g)?'W ':'L ')+(g.home===name?g.homeScore+'–'+g.awayScore:g.awayScore+'–'+g.homeScore)+'</b></article>';}).join("")+'</div>':'';
+      html+='</section><section class="team-next-section"><span class="team-section-label">MARK YOUR CALENDAR</span><h3>Up next</h3>';
+      html+=upcoming.length?'<div class="team-fixtures">'+upcoming.map(g=>{const opponent=g.home===name?g.away:g.home;return '<article><img src="'+teamLogo(opponent)+'" alt=""><div><strong>'+(g.home===name?'vs ':'@ ')+esc(shortTeam(opponent))+'</strong><small>'+esc(daySydney(g.date))+' · Sydney</small></div><b>'+esc(g.status==="IN"?'LIVE':timeSydney(g.date))+'</b></article>';}).join("")+'</div>':'<p>No upcoming regular-season games listed.</p>';
       html+='</section>';
     }else html+='<section><h3>Recent form & upcoming games</h3><p>Schedule unavailable · try again later.</p></section>';
     target.innerHTML=html;

@@ -2713,3 +2713,46 @@ body[data-screen="competitionScreen"] #broadcastTicker{display:none!important}
 .team-injury p{margin:5px 0;color:#c5d2e2}
 .team-injury small{color:#afc1d5}
 @media(max-width:700px){.team-detail-content{grid-template-columns:minmax(0,1fr)}}
+
+/* A full-width club home; draft and barrel controls stay on draft screens. */
+body[data-screen="teamsHubScreen"] .sidebar{display:none!important}
+body[data-screen="teamsHubScreen"] .shell{grid-template-columns:minmax(0,1fr)!important}
+body[data-screen="teamsHubScreen"] #broadcastTicker{display:none!important}
+#teamsHubScreen .teams-hub-shell{max-width:1500px;margin:auto}
+#teamsHubScreen .teams-hub-detail{border:0;background:transparent}
+#teamsHubScreen .team-club-hero{position:relative;isolation:isolate;display:grid;grid-template-columns:110px minmax(0,1fr);gap:24px;align-items:center;overflow:hidden;padding:36px;border:1px solid #34485f;border-radius:22px;background:linear-gradient(125deg,var(--club-primary),#0b1726 75%);margin:18px 0 28px}
+#teamsHubScreen .team-club-hero>img{width:110px;height:110px;object-fit:contain;filter:drop-shadow(0 10px 16px #0006)}
+#teamsHubScreen .team-club-title{min-width:0}
+#teamsHubScreen .team-club-title h3{font-size:clamp(30px,4vw,60px);line-height:1.05;margin:8px 0;letter-spacing:-.03em;color:#fff;text-shadow:0 2px 12px #0008}
+#teamsHubScreen .team-club-title p{color:#fff;font-size:16px}
+#teamsHubScreen .team-club-title .comp-eyebrow{color:#fff}
+.team-hero-lineup{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:12px}
+.team-hero-player{min-width:0;position:relative;height:190px;border-radius:12px;background:#ffffff0d;overflow:hidden;text-align:center}
+.team-hero-player>span{display:grid;place-items:center;height:160px;color:#b3c7db;font-size:35px}
+.team-hero-player img{position:absolute;inset:0;width:100%;height:165px;object-fit:contain;object-position:center bottom}
+.team-hero-player small{position:absolute;bottom:0;left:0;right:0;padding:9px 5px;background:#07121ee8;color:#fff;font-size:12px}
+.team-detail-content{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);align-items:start;gap:24px}
+.team-detail-content>section{border-radius:18px;padding:24px;background:#101e2d;border:1px solid #2b4054}
+.team-detail-content h3{font-size:27px;line-height:1.15;letter-spacing:-.03em;margin:5px 0 12px}
+.team-section-label{font:700 11px/1.4 Arial,sans-serif;letter-spacing:.12em;color:#91cfff}
+.team-roster-section{grid-row:span 2}
+.team-roster-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.team-player-card{min-width:0;border-radius:12px;overflow:hidden;background:#192b3e}
+.team-player-photo{height:125px;position:relative;background:linear-gradient(145deg,#284360,#102033)}
+.team-player-photo>span{display:grid;place-items:center;height:100%;color:#91aac2;font-size:30px}
+.team-player-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom}
+.team-player-card>div:last-child{padding:12px}
+.team-player-card strong{display:block;color:#fff;font-size:14px;line-height:1.25}
+.team-player-card small{display:block;margin-top:5px;color:#b9cbe0;font-size:12px}
+.team-fixtures article{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #31445a}
+.team-fixtures img{width:38px;height:38px;object-fit:contain}
+.team-fixtures article>div{flex:1;min-width:0}
+.team-fixtures strong{font-size:15px}
+.team-fixtures small{display:block;color:#b5c8dc;font-size:12px}
+.team-fixtures b{font-size:13px;white-space:nowrap}
+.team-form-strip{display:flex;gap:7px;margin:12px 0}
+.team-form-strip span{display:grid;place-items:center;width:34px;height:34px;border-radius:7px;font-weight:700}
+.team-form-strip .is-win{background:#174d40;color:#b8f7da}
+.team-form-strip .is-loss{background:#5d2c35;color:#ffced3}
+@media(max-width:900px){.team-roster-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.team-detail-content{grid-template-columns:minmax(0,1fr)}.team-roster-section{grid-row:auto}}
+@media(max-width:600px){#teamsHubScreen .team-club-hero{padding:20px;grid-template-columns:65px minmax(0,1fr);gap:14px}#teamsHubScreen .team-club-hero>img{width:65px;height:65px}.team-hero-lineup{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.team-hero-player{height:145px}.team-hero-player:nth-child(n+4){display:none}.team-hero-player img{height:115px}.team-hero-player small{font-size:11px}.team-detail-content>section{padding:18px}.team-fixtures article{gap:8px}}

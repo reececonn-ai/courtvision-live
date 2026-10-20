@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp27">
+<link rel="stylesheet" href="/competition.css?v=comp28">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -6707,8 +6707,10 @@ function renderTeamsHub(){
     const t=teamByName(teamsHubSelected),a=state.assignments?.[teamsHubSelected];
     detail.hidden=false;
     detail.dataset.team=teamsHubSelected;
+    detail.style.setProperty("--club-primary",t[2]||"#235b90");
+    detail.style.setProperty("--club-secondary",t[3]||"#71b8ee");
     detail.innerHTML='<button type="button" class="teams-hub-back" onclick="openTeamsHub()">← ALL TEAMS</button>'
-      +'<div class="teams-hub-profile"><img src="'+logoUrl(t[1])+'" alt=""><div><span class="comp-eyebrow">TEAM DETAIL</span><h3>'
+      +'<div class="teams-hub-profile team-club-hero"><img src="'+logoUrl(t[1])+'" alt=""><div class="team-club-title"><span class="comp-eyebrow">YOUR CLUB, UP CLOSE</span><h3>'
       +escapeHtml(t[0])+'</h3><p>'+escapeHtml(a?'Owned by '+a.player:'Unassigned')+'</p></div></div>'
       +'<div class="team-detail-content" aria-live="polite">Loading roster, injuries and schedule…</div>';
     if(window.cvCompetition?.renderTeamDetail)void window.cvCompetition.renderTeamDetail(teamsHubSelected,detail);
@@ -6919,7 +6921,7 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp24"></script>
+<script src="/competition.js?v=comp25"></script>
 <script src="/nba-news.js?v=1" defer></script>
 
 <nav class="mobile-nav" aria-label="Mobile draft navigation">
