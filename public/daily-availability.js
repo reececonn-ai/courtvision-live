@@ -46,6 +46,9 @@
     return '<section><h4>'+esc(name)+'</h4>'+(list?.length?list.map(x=>'<article class="game-availability-player"><strong>'+esc(x.athlete?.displayName||x.player||"Player")+'</strong> <span class="availability-status">'+esc(x.status||"Status not supplied")+'</span><p>'+esc(x.shortComment||x.longComment||x.details?.detail||"")+'</p>'+(x.date?'<small>Reported '+esc(dateText(x.date))+'</small>':'')+'</article>').join(""):'<p class="availability-note">No injuries listed. This does not confirm everyone is available.</p>')+'</section>';
   }
   async function renderGame(panel,g,summaryProvider){
+    // Guard here too: older callers must never put pregame content above a live box score.
+    if(["IN","FINAL"].includes(g.status)){panel.innerHTML="";panel.hidden=true;return}
+    panel.hidden=false;
     if(g.sample||String(g.id).startsWith("demo-")){panel.innerHTML="";return}
     const today=keyNow(),key=(()=>{const p=new Intl.DateTimeFormat("en-CA",{timeZone:"Australia/Sydney",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(g.date)).reduce((o,p)=>(o[p.type]=p.value,o),{});return p.year+"-"+p.month+"-"+p.day})();
     const historical=key<today,days=Math.round((Date.parse(key+"T12:00:00Z")-Date.parse(today+"T12:00:00Z"))/86400000);

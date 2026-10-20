@@ -3334,3 +3334,6 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 #nerdStudio .ns-performance-graph li>b{text-align:right;font-size:17px;color:#fff}
 #nerdStudio #nerdClassic{margin-top:28px}
 @media(max-width:600px){#nerdStudio .ns-performance-graph li{grid-template-columns:140px minmax(50px,1fr) 45px;gap:8px}#nerdStudio .ns-performance-axis{margin-left:148px;margin-right:53px;font-size:9px;gap:10px}#nerdStudio .ns-performance-name{font-size:11px}#nerdStudio .ns-performance-name img{width:23px;height:23px}}
+
+/* A live/final card always leads with its box score, including mixed cached assets. */
+.comp-game.in .game-lineup-slot,.comp-game.final .game-lineup-slot{display:none!important}
