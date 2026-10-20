@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp42">
+<link rel="stylesheet" href="/competition.css?v=comp43">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -4772,9 +4772,10 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
               <small id="competitionSlateDate">SYDNEY TIME</small>
             </div>
             <div class="comp-day-controls" aria-label="Game day">
-              <button type="button" id="competitionDayPrevious" aria-label="Previous day: today" onclick="changeCompetitionDay(0)">←</button>
+              <button type="button" id="competitionDayPrevious" aria-label="Previous day" onclick="stepCompetitionDay(-1)">←</button>
               <div class="comp-day-tabs"><button type="button" id="competitionDay0" aria-pressed="true" onclick="changeCompetitionDay(0)">Today</button><button type="button" id="competitionDay1" aria-pressed="false" onclick="changeCompetitionDay(1)">Tomorrow</button></div>
-              <button type="button" id="competitionDayNext" aria-label="Next day: tomorrow" onclick="changeCompetitionDay(1)">→</button>
+              <button type="button" id="competitionDayNext" aria-label="Next day" onclick="stepCompetitionDay(1)">→</button>
+              <label class="comp-date-label" for="competitionGameDate">Pick a date <input type="date" id="competitionGameDate" onchange="pickCompetitionDate(this.value)"></label><button type="button" onclick="refreshCompetitionSlate()" aria-label="Refresh selected game date">Refresh</button>
               <span id="competitionDayHint">Times shown in Sydney time</span>
             </div>
             <div class="comp-games" id="competitionGames">
@@ -6946,7 +6947,7 @@ if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueD
 setTimeout(cvStartSync,80);
 
 </script>
-<script src="/competition.js?v=comp35"></script>
+<script src="/competition.js?v=comp36"></script>
 <script src="/nerd-studio.js?v=2"></script>
 <script src="/nba-insights.js?v=1"></script>
 <script src="/nba-news.js?v=1" defer></script>

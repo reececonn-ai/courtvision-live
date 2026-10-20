@@ -391,25 +391,26 @@
     return out;
   }
 
-  function parseScoreboard(data){
+  function parseScoreboard(data,includePlayoffs=false){
     const out=[];
     for(const ev of data?.events||[]){
       const comp=ev.competitions?.[0];if(!comp)continue;
       // ESPN scoreboard includes preseason fixtures. Never count those toward competition.
       if(Date.parse(ev.date||comp.date||"")<REGULAR_SEASON_START)continue;
       const seasonType=Number(ev.season?.type??data?.season?.type??0);
-      if(seasonType&&seasonType!==2)continue;
+      if(seasonType&&seasonType!==2&&!(includePlayoffs&&seasonType===3))continue;
       const cs=comp.competitors||[];
       const home=cs.find(x=>x.homeAway==="home")||cs[0],away=cs.find(x=>x.homeAway==="away")||cs[1];
       const hn=teamNameFromEspn(home?.team),an=teamNameFromEspn(away?.team);if(!hn||!an)continue;
       const statusType=comp.status?.type||ev.status?.type||{};
       const completed=!!statusType.completed;
       const detail=statusType.shortDetail||statusType.detail||comp.status?.displayClock||"";
-      const status=completed?"FINAL":statusType.state==="in"?"IN":"SCHEDULED";
+      const rawStatus=String(statusType.name||"")+" "+detail;
+      const status=/postpon/i.test(rawStatus)?"POSTPONED":/cancel/i.test(rawStatus)?"CANCELLED":/suspend|delay/i.test(rawStatus)?"DELAYED":completed?"FINAL":statusType.state==="in"?"IN":"SCHEDULED";
       out.push({
         id:String(ev.id||comp.id||Math.random()),
         date:new Date(ev.date||comp.date||Date.now()),
-        home:hn,away:an,status,detail,
+        home:hn,away:an,status,detail,timeTbd:comp.timeValid===false||/\bTBD\b/i.test(detail),
         homeScore:Number(home?.score)||0,awayScore:Number(away?.score)||0,
         homeWinner:completed?(home?.winner===true||Number(home?.score)>Number(away?.score)):false,
         awayWinner:completed?(away?.winner===true||Number(away?.score)>Number(home?.score)):false
@@ -468,6 +469,7 @@
     if(isTestDraft())return;
     autoUpdateRunning=true;
     try{
+      if(active==="competitionScreen"&&selectedSlateKey()!==sydneyKey())await loadDateSlate(selectedSlateKey(),true);
       const before=cache.games||[];
       const beforeById=new Map(before.map(g=>[g.id,g]));
       const latest=await fetchTodayScoreboardLite();
@@ -799,30 +801,63 @@
 
 
 
+
   let slateOffset=null,slateDayKey="",slateToday=[],slateRecords={};
-  function nextSydneyKey(now=new Date()){
-    return new Date(Date.parse(sydneyKey(now)+"T12:00:00Z")+86400000).toISOString().slice(0,10);
-  }
+  const dateSlates=new Map();
+  const firstSlate=(SEASON_YEAR-1)+"-10-01",lastSlate=SEASON_YEAR+"-07-31";
+  function shiftDateKey(key,days){return new Date(Date.parse(key+"T12:00:00Z")+days*86400000).toISOString().slice(0,10)}
+  function nextSydneyKey(now=new Date()){return shiftDateKey(sydneyKey(now),1)}
   function chooseSlate(today,tomorrow){
     if(slateOffset===null)slateOffset=today.length?0:tomorrow.length?1:0;
     return slateOffset===1?tomorrow:today;
   }
+  function selectedSlateKey(){return shiftDateKey(sydneyKey(),slateOffset??0)}
   window.changeCompetitionDay=function(offset){
-    slateOffset=Math.max(0,Math.min(1,Number(offset)||0));
+    const n=Math.trunc(Number(offset));if(!Number.isFinite(n))return;
+    const key=shiftDateKey(sydneyKey(),n);if(key<firstSlate||key>lastSlate)return;
+    slateDayKey=sydneyKey();slateOffset=n;
     renderGames(slateToday,slateRecords);
+  };
+  window.stepCompetitionDay=function(step){window.changeCompetitionDay((slateOffset??0)+step)};
+  window.pickCompetitionDate=function(key){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(key)||key<firstSlate||key>lastSlate)return;
+    const day=Date.parse(key+"T12:00:00Z");if(!Number.isFinite(day)||new Date(day).toISOString().slice(0,10)!==key)return;
+    window.changeCompetitionDay(Math.round((day-Date.parse(sydneyKey()+"T12:00:00Z"))/86400000));
+  };
+  async function loadDateSlate(key,force=false){
+    const previous=dateSlates.get(key),ttl=key<sydneyKey()?6*3600000:120000;
+    if(previous?.pending)return previous.pending;
+    if(!force&&previous&&Date.now()-previous.at<ttl)return previous;
+    const item={...previous,loading:true,error:null};
+    const pending=(async()=>{
+      const keys=[shiftDateKey(key,-1),key,shiftDateKey(key,1)];
+      const results=await Promise.allSettled(keys.map(async date=>{
+        const compact=date.replace(/-/g,"");
+        return parseScoreboard(await fetchNbaJson("/api/nba/scoreboard?dates="+compact,"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates="+compact,8000),true);
+      }));
+      const failures=results.filter(r=>r.status==="rejected").length;
+      if(failures){item.error="Could not refresh the complete schedule. "+(previous?.games?"Showing the last saved result.":"Please try Refresh.");item.games=previous?.games;item.at=0;}
+      else{item.games=[...new Map(results.flatMap(r=>r.value).map(g=>[g.id,g])).values()].filter(g=>sydneyKey(g.date)===key).sort((a,b)=>a.date-b.date);item.at=Date.now();}
+      item.loading=false;item.pending=null;dateSlates.set(key,item);
+      while(dateSlates.size>60)dateSlates.delete(dateSlates.keys().next().value);
+      if(selectedSlateKey()===key)renderGames(slateToday,slateRecords);
+      return item;
+    })();
+    item.pending=pending;dateSlates.set(key,item);return pending;
+  }
+  window.refreshCompetitionSlate=function(){
+    const key=selectedSlateKey();if(key===sydneyKey())return refreshCompetitionBoard(true);
+    return loadDateSlate(key,true);
   };
   function bindSlateSwipe(el){
     if(el.dataset.swipeBound)return;el.dataset.swipeBound="true";
     let start=null,suppressClickUntil=0;
     el.addEventListener("click",e=>{if(Date.now()<suppressClickUntil){e.preventDefault();e.stopPropagation();}},true);
     el.addEventListener("touchstart",e=>{const t=e.touches[0];start={x:t.clientX,y:t.clientY}},{passive:true});
-    el.addEventListener("touchend",e=>{
-      if(!start)return;const t=e.changedTouches[0],dx=t.clientX-start.x,dy=t.clientY-start.y;start=null;
-      if(Math.abs(dx)>=60&&Math.abs(dx)>Math.abs(dy)*1.5){suppressClickUntil=Date.now()+500;window.changeCompetitionDay(dx<0?1:0);}
-    },{passive:true});
+    el.addEventListener("touchend",e=>{if(!start)return;const t=e.changedTouches[0],dx=t.clientX-start.x,dy=t.clientY-start.y;start=null;if(Math.abs(dx)>=60&&Math.abs(dx)>Math.abs(dy)*1.5){suppressClickUntil=Date.now()+500;window.stepCompetitionDay(dx<0?1:-1)}},{passive:true});
   }
   function gameWinChance(g){
-    if(g.status==="FINAL")return null;
+    if(!["SCHEDULED","IN"].includes(g.status))return null;
     const homeLine=winLineFor(g.home),awayLine=winLineFor(g.away);
     if(homeLine===null||awayLine===null)return null;
     // Log5 matchup estimate from season win projections; +0.12 log-odds at home.
@@ -845,7 +880,7 @@
   function gameWinChanceMarkup(g){
     if(g.status==="FINAL")return '<div class="comp-game-probability"><span>FINAL RESULT</span><strong>'+esc(shortTeam(g.homeWinner?g.home:g.awayWinner?g.away:g.home))+(g.homeWinner||g.awayWinner?' WON':' · FINAL')+'</strong></div>';
     const p=gameWinChance(g);
-    if(!p)return '<div class="comp-game-probability"><span>WIN CHANCE</span><strong>Projection unavailable</strong></div>';
+    if(!p)return '<div class="comp-game-probability"><span>'+(g.status==="SCHEDULED"||g.status==="IN"?"WIN CHANCE":"GAME STATUS")+'</span><strong>'+esc(g.status==="SCHEDULED"||g.status==="IN"?"Projection unavailable":g.status)+'</strong></div>';
     return '<div class="comp-game-probability"><div><span>'+esc(shortTeam(g.away))+' <b>'+p.away+'%</b></span><span>'+esc(shortTeam(g.home))+' <b>'+p.home+'%</b></span></div>'+
       '<div class="comp-game-prob-track" aria-hidden="true"><i style="width:'+p.away+'%"></i></div>'+
       '<small>'+(g.sample?'SAMPLE · ':'')+'PREGAME ESTIMATE'+(g.status==="IN"?' · NOT LIVE ODDS':'')+'</small></div>';
@@ -893,9 +928,9 @@
   }
 
   async function populateGameStats(panel,g,records){
-    if(g.status==="SCHEDULED"){
+    if(!["FINAL","IN"].includes(g.status)){
       const record=name=>{const r=records[name];return r?r.w+"–"+r.l:"—"};
-      panel.innerHTML='<p>Pregame matchup · game stats appear after tip-off.</p>'+statsTable(["Team",shortTeam(g.away),shortTeam(g.home)],[["Season record",record(g.away),record(g.home)],["Projected season wins",winLineFor(g.away)??"—",winLineFor(g.home)??"—"]]);
+      panel.innerHTML='<p>'+esc(g.status==='SCHEDULED'?'Pregame matchup · game stats appear after tip-off.':g.status+' · check the schedule for a confirmed new time.')+'</p>'+statsTable(["Team",shortTeam(g.away),shortTeam(g.home)],[["Season record",record(g.away),record(g.home)],["Projected season wins",winLineFor(g.away)??"—",winLineFor(g.home)??"—"]]);
       return;
     }
     if(g.sample||String(g.id).startsWith("demo-")){
@@ -946,17 +981,19 @@
     const todayKey=sydneyKey();
     if(slateDayKey!==todayKey){slateDayKey=todayKey;slateOffset=null;}
     slateToday=games;slateRecords=records;
-    games=chooseSlate(games,cache.tomorrow||[]);
-    const selectedKey=slateOffset===1?nextSydneyKey():todayKey;
-    const title=$("competitionSlateTitle");if(title)title.textContent=slateOffset===1?"TOMORROW’S GAMES":"TODAY’S GAMES";
-    const dateEl=$("competitionSlateDate");
-    if(dateEl)dateEl.textContent=daySydney(new Date(selectedKey+"T01:00:00Z")).toUpperCase()+" · SYDNEY";
-    const previous=$("competitionDayPrevious"),next=$("competitionDayNext");
-    if(previous)previous.disabled=slateOffset===0;if(next)next.disabled=slateOffset===1;
+    chooseSlate(games,cache.tomorrow||[]);
+    const selectedKey=selectedSlateKey();
+    let item=selectedKey===todayKey?{games,at:cache.at||Date.now()}:dateSlates.get(selectedKey);
+    if(selectedKey!==todayKey&&!item){void loadDateSlate(selectedKey);item=dateSlates.get(selectedKey);}
+    games=item?.games||[];
+    const title=$("competitionSlateTitle");if(title)title.textContent=slateOffset===0?"TODAY’S GAMES":slateOffset===1?"TOMORROW’S GAMES":"NBA GAMES";
+    const dateEl=$("competitionSlateDate");if(dateEl)dateEl.textContent=daySydney(new Date(selectedKey+"T01:00:00Z")).toUpperCase()+" · SYDNEY";
+    const picker=$("competitionGameDate");if(picker){picker.value=selectedKey;picker.min=firstSlate;picker.max=lastSlate;}
+    const previous=$("competitionDayPrevious"),next=$("competitionDayNext");if(previous)previous.disabled=selectedKey<=firstSlate;if(next)next.disabled=selectedKey>=lastSlate;
     for(const offset of [0,1]){const tab=$("competitionDay"+offset);if(tab)tab.setAttribute("aria-pressed",String(slateOffset===offset));}
-    const hint=$("competitionDayHint");if(hint)hint.textContent=slateOffset===1&&!slateToday.length?"No games today · showing tomorrow’s slate":"Times shown in Sydney time";
+    const hint=$("competitionDayHint");if(hint)hint.textContent=item?.error?item.error:item?.loading?"Refreshing selected date…":(item?.at?"Updated "+timeSydney(new Date(item.at))+" · ":"")+"Sydney time"+(selectedKey!==todayKey?" · records shown are current":"");
     bindSlateSwipe(el);
-    if(!games.length){el.innerHTML='<div class="comp-empty">No NBA games listed for '+(slateOffset===1?'tomorrow':'today')+' in Sydney time. Use the day controls to check the other slate.</div>';return}
+    if(!games.length){el.innerHTML='<div class="comp-empty">'+(item?.loading?'Loading this date’s games…':item?.error?'Schedule unavailable. Use Refresh to try again.':'No regular-season or playoff games listed for this Sydney date. Pick another date or use the arrows.')+'</div>';return}
     const teamLine=name=>{
       const r=records[name]||{w:0,l:0,rank:null};
       return "#"+(r.rank||"—")+"\u00a0·\u00a0"+r.w+"-"+r.l;
@@ -974,8 +1011,8 @@
 
     el.innerHTML=games.map((g,index)=>{
       const ao=teamOwner(g.away),ho=teamOwner(g.home);
-      const scores=g.status!=="SCHEDULED";
-      const status=g.status==="SCHEDULED"?timeSydney(g.date):(g.status==="IN"?(g.detail||"LIVE"):"");
+      const scores=g.status==="FINAL"||g.status==="IN";
+      const status=g.status==="SCHEDULED"?(g.timeTbd?"TIME TBD":timeSydney(g.date)):g.status==="IN"?(g.detail||"LIVE"):g.status==="FINAL"?"FINAL":g.status;
       return '<article class="comp-game '+g.status.toLowerCase()+'"><div class="comp-game-main">'+
         side(g.away,ao,g.awayScore,"away",scores)+
         side(g.home,ho,g.homeScore,"home",scores)+
@@ -1483,6 +1520,7 @@
       saveCompetitionSnapshot(rows,data.demo);
       renderLeaderboard(rows,data.demo,data.games||[]);
       renderGames(data.games||[],data.records||{});
+      if(force&&selectedSlateKey()!==sydneyKey())void loadDateSlate(selectedSlateKey(),true);
       updateCompetitionTicker(rows,data.games||[],data.recent||[],data.demo);
       const stamp=$("competitionUpdated");
       if(stamp)stamp.textContent=(data.demo?"DEMO · ":regularSeasonStarted()?"UPDATED ":"PRESEASON PROJECTION · ")+new Intl.DateTimeFormat("en-AU",{timeZone:TZ,day:"numeric",month:"short",hour:"numeric",minute:"2-digit"}).format(new Date());
@@ -1549,6 +1587,7 @@
     gameWinChance,
     chooseSlate,
     nextSydneyKey,
+    shiftDateKey,
     ownerSummaries,
     calculateProbabilities,
     competitionTidbits,

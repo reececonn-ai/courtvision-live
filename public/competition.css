@@ -3135,3 +3135,9 @@ body:not(.classic-main-style) #draftBoardScreen .board-team:hover{
   #competitionGames .comp-game-state{font-size:13px!important;padding:5px 8px!important}
   #teamsHubDetail .team-fixtures b{font-size:14px!important}
 }
+
+.comp-date-label{display:flex;align-items:center;gap:8px;color:#bad0e3;font:12px/1.5 Arial,sans-serif}
+.comp-date-label input{background:#132a40;color:#eef7ff;border:1px solid #496a87;border-radius:7px;min-height:44px;padding:8px 10px;font:14px Arial,sans-serif;color-scheme:dark}
+#competitionDayHint{flex-basis:100%;margin:4px 0 0}
+#competitionGames .comp-game:is(.postponed,.cancelled,.delayed) .comp-game-state{background:#44301c!important;border-color:#ac793b!important;color:#ffe3aa!important}
+@media(max-width:600px){.comp-date-label{flex-basis:100%;margin-top:8px}.comp-date-label input{flex:1;min-width:0}}
