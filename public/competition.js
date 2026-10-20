@@ -927,13 +927,13 @@
     return {boxscore:{teams:[make(g.away,false),make(g.home,true)]}};
   }
 
-  function loadGameSummary(g){
+  function loadGameSummary(g,force=false){
     const key=[g.id,g.status,g.homeScore,g.awayScore].join(":");
     let item=gameStatsCache.get(key);
-    if(!item||Date.now()-item.at>60000){
+    if(force||!item||Date.now()-item.at>60000){
       if(!/^\d+$/.test(String(g.id)))return Promise.reject(new Error("Invalid game ID"));
       const direct="https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event="+encodeURIComponent(g.id);
-      item={at:Date.now(),promise:fetchNbaJson("/api/nba/summary?event="+encodeURIComponent(g.id),direct,8000)};
+      item={at:Date.now(),promise:fetchNbaJson("/api/nba/summary?event="+encodeURIComponent(g.id)+(force?"&fresh=1":""),direct,8000)};
       gameStatsCache.set(key,item);
       item.promise.catch(()=>{if(gameStatsCache.get(key)===item)gameStatsCache.delete(key)});
     }
@@ -975,6 +975,18 @@
     }
   }
 
+
+  async function refreshOpenGame(g){
+    const data=await loadGameSummary(g,true);
+    const updated=parseScoreboard({events:[data.header]},true).find(x=>x.id===String(g.id));
+    if(!updated)throw new Error("Updated score unavailable");
+    Object.assign(g,updated);
+    const lists=[cache.games,cache.tomorrow,cache.recent,slateToday,...[...dateSlates.values()].map(x=>x.games)];
+    for(const list of lists)for(const item of list||[])if(String(item.id)===String(g.id))Object.assign(item,updated);
+    gameStatsCache.set([g.id,g.status,g.homeScore,g.awayScore].join(":"),{at:Date.now(),promise:Promise.resolve(data)});
+    renderGames(slateToday,slateRecords);
+  }
+
   function bindGameStats(el,games,records){
     if(!games.some(g=>g.id===gameStatsOpen))gameStatsOpen=null;
     el.querySelectorAll(".comp-game").forEach((card,index)=>{
@@ -987,6 +999,14 @@
       };
       const close=()=>{panel.hidden=true;button.setAttribute("aria-expanded","false");if(gameStatsOpen===g.id)gameStatsOpen=null};
       button.addEventListener("click",()=>{if(gameStatsOpen===g.id){close();return}open()});
+      card.querySelector(".comp-game-stats-refresh").addEventListener("click",async e=>{
+        const refresh=e.currentTarget;if(refresh.disabled)return;
+        refresh.disabled=true;refresh.setAttribute("aria-busy","true");
+        const note=card.querySelector(".comp-game-refresh-status");note.textContent="Refreshing…";
+        try{await refreshOpenGame(g);}
+        catch(_){if(note.isConnected)note.textContent="Couldn’t update. Tap refresh to retry.";}
+        finally{refresh.disabled=false;refresh.removeAttribute("aria-busy");}
+      });
       card.querySelector(".comp-game-stats-close").addEventListener("click",()=>{close();button.focus()});
       card.addEventListener("keydown",e=>{if(e.key==="Escape"){close();button.focus()}});
       if(gameStatsOpen===g.id)open();
@@ -1036,7 +1056,7 @@
         (status?'<div class="comp-game-state">'+esc(status)+'</div>':'')+
         gameWinChanceMarkup(g)+
         '<button type="button" class="comp-game-stats-toggle" aria-expanded="false" aria-controls="compGameStats'+index+'" aria-label="Game stats: '+esc(shortTeam(g.away))+' vs '+esc(shortTeam(g.home))+'"><span>Click or tap for stats</span></button>'+gameHighlightsLink(g)+'</div>'+
-        '<section class="comp-game-stats" id="compGameStats'+index+'" aria-label="Game stats" hidden><div class="comp-game-stats-head"><strong>'+esc(shortTeam(g.away))+' vs '+esc(shortTeam(g.home))+'</strong><button type="button" class="comp-game-stats-close">Close stats</button></div><div class="comp-game-stats-body" aria-live="polite"></div></section>'+
+        '<section class="comp-game-stats" id="compGameStats'+index+'" aria-label="Game stats" hidden><div class="comp-game-stats-head"><strong>'+esc(shortTeam(g.away))+' vs '+esc(shortTeam(g.home))+'</strong><div class="comp-game-stats-actions"><span class="comp-game-refresh-status" role="status"></span><button type="button" class="comp-game-stats-refresh" aria-label="Refresh scores and game stats" title="Refresh scores and game stats"><span aria-hidden="true">↻</span></button><button type="button" class="comp-game-stats-close">Close stats</button></div></div><div class="comp-game-stats-body" aria-live="polite"></div></section>'+
       '</article>';
     }).join("");
     bindGameStats(el,games,records);

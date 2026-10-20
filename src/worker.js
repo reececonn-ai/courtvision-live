@@ -460,7 +460,7 @@ export default {
       const event = String(url.searchParams.get("event") || "");
       if (!/^\d{1,15}$/.test(event)) return json({ ok: false, error: "Invalid event" }, 400);
       const upstream = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=" + encodeURIComponent(event);
-      return cachedNbaResponse(request, upstream, 60, ctx);
+      return cachedNbaResponse(request, upstream, 60, ctx, url.searchParams.get("fresh") === "1");
     }
 
     if (url.pathname === "/api/nba/scoreboard") {

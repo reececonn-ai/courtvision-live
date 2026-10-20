@@ -3337,3 +3337,11 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 
 /* A live/final card always leads with its box score, including mixed cached assets. */
 .comp-game.in .game-lineup-slot,.comp-game.final .game-lineup-slot{display:none!important}
+
+.comp-game-stats-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.comp-game-stats-actions .comp-game-stats-refresh{display:grid;place-items:center;min-width:44px;min-height:44px;padding:4px 10px;font-size:28px;line-height:1;color:#dcedff;background:#183247;border:1px solid #58748b;border-radius:5px;cursor:pointer}
+.comp-game-stats-refresh[aria-busy="true"] span{animation:cv-game-refresh-spin 1s linear infinite}
+.comp-game-stats-refresh:disabled{opacity:.65;cursor:wait}
+.comp-game-refresh-status{font-size:12px;color:#abc7df;max-width:220px}
+@keyframes cv-game-refresh-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.comp-game-stats-refresh[aria-busy="true"] span{animation:none}}
