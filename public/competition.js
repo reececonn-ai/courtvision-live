@@ -1265,6 +1265,88 @@
     try{return await promise}catch(e){teamDetailCache.delete(cacheKey);throw e}
   }
 
+
+  function seasonJourney(name,games){
+    const finals=games.filter(g=>g.status==="FINAL").sort((a,b)=>a.date-b.date);
+    if(!finals.length)return '<p class="team-chart-empty">The story starts at opening tip. Wins and projected pace will appear here after the first regular-season result.</p>';
+    const line=winLineFor(name),hasLine=line!==null;
+    let wins=0;const points=[{n:0,w:0}];finals.forEach((g,i)=>{if(g.home===name?g.homeWinner:g.awayWinner)wins++;points.push({n:i+1,w:wins})});
+    const maxX=Math.max(10,finals.length),maxY=Math.max(5,Math.ceil(Math.max(wins,hasLine?line/82*maxX:0)/5)*5);
+    const x=n=>48+n/maxX*440,y=w=>210-w/maxY*175;
+    const actual=points.map(p=>x(p.n)+","+y(p.w)).join(" ");
+    let svg='<svg viewBox="0 0 520 260" role="img" aria-label="'+esc(finals.length+' games, '+wins+' wins. '+(hasLine?'Compared with preseason projected pace.':''))+'">';
+    for(let i=0;i<=2;i++){const v=maxY*i/2;svg+='<line x1="48" y1="'+y(v)+'" x2="488" y2="'+y(v)+'" class="chart-grid"/><text x="38" y="'+(y(v)+4)+'" text-anchor="end">'+v+'</text>';}
+    svg+='<text x="48" y="240">0</text><text x="488" y="240" text-anchor="end">'+maxX+' games</text><text x="48" y="22">Cumulative wins</text>';
+    if(hasLine)svg+='<line x1="48" y1="210" x2="488" y2="'+y(line/82*maxX)+'" class="chart-pace"/>';
+    svg+='<polyline points="'+actual+'" class="chart-actual"/><circle cx="'+x(finals.length)+'" cy="'+y(wins)+'" r="4" class="chart-dot"/></svg>';
+    return '<p class="team-chart-summary">'+wins+' wins from '+finals.length+' games'+(hasLine?' · '+(wins-line/82*finals.length>=0?'+':'')+(wins-line/82*finals.length).toFixed(1)+' vs projected pace':'')+'</p><div class="team-chart-legend"><span>● Actual wins</span>'+(hasLine?'<span>┄ Preseason pace ('+line+' / 82)</span>':'')+'</div>'+svg;
+  }
+
+  function ownerContribution(name,records,sample=false){
+    const owner=teamOwner(name),player=state.players.find(p=>p.name===owner);
+    if(!player)return '<p class="team-chart-empty">This team is unassigned. Its contribution will appear once it has an owner.</p>';
+    const rows=(player.teams||[]).map(team=>({team,w:records[team]?.w}));
+    if(rows.some(r=>!Number.isFinite(r.w)))return '<p class="team-chart-empty">Complete owner standings are not available yet. No contribution is estimated from missing records.</p>';
+    const total=rows.reduce((n,r)=>n+r.w,0),mine=rows.find(r=>r.team===name)?.w||0,max=Math.max(1,...rows.map(r=>r.w));
+    return '<p class="team-chart-summary">'+esc(owner)+' · '+(total?mine+' of '+total+' wins ('+Math.round(mine/total*100)+'%)':'No regular-season wins yet')+'</p><div class="team-owner-bars">'+rows.sort((a,b)=>b.w-a.w).map(r=>'<div class="team-owner-bar '+(r.team===name?'selected':'')+'"><img src="'+teamLogo(r.team)+'" alt=""><span>'+esc(shortTeam(r.team))+'</span><div><i style="width:'+(r.w/max*100)+'%"></i></div><b>'+r.w+' W</b></div>').join("")+'</div>';
+  }
+
+  function playerChartRows(data,name){
+    const totals=new Map();
+    for(const summary of data){
+      const team=(summary?.boxscore?.players||[]).find(x=>teamNameFromEspn(x.team)===name);
+      const group=team?.statistics?.find(x=>x.labels?.includes("PTS"));
+      if(!group)continue;
+      for(const row of group.athletes||[]){
+        if(row.didNotPlay||!Array.isArray(row.stats))continue;
+        const number=k=>{const index=group.labels.indexOf(k);return index>=0?parseFloat(row.stats[index]):NaN};
+        if(!["PTS","REB","AST"].every(k=>Number.isFinite(number(k))))continue;
+        const id=String(row.athlete?.id||row.athlete?.displayName||"");
+        if(!id)continue;
+        const p=totals.get(id)||{name:row.athlete?.displayName||"Player",photo:row.athlete?.headshot?.href||"",pts:0,reb:0,ast:0,gp:0};
+        p.pts+=number("PTS");p.reb+=number("REB");p.ast+=number("AST");p.gp++;totals.set(id,p);
+      }
+    }
+    return [...totals.values()].map(p=>({...p,pts:p.pts/p.gp,reb:p.reb/p.gp,ast:p.ast/p.gp}));
+  }
+
+  function playerLeaderBars(rows,metric){
+    const leaders=[...rows].sort((a,b)=>b[metric]-a[metric]).slice(0,5),max=Math.max(1,...leaders.map(p=>p[metric]));
+    if(!leaders.length)return '<p class="team-chart-empty">Player leaders will appear when complete regular-season box scores are available.</p>';
+    return leaders.map(p=>'<div class="team-player-bar">'+(/^https:\/\//i.test(p.photo)?'<img src="'+esc(p.photo)+'" alt="" onerror="this.remove()">':'<span class="team-player-initial">'+esc(p.name.charAt(0))+'</span>')+'<div><strong>'+esc(p.name)+'</strong><small>'+p.gp+' appearance'+(p.gp===1?'':'s')+' in this window</small><div class="team-player-track"><i style="width:'+(p[metric]/max*100)+'%"></i></div></div><b>'+p[metric].toFixed(1)+'</b></div>').join("");
+  }
+
+  async function mountTeamCharts(name,detail,games,roster,scheduleOk){
+    const host=detail.querySelector(".team-charts");if(!host)return;
+    let sample=false,metric="pts",livePlayers=[],liveRecords=null,playerNote="Loading recent box scores…";
+    const finals=games.filter(g=>g.status==="FINAL").sort((a,b)=>b.date-a.date).slice(0,5);
+    const active=()=>detail.isConnected&&!detail.hidden&&detail.dataset.team===name&&detail.querySelector(".team-charts")===host;
+    function render(){
+      if(!active())return;
+      let chartGames=games,players=livePlayers,records=liveRecords;
+      if(sample){
+        chartGames=Array.from({length:24},(_,i)=>({status:"FINAL",date:new Date(2026,10,i+1),home:name,homeWinner:i%3!==0,awayWinner:i%3===0}));
+        players=(roster.length?roster.slice(0,5):[{name:"Sample player A"},{name:"Sample player B"},{name:"Sample player C"}]).map((p,i)=>({name:p.name,photo:p.headshot||"",gp:5,pts:27-i*3.6,reb:9-i*.9,ast:7-i*.8}));
+        records=Object.fromEntries(TEAM_DATA.map((t,i)=>[t[0],{w:10+i%9}]));
+      }
+      host.innerHTML='<div class="team-charts-top"><div><span class="team-section-label">THE NUMBERS BEHIND THE TEAM</span><h3>A closer look</h3><p>'+(sample?'SAMPLE CHARTS · Fictional results and statistics.':'2026–27 regular season · ESPN results and box scores.')+'</p></div><button type="button" class="team-chart-sample">'+(sample?'Show real data':'Try sample charts')+'</button></div>'+
+        '<div class="team-charts-grid"><section class="team-journey"><h4>Season journey</h4>'+(sample||scheduleOk?seasonJourney(name,chartGames):'<p class="team-chart-empty">Schedule unavailable. Try reopening this team later.</p>')+'</section>'+
+        '<section class="team-player-leaders"><h4>Who’s delivering?</h4><p class="team-chart-caption">'+(sample?'Sample per-game averages':esc(playerNote))+'</p><div class="team-metric-tabs" role="group" aria-label="Player statistic">'+[["pts","Points"],["reb","Rebounds"],["ast","Assists"]].map(([key,label])=>'<button type="button" data-metric="'+key+'" aria-pressed="'+(metric===key)+'">'+label+'</button>').join("")+'</div><div class="team-player-bars">'+playerLeaderBars(players,metric)+'</div></section>'+
+        '<section class="team-contribution"><h4>Your owner’s wins</h4>'+(records?ownerContribution(name,records,sample):'<p class="team-chart-empty">Loading owner standings…</p>')+'</section></div>';
+      host.querySelector(".team-chart-sample").addEventListener("click",()=>{sample=!sample;render()});
+      host.querySelectorAll("[data-metric]").forEach(b=>b.addEventListener("click",()=>{metric=b.dataset.metric;render()}));
+    }
+    render();
+    const standings=async()=>{if(!regularSeasonStarted())return Object.fromEntries(TEAM_DATA.map(t=>[t[0],{w:0,l:0}]));if(cache.records)return cache.records;const data=await fetchNbaJson("/api/nba/standings?season="+SEASON_YEAR,"https://site.api.espn.com/apis/v2/sports/basketball/nba/standings?season="+SEASON_YEAR,8000);return parseStandings(data)};
+    void standings().then(records=>{liveRecords=records;render()}).catch(()=>{liveRecords={};render()});
+    if(!finals.length){playerNote="Per-game averages · last five team games · no results yet";render();return}
+    const results=await Promise.allSettled(finals.map(g=>fetchNbaJson("/api/nba/summary?event="+encodeURIComponent(g.id),"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event="+encodeURIComponent(g.id),8000)));
+    const data=results.filter(r=>r.status==="fulfilled").map(r=>r.value).filter(summary=>(summary?.boxscore?.players||[]).some(t=>teamNameFromEspn(t.team)===name&&t.statistics?.some(group=>group.labels?.includes("PTS")&&group.athletes?.length)));
+    livePlayers=playerChartRows(data,name);
+    playerNote="Per-game averages · last "+finals.length+" team games"+(data.length<finals.length?" · partial coverage ("+data.length+" box scores)":"")+" · ESPN";
+    render();
+  }
+
   async function renderTeamDetail(name,detail){
     const team=teamMeta(name);if(!team)return;
     const key=typeof espnTeamKey==="function"?espnTeamKey(team[1]):String(team[1]).toLowerCase();
@@ -1305,7 +1387,9 @@
       html+=upcoming.length?'<div class="team-fixtures">'+upcoming.map(g=>{const opponent=g.home===name?g.away:g.home;return '<article><img src="'+teamLogo(opponent)+'" alt=""><div><strong>'+(g.home===name?'vs ':'@ ')+esc(shortTeam(opponent))+'</strong><small>'+esc(daySydney(g.date))+' · Sydney</small></div><b>'+esc(g.status==="IN"?'LIVE':timeSydney(g.date))+'</b></article>';}).join("")+'</div>':'<p>No upcoming regular-season games listed.</p>';
       html+='</section>';
     }else html+='<section><h3>Recent form & upcoming games</h3><p>Schedule unavailable · try again later.</p></section>';
-    target.innerHTML=html;
+    target.innerHTML='<section class="team-charts" aria-label="Team statistics"></section>'+html;
+    const chartGames=scheduleResult.status==="fulfilled"?parseScoreboard(scheduleResult.value).filter(g=>g.home===name||g.away===name):[];
+    void mountTeamCharts(name,detail,chartGames,shown,scheduleResult.status==="fulfilled");
   }
 
   async function getCompetitionData(force=false){
