@@ -837,7 +837,6 @@
 
 
   let gameStatsOpen=null;
-  let gameStatsPinned=false;
   const gameStatsCache=new Map();
 
   function statsTable(headers,rows){
@@ -906,7 +905,7 @@
   }
 
   function bindGameStats(el,games,records){
-    if(!games.some(g=>g.id===gameStatsOpen)){gameStatsOpen=null;gameStatsPinned=false;}
+    if(!games.some(g=>g.id===gameStatsOpen))gameStatsOpen=null;
     el.querySelectorAll(".comp-game").forEach((card,index)=>{
       const g=games[index],button=card.querySelector(".comp-game-stats-toggle"),panel=card.querySelector(".comp-game-stats"),body=card.querySelector(".comp-game-stats-body");
       const open=()=>{
@@ -915,10 +914,8 @@
         gameStatsOpen=g.id;panel.hidden=false;button.setAttribute("aria-expanded","true");
         void populateGameStats(body,g,records);
       };
-      const close=()=>{panel.hidden=true;button.setAttribute("aria-expanded","false");if(gameStatsOpen===g.id){gameStatsOpen=null;gameStatsPinned=false}};
-      card.addEventListener("pointerenter",e=>{if(e.pointerType==="mouse"&&!gameStatsPinned)open()});
-      card.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse"&&!gameStatsPinned&&!card.contains(document.activeElement))close()});
-      button.addEventListener("click",()=>{if(gameStatsOpen===g.id&&gameStatsPinned){close();return}gameStatsPinned=true;open()});
+      const close=()=>{panel.hidden=true;button.setAttribute("aria-expanded","false");if(gameStatsOpen===g.id)gameStatsOpen=null};
+      button.addEventListener("click",()=>{if(gameStatsOpen===g.id){close();return}open()});
       card.querySelector(".comp-game-stats-close").addEventListener("click",()=>{close();button.focus()});
       card.addEventListener("keydown",e=>{if(e.key==="Escape"){close();button.focus()}});
       if(gameStatsOpen===g.id)open();
@@ -959,7 +956,7 @@
         side(g.home,ho,g.homeScore,"home",scores)+
         (status?'<div class="comp-game-state">'+esc(status)+'</div>':'')+
         gameWinChanceMarkup(g)+
-        '<button type="button" class="comp-game-stats-toggle" aria-expanded="false" aria-controls="compGameStats'+index+'" aria-label="Game stats: '+esc(shortTeam(g.away))+' vs '+esc(shortTeam(g.home))+'"><span>Hover or tap for stats</span></button></div>'+
+        '<button type="button" class="comp-game-stats-toggle" aria-expanded="false" aria-controls="compGameStats'+index+'" aria-label="Game stats: '+esc(shortTeam(g.away))+' vs '+esc(shortTeam(g.home))+'"><span>Click or tap for stats</span></button></div>'+
         '<section class="comp-game-stats" id="compGameStats'+index+'" aria-label="Game stats" hidden><div class="comp-game-stats-head"><strong>'+esc(shortTeam(g.away))+' vs '+esc(shortTeam(g.home))+'</strong><button type="button" class="comp-game-stats-close">Close stats</button></div><div class="comp-game-stats-body" aria-live="polite"></div></section>'+
       '</article>';
     }).join("");
