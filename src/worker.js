@@ -378,10 +378,10 @@ export default {
       });
     }
 
-    // Optional editorial feed: one upstream source, cached 3 hours at the edge.
+    // Optional editorial feed: one upstream source, cached 30 minutes at the edge.
     // Never touches the draft Durable Object or triggers scheduled background work.
     if (url.pathname === "/api/nba/news") {
-      const key = new Request(url.origin + "/api/nba/news", { method: "GET" });
+      const key = new Request(url.origin + "/api/nba/news?layout=2", { method: "GET" });
       const cache = caches.default;
       const hit = await cache.match(key);
       if (hit) return hit;
@@ -396,18 +396,20 @@ export default {
           headline: String(a.headline || "").slice(0, 180),
           summary: String(a.description || a.story || "").replace(/<[^>]*>/g, "").slice(0, 260),
           published: String(a.published || a.lastModified || ""),
+          image: (a.images || []).map(i => String(i.url || "")).find(u => /^https:\/\/(?:[a-z0-9-]+\.)*espncdn\.com\//i.test(u)) || "",
+          teams: (a.categories || []).filter(c => c.type === "team" || c.team).map(c => ({ id: String(c.team?.id || c.id || ""), name: String(c.team?.displayName || c.team?.description || c.description || "") })),
           url: String(a.links?.web?.href || a.links?.mobile?.href || ""),
           category: /injur|out for|questionable|doubtful|ruled out|surgery|availability/i.test(a.headline || "") ? "INJURY" :
             /trad|sign|waiv|acquir|deal|contract/i.test(a.headline || "") ? "ROSTER" : "NBA NEWS",
         })).filter(a => a.headline && /^https:\/\/(www\.)?espn\.com\//.test(a.url));
         const response = json({ ok: true, source: "ESPN", fetchedAt: new Date().toISOString(), articles });
-        response.headers.set("cache-control", "public, max-age=10800, s-maxage=10800");
+        response.headers.set("cache-control", "public, max-age=1800, s-maxage=1800");
         ctx.waitUntil(cache.put(key, response.clone()));
         return response;
       } catch (_) {
         // Cache failures temporarily too: do not hammer upstream on every viewer.
         const response = json({ ok: false, articles: [], error: "News temporarily unavailable" });
-        response.headers.set("cache-control", "public, max-age=1800, s-maxage=1800");
+        response.headers.set("cache-control", "public, max-age=180, s-maxage=180");
         ctx.waitUntil(cache.put(key, response.clone()));
         return response;
       }
