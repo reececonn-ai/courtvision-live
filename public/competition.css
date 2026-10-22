@@ -3371,3 +3371,18 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 #competitionScreen .cv-daily-navigation button:disabled{opacity:.3;cursor:default}
 #competitionScreen .cv-daily-navigation button:focus-visible{outline:2px solid #63c8ff;outline-offset:2px}
 @media(max-width:700px){#competitionScreen .cv-daily-highlights article{flex-basis:82%}#competitionScreen .cv-daily-navigation button{min-height:44px}}
+
+/* A roomier Daily Numbers strip on desktop; phone sizing stays unchanged. */
+@media(min-width:701px){
+  #competitionScreen .cv-daily-strip{padding:18px 22px}
+  #competitionScreen .cv-daily-head{margin-bottom:16px}
+  #competitionScreen .cv-daily-head h3{font-size:22px}
+  #competitionScreen .cv-daily-head>span{font-size:13px}
+  #competitionScreen .cv-daily-head button{font-size:14px;padding:10px}
+  #competitionScreen .cv-daily-strip article small{font-size:12px;letter-spacing:1.1px}
+  #competitionScreen .cv-daily-strip article strong{font-size:21px;margin:8px 0}
+  #competitionScreen .cv-daily-strip article p{font-size:15px;line-height:1.6}
+  #competitionScreen .cv-daily-highlights article{padding:4px 0 8px}
+  #competitionScreen .cv-daily-navigation span,#competitionScreen .cv-daily-strip summary{font-size:13px}
+  #competitionScreen .cv-daily-strip summary{padding-top:14px}
+}
