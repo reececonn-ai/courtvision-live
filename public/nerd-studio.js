@@ -59,9 +59,34 @@
     const previous=(state.competitionSnapshots||[]).filter(s=>!!s.demo===!!demo&&s.key<key&&Array.isArray(s.rows)).sort((a,b)=>String(b.key).localeCompare(String(a.key)))[0];
     const moves=rows.map(r=>({r,old:previous?.rows.find(p=>p.name===r.name)})).filter(x=>Number.isFinite(x.old?.probability)).map(x=>({...x,change:x.r.probability-x.old.probability})).sort((a,b)=>Math.abs(b.change)-Math.abs(a.change));
     if(moves[0]&&Math.abs(moves[0].change)>=.1)items.push(['RACE MOVER',moves[0].r.name,plus(moves[0].change)+' percentage points of title chance since '+previous.key+'.']);
+
+    const scored=teams.filter(t=>t.scoredN>=2);
+    const attack=[...scored].sort((a,b)=>b.pf-a.pf)[0];
+    if(attack)items.push(['BUCKET GETTERS',attack.name,attack.pf.toFixed(1)+' points per game across '+attack.scoredN+' available scored games.']);
+    const defense=[...scored].sort((a,b)=>a.pa-b.pa)[0];
+    if(defense)items.push(['LOCKING IT DOWN',defense.name,defense.pa.toFixed(1)+' points allowed per game across '+defense.scoredN+' available scored games.']);
+    const margin=[...scored].sort((a,b)=>b.margin-a.margin)[0];
+    if(margin&&margin.margin>0)items.push(['WINNING WITH ROOM',margin.name,plus(margin.margin)+' average scoring margin across '+margin.scoredN+' available scored games.']);
+    const close=teams.filter(t=>t.close.length>=2).map(t=>({...t,cw:t.close.filter(g=>g.won).length})).filter(t=>t.cw/t.close.length>=.6).sort((a,b)=>b.cw/b.close.length-a.cw/a.close.length||b.close.length-a.close.length)[0];
+    if(close)items.push(['NAIL-BITERS',close.name,close.cw+'–'+(close.close.length-close.cw)+' in available games decided by five points or fewer. Final-score margin, not clutch-time stats.']);
+    const cold=teams.filter(t=>t.formN>=3&&t.form/t.formN<=.4).sort((a,b)=>a.form/a.formN-b.form/b.formN||b.formN-a.formN)[0];
+    if(cold)items.push(['NEEDS A RESPONSE',cold.name,cold.form+'–'+(cold.formN-cold.form)+' in its last '+cold.formN+' available games.']);
+    const carries=rows.filter(r=>r.w>=3&&r.teams.length>1).map(r=>({r,t:[...r.teams].sort((a,b)=>b.w-a.w)[0]})).filter(x=>x.t.w>=2&&x.t.w/x.r.w>=.4).sort((a,b)=>b.t.w/b.r.w-a.t.w/a.r.w||b.t.w-a.t.w);
+    if(carries[0]){const {r,t}=carries[0];items.push(['THE CARRY JOB',t.name,t.w+' of '+r.name+'’s '+r.w+' squad wins ('+(100*t.w/r.w).toFixed(0)+'%).']);}
+    const ranked=[...rows].sort((a,b)=>b.projected-a.projected),pairs=ranked.slice(1).map((r,i)=>({a:ranked[i],b:r,gap:ranked[i].projected-r.projected})).sort((a,b)=>a.gap-b.gap);
+    if(pairs[0]&&pairs[0].gap<10){const {a,b,gap}=pairs[0];items.push(['TOO CLOSE TO CALL',a.name+' / '+b.name,gap<.05?'Level on projected squad wins.':gap.toFixed(1)+' projected wins separate these neighbours in the forecast.']);}
+    const finals=[...recent].filter(g=>g.status==="FINAL"&&(g.homeWinner||g.awayWinner)).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    const lastDay=finals[0]?new Date(finals[0].date).toLocaleDateString("en-CA",{timeZone:"Australia/Sydney"}):null;
+    const latestDay=finals.filter(g=>new Date(g.date).toLocaleDateString("en-CA",{timeZone:"Australia/Sydney"})===lastDay);
+    const biggest=[...latestDay].filter(g=>Number.isFinite(g.homeScore)&&Number.isFinite(g.awayScore)).sort((a,b)=>Math.abs(b.homeScore-b.awayScore)-Math.abs(a.homeScore-a.awayScore))[0];
+    if(biggest&&Math.abs(biggest.homeScore-biggest.awayScore)>=10)items.push(['STATEMENT RESULT',biggest.homeWinner?biggest.home:biggest.away,'Won by '+Math.abs(biggest.homeScore-biggest.awayScore)+' against '+(biggest.homeWinner?biggest.away:biggest.home)+' on '+lastDay+' (Sydney).']);
+    if(latestDay.length){
+      const results=rows.map(r=>{const owned=new Set(r.teams.map(t=>t.name));let w=0,l=0;const seen=new Set();for(const g of latestDay){const id=g.id||[g.date,g.home,g.away].join("|");if(seen.has(id))continue;seen.add(id);for(const side of ["home","away"])if(owned.has(g[side])){if(g[side+"Winner"])w++;else l++;}}return {name:r.name,w,l};}).filter(r=>r.w+r.l>0).sort((a,b)=>(b.w-b.l)-(a.w-a.l)||b.w-a.w);
+      if(results[0])items.push(['LATEST FINISHED DAY',results[0].name,results[0].w+'–'+results[0].l+' from owned teams on '+lastDay+' (Sydney).']);
+    }
     const stamp=new Date().toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",timeZone:"Australia/Sydney"});
     return '<section class="ns-section ns-daily"><div class="ns-section-title"><span class="ns-kicker">THE DAILY TL;DR · '+esc(stamp)+(demo?' · SAMPLE DATA':'')+'</span><h3>Your numbers, in a minute.</h3></div>'+
-      (items.length?'<div class="ns-daily-grid">'+items.slice(0,4).map(([tag,name,copy])=>'<article><small>'+tag+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>').join("")+'</div>':'<p>No meaningful performance signals yet. The daily brief fills in as results arrive—no games means no hot takes.</p>')+
+      (items.length?'<div class="ns-daily-grid">'+items.slice(0,6).map(([tag,name,copy])=>'<article><small>'+tag+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>').join("")+'</div>'+(items.length>6?'<details class="ns-deep-defs"><summary>More daily numbers · '+(items.length-6)+'</summary><div class="ns-daily-grid">'+items.slice(6).map(([tag,name,copy])=>'<article><small>'+tag+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>').join("")+'</div></details>':''):'<p>No meaningful performance signals yet. The daily brief fills in as results arrive—no games means no hot takes.</p>')+
       '<p class="ns-note">Refreshes with the competition data. Early-season signals can swing sharply; recent form uses the available results window.</p><a href="#nsTeamLab">Explore team performance ↓</a></section>';
   }
 
