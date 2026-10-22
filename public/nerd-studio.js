@@ -89,8 +89,8 @@
   function dailyBrief(rows,recent,demo){
     const items=dailyInsights(rows,recent,demo);
     const stamp=new Date().toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",timeZone:"Australia/Sydney"});
-    return '<section class="ns-section ns-daily"><div class="ns-section-title"><span class="ns-kicker">THE DAILY TL;DR · '+esc(stamp)+(demo?' · SAMPLE DATA':'')+'</span><h3>Your numbers, in a minute.</h3></div>'+
-      (items.length?'<div class="ns-daily-grid">'+items.slice(0,6).map(([tag,name,copy])=>'<article><small>'+tag+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>').join("")+'</div>'+(items.length>6?'<details class="ns-deep-defs"><summary>More daily numbers · '+(items.length-6)+'</summary><div class="ns-daily-grid">'+items.slice(6).map(([tag,name,copy])=>'<article><small>'+tag+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>').join("")+'</div></details>':''):'<p>No meaningful performance signals yet. The daily brief fills in as results arrive—no games means no hot takes.</p>')+
+    return '<section class="ns-section ns-daily"><div class="ns-section-title"><span class="ns-kicker">THE DAILY TL:DR · '+esc(stamp)+(demo?' · SAMPLE DATA':'')+'</span><h3>Your numbers, in a minute.</h3></div>'+
+      (items.length?'<div class="ns-daily-grid">'+items.slice(0,6).map(([tag,name,copy])=>'<article><small>'+tag+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>').join("")+'</div>'+(items.length>6?'<details class="ns-deep-defs"><summary>More daily TL:DR · '+(items.length-6)+'</summary><div class="ns-daily-grid">'+items.slice(6).map(([tag,name,copy])=>'<article><small>'+tag+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>').join("")+'</div></details>':''):'<p>No meaningful performance signals yet. The daily brief fills in as results arrive—no games means no hot takes.</p>')+
       '<p class="ns-note">Refreshes with the competition data. Early-season signals can swing sharply; recent form uses the available results window.</p><a href="#nsTeamLab">Explore team performance ↓</a></section>';
   }
 
@@ -212,11 +212,11 @@
     const expanded=root.querySelector("details")?.open||false,position=root.querySelector(".cv-daily-highlights")?.scrollLeft||0,items=dailyInsights(rows,recent,demo);
     const card=([tag,name,copy])=>'<article><small>'+esc(tag)+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>';
     const date=new Date().toLocaleDateString("en-AU",{day:"numeric",month:"short",timeZone:"Australia/Sydney"});
-    root.innerHTML='<div class="cv-daily-head"><h3>Daily Numbers</h3><span>'+esc(date)+(demo?' · SAMPLE':'')+'</span><button type="button" class="cv-daily-deep-link">Stats for Nerds ↗</button></div>'+
+    root.innerHTML='<div class="cv-daily-head"><h3>Daily TL:DR</h3><span>'+esc(date)+(demo?' · SAMPLE':'')+'</span><button type="button" class="cv-daily-deep-link">Stats for Nerds ↗</button></div>'+
       (items.length?'<div id="cvDailyCarousel" class="cv-daily-highlights" tabindex="0" aria-label="Daily highlights; swipe or scroll for more">'+items.map(card).join("")+'</div>'+
-      (items.length>1?'<div class="cv-daily-navigation"><button type="button" class="cv-daily-prev" aria-label="Previous daily numbers" aria-controls="cvDailyCarousel">←</button><span>Swipe or use the arrows</span><button type="button" class="cv-daily-next" aria-label="Next daily numbers" aria-controls="cvDailyCarousel">→</button></div>':'')+
-      (items.length>3?'<details'+(expanded?' open':'')+'><summary>Expand all daily numbers · '+items.length+'</summary><div class="cv-daily-more">'+items.map(card).join("")+'</div></details>':''):
-      '<p class="cv-daily-empty">The daily numbers will fill in as results arrive.</p>');
+      (items.length>1?'<div class="cv-daily-navigation"><button type="button" class="cv-daily-prev" aria-label="Previous daily TL:DR" aria-controls="cvDailyCarousel">←</button><span>Swipe or use the arrows</span><button type="button" class="cv-daily-next" aria-label="Next daily TL:DR" aria-controls="cvDailyCarousel">→</button></div>':'')+
+      (items.length>3?'<details'+(expanded?' open':'')+'><summary>Expand all daily TL:DR · '+items.length+'</summary><div class="cv-daily-more">'+items.map(card).join("")+'</div></details>':''):
+      '<p class="cv-daily-empty">The daily TL:DR will fill in as results arrive.</p>');
     const track=root.querySelector(".cv-daily-highlights"),prev=root.querySelector(".cv-daily-prev"),next=root.querySelector(".cv-daily-next");
     if(track){
       track.scrollLeft=position;
