@@ -84,13 +84,39 @@
       const results=rows.map(r=>{const owned=new Set(r.teams.map(t=>t.name));let w=0,l=0;const seen=new Set();for(const g of latestDay){const id=g.id||[g.date,g.home,g.away].join("|");if(seen.has(id))continue;seen.add(id);for(const side of ["home","away"])if(owned.has(g[side])){if(g[side+"Winner"])w++;else l++;}}return {name:r.name,w,l};}).filter(r=>r.w+r.l>0).sort((a,b)=>(b.w-b.l)-(a.w-a.l)||b.w-a.w);
       if(results[0])items.push(['LATEST FINISHED DAY',results[0].name,results[0].w+'–'+results[0].l+' from owned teams on '+lastDay+' (Sydney).']);
     }
+
+    const ugly=teams.map(t=>{
+      const seen=new Set(),gs=finals.filter(g=>g.home===t.name||g.away===t.name).filter(g=>{const id=g.id||[g.date,g.home,g.away].join("|");if(seen.has(id))return false;seen.add(id);return true;}).filter(g=>Number.isFinite(g.homeScore)&&Number.isFinite(g.awayScore));
+      const wins=gs.filter(g=>g.home===t.name?g.homeWinner:g.awayWinner).length;
+      return {t,n:gs.length,wins,margin:gs.reduce((n,g)=>n+(g.home===t.name?g.homeScore-g.awayScore:g.awayScore-g.homeScore),0)};
+    }).filter(x=>x.n>=3&&x.wins>x.n/2&&x.margin<0).sort((a,b)=>a.margin/a.n-b.margin/b.n)[0];
+    if(ugly)items.unshift(['WINNING UGLY',ugly.t.name,ugly.wins+'–'+(ugly.n-ugly.wins)+' despite a '+plus(ugly.margin/ugly.n)+' average margin across '+ugly.n+' available scored games. Finding a way.']);
+    const lines=new Map(teams.map(t=>[t.name,t.line]));
+    const killers=latestDay.map(g=>{const winner=g.homeWinner?g.home:g.away,loser=g.homeWinner?g.away:g.home,a=lines.get(winner),b=lines.get(loser);return {g,winner,loser,gap:Number.isFinite(a)&&Number.isFinite(b)?b-a:null}}).filter(x=>x.gap!==null&&x.gap>=5).sort((a,b)=>b.gap-a.gap);
+    if(killers[0]){const x=killers[0];items.unshift(['GIANT KILLER',x.winner,'Beat '+x.loser+' on '+lastDay+' (Sydney), despite a preseason projection '+x.gap.toFixed(1)+' wins lower. Biggest projection-gap upset in that day’s available results.',[x.winner,x.loser]]);}
+    const sweeps=rows.map(r=>{const owned=new Set(r.teams.map(t=>t.name)),seen=new Set(),results=[];
+      for(const g of latestDay){const id=g.id||[g.date,g.home,g.away].join("|");if(seen.has(id))continue;seen.add(id);for(const side of ["home","away"])if(owned.has(g[side]))results.push({team:g[side],won:!!g[side+"Winner"]});}
+      return {r,results};
+    }).filter(x=>x.results.length>=2&&x.results.every(g=>g.won)).sort((a,b)=>b.results.length-a.results.length||a.r.name.localeCompare(b.r.name));
+    if(sweeps[0]){const x=sweeps[0];items.unshift(['SQUAD SWEEP',x.r.name,x.results.length+'–0 in completed owned-team games on '+lastDay+' (Sydney). Every available completed result went their way; other fixtures may still remain.',x.results.map(g=>g.team)]);}
     return items;
   }
+
+  function dailyCard([tag,name,copy,related],rows){
+    const semantic=tag==="GIANT KILLER"?"#c7a0ff":tag==="SQUAD SWEEP"?"#77d8b6":tag==="WINNING UGLY"?"#f2bb63":/BELOW|RESPONSE/.test(tag)?"#f18ba3":"#63c8ff";
+    const owner=rows.find(r=>r.name===name);
+    const names=related||((typeof teamByName==="function"&&teamByName(name))?[name]:owner?.teams.map(t=>t.name)||[]);
+    const clubs=[...new Set(names)].map(n=>typeof teamByName==="function"?teamByName(n):null).filter(Boolean).slice(0,3);
+    const accent=clubs.length===1?clubs[0][2]:semantic;
+    const logos=clubs.length?clubs.map(t=>'<img src="'+esc(logoUrl(t[1]))+'" alt="'+esc(t[0])+'" loading="lazy" onerror="this.hidden=true">').join(""):'<span class="cv-digest-symbol" aria-hidden="true">✦</span>';
+    return '<article class="cv-digest-card" style="--digest-accent:'+accent+';--digest-label:'+semantic+'"><div class="cv-digest-top"><small>'+esc(tag)+'</small><div class="cv-digest-logos">'+logos+'</div></div><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>';
+  }
+
   function dailyBrief(rows,recent,demo){
     const items=dailyInsights(rows,recent,demo);
     const stamp=new Date().toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",timeZone:"Australia/Sydney"});
     return '<section class="ns-section ns-daily"><div class="ns-section-title"><span class="ns-kicker">THE DAILY TL:DR · '+esc(stamp)+(demo?' · SAMPLE DATA':'')+'</span><h3>Your numbers, in a minute.</h3></div>'+
-      (items.length?'<div class="ns-daily-grid">'+items.slice(0,6).map(([tag,name,copy])=>'<article><small>'+tag+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>').join("")+'</div>'+(items.length>6?'<details class="ns-deep-defs"><summary>More daily TL:DR · '+(items.length-6)+'</summary><div class="ns-daily-grid">'+items.slice(6).map(([tag,name,copy])=>'<article><small>'+tag+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>').join("")+'</div></details>':''):'<p>No meaningful performance signals yet. The daily brief fills in as results arrive—no games means no hot takes.</p>')+
+      (items.length?'<div class="ns-daily-grid">'+items.slice(0,6).map(item=>dailyCard(item,rows)).join("")+'</div>'+(items.length>6?'<details class="ns-deep-defs"><summary>More daily TL:DR · '+(items.length-6)+'</summary><div class="ns-daily-grid">'+items.slice(6).map(item=>dailyCard(item,rows)).join("")+'</div></details>':''):'<p>No meaningful performance signals yet. The daily brief fills in as results arrive—no games means no hot takes.</p>')+
       '<p class="ns-note">Refreshes with the competition data. Early-season signals can swing sharply; recent form uses the available results window.</p><a href="#nsTeamLab">Explore team performance ↓</a></section>';
   }
 
@@ -210,7 +236,7 @@
   function renderCompetitionBrief(rows,recent,demo){
     const root=document.getElementById("competitionDailyNumbers");if(!root)return;
     const expanded=root.querySelector("details")?.open||false,position=root.querySelector(".cv-daily-highlights")?.scrollLeft||0,items=dailyInsights(rows,recent,demo);
-    const card=([tag,name,copy])=>'<article><small>'+esc(tag)+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>';
+    const card=item=>dailyCard(item,rows);
     const date=new Date().toLocaleDateString("en-AU",{day:"numeric",month:"short",timeZone:"Australia/Sydney"});
     root.innerHTML='<div class="cv-daily-head"><h3>Daily TL:DR</h3><span>'+esc(date)+(demo?' · SAMPLE':'')+'</span><button type="button" class="cv-daily-deep-link">Stats for Nerds ↗</button></div>'+
       (items.length?'<div id="cvDailyCarousel" class="cv-daily-highlights" tabindex="0" aria-label="Daily highlights; swipe or scroll for more">'+items.map(card).join("")+'</div>'+

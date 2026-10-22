@@ -3386,3 +3386,14 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
   #competitionScreen .cv-daily-navigation span,#competitionScreen .cv-daily-strip summary{font-size:13px}
   #competitionScreen .cv-daily-strip summary{padding-top:14px}
 }
+
+/* Team identities and colour-coded insight cards in both digest views. */
+#competitionScreen .cv-daily-strip .cv-digest-card,#nerdStudio .ns-daily .cv-digest-card{box-sizing:border-box;border:1px solid #2c4358;border-top:3px solid var(--digest-accent);border-radius:7px;padding:14px;background:linear-gradient(130deg,color-mix(in srgb,var(--digest-accent) 14%,#102235),#0d1d2d);box-shadow:0 3px 10px #0002}
+.cv-digest-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:34px}
+.cv-digest-logos{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.cv-digest-logos img{width:32px;height:32px;object-fit:contain;background:#e7f0fa;border-radius:50%;padding:3px;box-sizing:border-box}
+.cv-digest-symbol{color:var(--digest-label);font-size:25px}
+#competitionScreen .cv-digest-card .cv-digest-top small,#nerdStudio .cv-digest-card .cv-digest-top small{color:var(--digest-label);line-height:1.4}
+#competitionScreen .cv-daily-highlights article.cv-digest-card{padding:14px}
+#nerdStudio .ns-daily-grid .cv-digest-card strong{margin-top:10px}
+@media(max-width:700px){#competitionScreen .cv-daily-strip .cv-digest-card{padding:12px} .cv-digest-logos img{width:28px;height:28px}}
