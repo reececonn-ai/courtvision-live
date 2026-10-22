@@ -3345,3 +3345,19 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 .comp-game-refresh-status{font-size:12px;color:#abc7df;max-width:220px}
 @keyframes cv-game-refresh-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.comp-game-stats-refresh[aria-busy="true"] span{animation:none}}
+
+/* Shared TLDR, compact competition edition. */
+#competitionScreen .cv-daily-strip{margin:12px 0;border-block:1px solid #34495b;border-top:2px solid #f2bb63;padding:12px 16px;background:#0c1c2b}
+#competitionScreen .cv-daily-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+#competitionScreen .cv-daily-head h3{font-size:18px;text-transform:uppercase;color:#f1f6ff;margin:0}
+#competitionScreen .cv-daily-head>span{font-size:11px;color:#98b1c8}
+#competitionScreen .cv-daily-head button{margin-left:auto;background:transparent;border:0;color:#63c8ff;font-size:12px;cursor:pointer;padding:8px}
+#competitionScreen .cv-daily-highlights,#competitionScreen .cv-daily-more{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+#competitionScreen .cv-daily-strip article{min-width:0}
+#competitionScreen .cv-daily-strip article small{display:block;font-size:10px;letter-spacing:1px;color:#f2bb63;font-weight:700}
+#competitionScreen .cv-daily-strip article strong{display:block;font-size:16px;color:#fff;margin:5px 0}
+#competitionScreen .cv-daily-strip article p{font-size:12px;line-height:1.5;color:#b7cce0;margin:0}
+#competitionScreen .cv-daily-strip summary{font-size:12px;color:#63c8ff;cursor:pointer;padding:10px 0 2px}
+#competitionScreen .cv-daily-more{padding:16px 0 4px}
+#competitionScreen .cv-daily-empty{color:#a9bfd3;font-size:12px;margin:0}
+@media(max-width:700px){#competitionScreen .cv-daily-highlights{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:16px;padding-bottom:8px}#competitionScreen .cv-daily-highlights article{flex:0 0 82%;scroll-snap-align:start}#competitionScreen .cv-daily-more{grid-template-columns:1fr;gap:16px}#competitionScreen .cv-daily-head{gap:8px}#competitionScreen .cv-daily-head h3{font-size:16px}#competitionScreen .cv-daily-head button{font-size:11px}}

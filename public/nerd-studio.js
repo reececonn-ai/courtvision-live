@@ -48,7 +48,7 @@
       return {...t,owner:r.name,played,delta:played&&Number.isFinite(t.line)?t.w-played*t.line/82:null,form:last.filter(g=>g.won).length,formN:last.length,n:games.length,scoredN:scored.length,pf:scored.length?scored.reduce((n,g)=>n+g.pf,0)/scored.length:null,pa:scored.length?scored.reduce((n,g)=>n+g.pa,0)/scored.length:null,margin:scored.length?scored.reduce((n,g)=>n+g.pf-g.pa,0)/scored.length:null,close:scored.filter(g=>Math.abs(g.pf-g.pa)<=5),blowouts:scored.filter(g=>g.pf-g.pa>=15).length};
     }));
   }
-  function dailyBrief(rows,recent,demo){
+  function dailyInsights(rows,recent,demo){
     const teams=teamNumbers(rows,recent),eligible=teams.filter(t=>t.delta!==null),items=[];
     const high=[...eligible].sort((a,b)=>b.delta-a.delta)[0],low=[...eligible].sort((a,b)=>a.delta-b.delta)[0];
     if(high&&high.delta>=.05)items.push(['BEATING THE LINE',high.name,plus(high.delta)+' wins above preseason pace through '+high.played+' games. '+high.owner+' gets the lift.']);
@@ -84,6 +84,10 @@
       const results=rows.map(r=>{const owned=new Set(r.teams.map(t=>t.name));let w=0,l=0;const seen=new Set();for(const g of latestDay){const id=g.id||[g.date,g.home,g.away].join("|");if(seen.has(id))continue;seen.add(id);for(const side of ["home","away"])if(owned.has(g[side])){if(g[side+"Winner"])w++;else l++;}}return {name:r.name,w,l};}).filter(r=>r.w+r.l>0).sort((a,b)=>(b.w-b.l)-(a.w-a.l)||b.w-a.w);
       if(results[0])items.push(['LATEST FINISHED DAY',results[0].name,results[0].w+'–'+results[0].l+' from owned teams on '+lastDay+' (Sydney).']);
     }
+    return items;
+  }
+  function dailyBrief(rows,recent,demo){
+    const items=dailyInsights(rows,recent,demo);
     const stamp=new Date().toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",timeZone:"Australia/Sydney"});
     return '<section class="ns-section ns-daily"><div class="ns-section-title"><span class="ns-kicker">THE DAILY TL;DR · '+esc(stamp)+(demo?' · SAMPLE DATA':'')+'</span><h3>Your numbers, in a minute.</h3></div>'+
       (items.length?'<div class="ns-daily-grid">'+items.slice(0,6).map(([tag,name,copy])=>'<article><small>'+tag+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>').join("")+'</div>'+(items.length>6?'<details class="ns-deep-defs"><summary>More daily numbers · '+(items.length-6)+'</summary><div class="ns-daily-grid">'+items.slice(6).map(([tag,name,copy])=>'<article><small>'+tag+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>').join("")+'</div></details>':''):'<p>No meaningful performance signals yet. The daily brief fills in as results arrive—no games means no hot takes.</p>')+
@@ -202,6 +206,19 @@
     bindSquad(root,rows,recent);
     bindDeep(root,rows,recent);
   }
+
+  function renderCompetitionBrief(rows,recent,demo){
+    const root=document.getElementById("competitionDailyNumbers");if(!root)return;
+    const expanded=root.querySelector("details")?.open||false,items=dailyInsights(rows,recent,demo);
+    const card=([tag,name,copy])=>'<article><small>'+esc(tag)+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>';
+    const date=new Date().toLocaleDateString("en-AU",{day:"numeric",month:"short",timeZone:"Australia/Sydney"});
+    root.innerHTML='<div class="cv-daily-head"><h3>Daily Numbers</h3><span>'+esc(date)+(demo?' · SAMPLE':'')+'</span><button type="button" class="cv-daily-deep-link">Stats for Nerds ↗</button></div>'+
+      (items.length?'<div class="cv-daily-highlights" tabindex="0" aria-label="Daily highlights; swipe or scroll for more">'+items.slice(0,3).map(card).join("")+'</div>'+
+      (items.length>3?'<details'+(expanded?' open':'')+'><summary>More daily numbers · '+(items.length-3)+'</summary><div class="cv-daily-more">'+items.slice(3).map(card).join("")+'</div></details>':''):
+      '<p class="cv-daily-empty">The daily numbers will fill in as results arrive.</p>');
+    root.querySelector(".cv-daily-deep-link")?.addEventListener("click",()=>window.openStatsForNerds());
+  }
+
   function toggle(){
     classic=!classic;
     const modern=document.getElementById("nerdStudio"),old=document.getElementById("nerdClassic"),button=document.getElementById("nerdLayoutToggle");
@@ -209,5 +226,5 @@
     if(button){button.textContent=classic?"New view":"Classic view";button.setAttribute("aria-pressed",String(classic))}
     if(!classic&&latest)render(latest.rows,latest.games,latest.recent,latest.demo);
   }
-  window.cvNerdStudio={render,toggle};
+  window.cvNerdStudio={render,toggle,renderCompetitionBrief};
 })();

@@ -1540,6 +1540,7 @@
   }
   function updateCompetitionTicker(rows,games,recent,demo=false){
     competitionTickerRows=rows;
+    window.cvNerdStudio?.renderCompetitionBrief(rows,recent,demo);
     window.cvCompetitionTicker=competitionTickerItems(rows,games,recent,demo);
     if(document.querySelector(".screen.active")?.id==="competitionScreen")setTicker(window.cvCompetitionTicker,"COMP BOARD");
   }
