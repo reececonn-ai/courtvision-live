@@ -209,13 +209,25 @@
 
   function renderCompetitionBrief(rows,recent,demo){
     const root=document.getElementById("competitionDailyNumbers");if(!root)return;
-    const expanded=root.querySelector("details")?.open||false,items=dailyInsights(rows,recent,demo);
+    const expanded=root.querySelector("details")?.open||false,position=root.querySelector(".cv-daily-highlights")?.scrollLeft||0,items=dailyInsights(rows,recent,demo);
     const card=([tag,name,copy])=>'<article><small>'+esc(tag)+'</small><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>';
     const date=new Date().toLocaleDateString("en-AU",{day:"numeric",month:"short",timeZone:"Australia/Sydney"});
     root.innerHTML='<div class="cv-daily-head"><h3>Daily Numbers</h3><span>'+esc(date)+(demo?' · SAMPLE':'')+'</span><button type="button" class="cv-daily-deep-link">Stats for Nerds ↗</button></div>'+
-      (items.length?'<div class="cv-daily-highlights" tabindex="0" aria-label="Daily highlights; swipe or scroll for more">'+items.slice(0,3).map(card).join("")+'</div>'+
-      (items.length>3?'<details'+(expanded?' open':'')+'><summary>More daily numbers · '+(items.length-3)+'</summary><div class="cv-daily-more">'+items.slice(3).map(card).join("")+'</div></details>':''):
+      (items.length?'<div id="cvDailyCarousel" class="cv-daily-highlights" tabindex="0" aria-label="Daily highlights; swipe or scroll for more">'+items.map(card).join("")+'</div>'+
+      (items.length>1?'<div class="cv-daily-navigation"><button type="button" class="cv-daily-prev" aria-label="Previous daily numbers" aria-controls="cvDailyCarousel">←</button><span>Swipe or use the arrows</span><button type="button" class="cv-daily-next" aria-label="Next daily numbers" aria-controls="cvDailyCarousel">→</button></div>':'')+
+      (items.length>3?'<details'+(expanded?' open':'')+'><summary>Expand all daily numbers · '+items.length+'</summary><div class="cv-daily-more">'+items.map(card).join("")+'</div></details>':''):
       '<p class="cv-daily-empty">The daily numbers will fill in as results arrive.</p>');
+    const track=root.querySelector(".cv-daily-highlights"),prev=root.querySelector(".cv-daily-prev"),next=root.querySelector(".cv-daily-next");
+    if(track){
+      track.scrollLeft=position;
+      const update=()=>{if(prev)prev.disabled=track.scrollLeft<=2;if(next)next.disabled=track.scrollLeft+track.clientWidth>=track.scrollWidth-2;};
+      const move=direction=>{const article=track.querySelector("article"),step=article?article.getBoundingClientRect().width+20:track.clientWidth;track.scrollBy({left:direction*step,behavior:window.matchMedia?.("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});};
+      prev?.addEventListener("click",()=>move(-1));next?.addEventListener("click",()=>move(1));
+      track.addEventListener("scroll",update,{passive:true});
+      track.addEventListener("keydown",e=>{if(e.key==="ArrowRight"||e.key==="ArrowLeft"){e.preventDefault();move(e.key==="ArrowRight"?1:-1);}});
+      if(typeof ResizeObserver!=="undefined"){root._dailyResize?.disconnect();root._dailyResize=new ResizeObserver(update);root._dailyResize.observe(track);}
+      update();
+    }
     root.querySelector(".cv-daily-deep-link")?.addEventListener("click",()=>window.openStatsForNerds());
   }
 

@@ -3361,3 +3361,13 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 #competitionScreen .cv-daily-more{padding:16px 0 4px}
 #competitionScreen .cv-daily-empty{color:#a9bfd3;font-size:12px;margin:0}
 @media(max-width:700px){#competitionScreen .cv-daily-highlights{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:16px;padding-bottom:8px}#competitionScreen .cv-daily-highlights article{flex:0 0 82%;scroll-snap-align:start}#competitionScreen .cv-daily-more{grid-template-columns:1fr;gap:16px}#competitionScreen .cv-daily-head{gap:8px}#competitionScreen .cv-daily-head h3{font-size:16px}#competitionScreen .cv-daily-head button{font-size:11px}}
+
+/* Browse every daily insight without expanding the strip. */
+#competitionScreen .cv-daily-highlights{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:20px;padding-bottom:8px}
+#competitionScreen .cv-daily-highlights article{flex:0 0 calc((100% - 40px)/3);scroll-snap-align:start}
+#competitionScreen .cv-daily-navigation{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:4px 0}
+#competitionScreen .cv-daily-navigation span{font-size:11px;color:#9db5cb}
+#competitionScreen .cv-daily-navigation button{min-width:44px;min-height:36px;border:1px solid #405f78;border-radius:4px;background:#152c40;color:#d8ecff;font-size:20px;cursor:pointer}
+#competitionScreen .cv-daily-navigation button:disabled{opacity:.3;cursor:default}
+#competitionScreen .cv-daily-navigation button:focus-visible{outline:2px solid #63c8ff;outline-offset:2px}
+@media(max-width:700px){#competitionScreen .cv-daily-highlights article{flex-basis:82%}#competitionScreen .cv-daily-navigation button{min-height:44px}}
