@@ -162,6 +162,8 @@ function defaultState(room) {
       teams: [],
     })),
     assignments: {},
+    tradeProposals: [],
+    tradeLedger: { banked: {}, teams: {}, events: [] },
     passed: [],
     available: [...ALL_TEAMS],
     history: [],

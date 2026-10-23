@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp60">
+<link rel="stylesheet" href="/competition.css?v=comp61">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -4501,7 +4501,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
       <div class="wheel-caption">Drafted and passed teams are removed from the live wheel</div>
     </section>
 
-    <section class="screen reveal" id="revealScreen"><nav class="teams-profile-nav competition-hub-tabs" aria-label="Team profile navigation"><button type="button" onclick="leaveTeamProfile('competition')">COMPETITION</button><button type="button" class="active" aria-current="page" onclick="leaveTeamProfile('teams')">TEAM STATS</button><button type="button" onclick="leaveTeamProfile('nerds')">STATS FOR NERDS</button><button type="button" onclick="leaveTeamProfile('board')">DRAFT BOARD</button></nav>
+    <section class="screen reveal" id="revealScreen"><nav class="teams-profile-nav competition-hub-tabs" aria-label="Team profile navigation"><button type="button" onclick="leaveTeamProfile('competition')">COMPETITION</button><button type="button" class="active" aria-current="page" onclick="leaveTeamProfile('teams')">TEAM STATS</button><button type="button" onclick="leaveTeamProfile('nerds')">STATS FOR NERDS</button><button type="button" onclick="leaveTeamProfile('trade')">TRADE</button><button type="button" onclick="leaveTeamProfile('board')">DRAFT BOARD</button></nav>
       <div class="team-bg" id="teamBg"></div>
       <img class="logo-watermark" id="logoWatermark" alt="">
       <div class="light-beam beam1"></div><div class="light-beam beam2"></div>
@@ -4697,7 +4697,8 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
       <div class="barrel" id="barrelCount">Barrel: 0 teams</div>
     </section>
 
-    <section class="screen draft-board-screen" id="draftBoardScreen"><div class="board-hub-heading"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" class="active" aria-current="page" onclick="openDraftBoard()">DRAFT BOARD</button></nav></div>
+    <section class="screen draft-board-screen" id="draftBoardScreen"><div class="board-hub-heading"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTradeDesk()">TRADE</button>
+          <button type="button" class="active" aria-current="page" onclick="openDraftBoard()">DRAFT BOARD</button></nav></div>
       <div class="broadcast-top"><span class="live-dot">Draft Board</span><span id="boardTopStatus">League overview</span></div>
       <div class="board-shell">
         <div class="board-head">
@@ -4737,7 +4738,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
     </section>
 
     <section class="screen competition-screen" id="competitionScreen">
-      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button onclick="refreshCompetitionBoard(true)">REFRESH</button><span class="competition-hub-updated" id="competitionUpdated">NOT LOADED</span></nav>
+      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button onclick="refreshCompetitionBoard(true)">REFRESH</button><span class="competition-hub-updated" id="competitionUpdated">NOT LOADED</span></nav>
         <header class="comp-topbar">
           <div class="comp-brand-lockup">
             <div class="comp-eyebrow">COURTVISION DAILY · AUSTRALIA/SYDNEY</div>
@@ -4807,9 +4808,28 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
       </div>
     </section>
 
+    <section class="screen trade-screen" id="tradeScreen">
+      <div class="competition-shell trade-shell">
+        <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" class="active" aria-current="page" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
+        <header class="trade-hero">
+          <span class="comp-section-kicker">THE TRADE DESK</span>
+          <h2>MAKE YOUR CASE.</h2>
+          <p>Offer one team for another. A majority of owners must approve before the swap becomes official.</p>
+        </header>
+        <section class="trade-builder-panel">
+          <div class="trade-panel-head"><div><span>BUILD A TRADE</span><strong>Four choices. Then the league votes.</strong></div><small>ONE-FOR-ONE SWAPS</small></div>
+          <div id="tradeBuilder"></div>
+        </section>
+        <section class="trade-board-panel">
+          <div class="trade-panel-head"><div><span>STEP 5</span><strong>ON THE TABLE</strong></div><small>MAJORITY RULES · HISTORICAL WINS STAY PUT</small></div>
+          <div id="tradeBoard" aria-live="polite"></div>
+        </section>
+      </div>
+    </section>
+
     <section class="screen teams-hub-screen" id="teamsHubScreen">
   <div class="teams-hub-shell" style="width:100%!important;max-width:none!important;margin:0!important">
-    <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" class="active" aria-current="page" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
+    <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" class="active" aria-current="page" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
     <header class="teams-hub-head"><div class="comp-eyebrow">2026–27 NBA · FRANCHISE DIRECTORY</div><h2>TEAM STATS</h2><p>Rosters, injuries, recent results and upcoming games.</p></header>
     <div class="teams-hub-filter"><label for="teamsHubSearch">FIND A TEAM</label><input id="teamsHubSearch" type="search" placeholder="Search team or owner…" oninput="renderTeamsHub()" autocomplete="off"></div>
     <div id="teamsHubDetail" class="teams-hub-detail" hidden></div>
@@ -4817,7 +4837,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
   </div>
 </section>
 <section class="screen nerd-screen" id="statsForNerdsScreen">
-      <div class="nerd-shell" style="width:100%!important;max-width:none!important;margin:0!important"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" class="active" aria-current="page" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
+      <div class="nerd-shell" style="width:100%!important;max-width:none!important;margin:0!important"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" class="active" aria-current="page" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
         <header class="nerd-topbar">
           <div>
             <div class="nerd-eyebrow">COURTVISION DEEP CUTS · VERIFIED FROM COMPETITION DATA</div>
@@ -4943,7 +4963,15 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 </div>
 
 <div class="modal" id="settingsModal">
-  <div class="modal-card">
+  <div class="modal-card settings-card admin-locked">
+    <div class="admin-pin-gate" id="adminPinGate">
+      <div class="admin-pin-lock">COMMISSIONER ACCESS</div>
+      <h2>Enter admin PIN</h2>
+      <p>This prevents accidental team and draft changes.</p>
+      <input id="adminPinInput" type="password" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="Admin PIN" onkeydown="if(event.key==='Enter')unlockAdminSettings()">
+      <button class="btn" onclick="unlockAdminSettings()">UNLOCK SETTINGS</button>
+      <small id="adminPinError" role="alert"></small>
+    </div>
     <div class="modal-head">
       <div><div class="kicker">Commissioner settings</div><h2>Edit the draft & presentation</h2></div>
       <button class="close" onclick="closeSettings()">×</button>
@@ -4996,10 +5024,12 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
       <h3>Commissioner corrections</h3>
       <div class="field"><label>Team</label><select id="adminTeamSelect" onchange="loadAdminTeamState()"></select></div>
       <div class="admin-team-state" id="adminTeamState">Select a team.</div>
+      <div class="field"><label>Swap with team</label><select id="adminSwapTeamSelect"></select></div>
       <div class="admin-correction-actions">
         <button class="btn secondary" onclick="returnAdminTeamToWheel()">Return to Wheel</button>
         <button class="btn secondary" onclick="restoreAdminPassedTeam()">Restore Passed Team</button>
         <button class="btn secondary" onclick="reassignAdminTeam()">Reassign Team</button>
+        <button class="btn secondary" onclick="swapAdminTeams()">Swap Two Teams</button>
         <button class="btn secondary" onclick="editAdminBid()">Edit Bid</button>
       </div>
     </div>
@@ -5102,7 +5132,7 @@ function freshState(){
   return {
     players:Array.from({length:6},(_,i)=>({name:`Player ${i+1}`,budget:50,remaining:50,teams:[]})),
     teamCap:5, available:TEAM_DATA.map(t=>t[0]), passed:[], assignments:{}, history:[], teamContent:{},
-    sound:true, liveRosters:{}, liveSyncAt:null
+    sound:true, liveRosters:{}, liveSyncAt:null, tradeProposals:[], tradeLedger:{banked:{},teams:{},events:[]}
   };
 }
 let state = loadStoredState() || freshState();
@@ -5124,6 +5154,8 @@ state.barrelCurrent = state.barrelCurrent || null;
 state.onTheBoard = state.onTheBoard || null;
 state.liveSpin = state.liveSpin || null;
 state.competitionSnapshots = Array.isArray(state.competitionSnapshots) ? state.competitionSnapshots : [];
+state.tradeProposals = Array.isArray(state.tradeProposals) ? state.tradeProposals : [];
+state.tradeLedger = state.tradeLedger && typeof state.tradeLedger==="object" ? state.tradeLedger : {banked:{},teams:{},events:[]};
 state.starterSource = state.starterSource || "auto"; // "auto" = ESPN depth chart → curated; "curated" = curated only
 state.teamCap = Math.max(1,+state.teamCap||5);
 // ---- curated-data migration: refresh editorial defaults when this file ships newer data,
@@ -5213,7 +5245,9 @@ function cvSharedSnapshot(){
       barrelCurrent:state.barrelCurrent||null,
       onTheBoard:state.onTheBoard||null,
       liveSpin:state.liveSpin?JSON.parse(JSON.stringify(state.liveSpin)):null,
-      competitionSnapshots:JSON.parse(JSON.stringify(state.competitionSnapshots||[]))
+      competitionSnapshots:JSON.parse(JSON.stringify(state.competitionSnapshots||[])),
+      tradeProposals:JSON.parse(JSON.stringify(state.tradeProposals||[])),
+      tradeLedger:JSON.parse(JSON.stringify(state.tradeLedger||{banked:{},teams:{},events:[]}))
     }
   };
 }
@@ -5331,6 +5365,8 @@ function cvApplySnapshot(snapshot,serverVersion=0){
       state.competitionSnapshots||[],
       Array.isArray(d.competitionSnapshots)?d.competitionSnapshots:[]
     );
+    state.tradeProposals=Array.isArray(d.tradeProposals)?JSON.parse(JSON.stringify(d.tradeProposals)):state.tradeProposals||[];
+    state.tradeLedger=d.tradeLedger&&typeof d.tradeLedger==="object"?JSON.parse(JSON.stringify(d.tradeLedger)):state.tradeLedger||{banked:{},teams:{},events:[]};
     currentTeam=state.onTheBoard||null;
     reconcileState();
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(_){}
@@ -5339,7 +5375,7 @@ function cvApplySnapshot(snapshot,serverVersion=0){
     // The competition hub is read-only navigation. Stale draft events must never
     // hijack a phone viewing Competition, Draft Board or Stats for Nerds.
     const currentView=document.querySelector(".screen.active")?.id;
-    const isCompetitionHub=["competitionScreen","draftBoardScreen","statsForNerdsScreen","teamsHubScreen"].includes(currentView);
+    const isCompetitionHub=["competitionScreen","draftBoardScreen","statsForNerdsScreen","teamsHubScreen","tradeScreen"].includes(currentView);
     if(!isCompetitionHub&&!document.body.classList.contains("teams-profile-view")&&state.liveSpin&&!state.onTheBoard){
       showScreenLocal("wheelScreen");
       cvPlayRemoteSpin(state.liveSpin);
@@ -6011,12 +6047,18 @@ function openAdminTeamFromBoard(name){openSettings();const s=document.getElement
 function buildAdminTeamSelect(){
   const s=document.getElementById("adminTeamSelect");if(!s)return;const cur=s.value;
   s.innerHTML=TEAM_DATA.map(t=>`<option value="${escapeAttr(t[0])}">${escapeHtml(t[0])}</option>`).join("");
-  if(cur&&TEAM_DATA.some(t=>t[0]===cur))s.value=cur;loadAdminTeamState();
+  if(cur&&TEAM_DATA.some(t=>t[0]===cur))s.value=cur;loadAdminTeamState();buildAdminSwapTeamSelect();
+}
+function buildAdminSwapTeamSelect(){
+  const source=document.getElementById("adminTeamSelect")?.value,select=document.getElementById("adminSwapTeamSelect");if(!select)return;
+  const current=select.value;select.innerHTML=Object.keys(state.assignments||{}).filter(name=>name!==source).sort().map(name=>`<option value="${escapeAttr(name)}">${escapeHtml(name)} · ${escapeHtml(state.assignments[name].player)}</option>`).join("");
+  if([...select.options].some(o=>o.value===current))select.value=current;
 }
 function loadAdminTeamState(){
   const s=document.getElementById("adminTeamSelect"),el=document.getElementById("adminTeamState");if(!s||!el)return;
   const n=s.value,a=state.assignments[n];
-  el.textContent=a?`Assigned to ${a.player}${a.barrel?" via Barrel":` for $${money(a.amount)}`}.`:state.passed.includes(n)?"Passed team · currently in the Barrel.":state.available.includes(n)?"Available · currently on the main wheel.":"Unassigned.";
+  el.textContent=a?`Assigned to ${a.player}${a.barrel?" via Barrel":` for ${money(a.amount)}`}.`:state.passed.includes(n)?"Passed team · currently in the Barrel.":state.available.includes(n)?"Available · currently on the main wheel.":"Unassigned.";
+  buildAdminSwapTeamSelect();
 }
 function removeTeamFromPlayer(name){
   const a=state.assignments[name];if(!a)return;
@@ -6044,6 +6086,21 @@ function reassignAdminTeam(){
   if(op){op.teams=op.teams.filter(t=>t!==n);if(!a.barrel)op.remaining=Math.min(op.budget,op.remaining+amount)}
   if(!a.barrel)np.remaining-=amount;np.teams.push(n);a.player=np.name;
   state.history.push(`ADMIN: ${n} reassigned to ${np.name}`);setLastAction(`${n} reassigned to ${np.name}`);saveState();loadAdminTeamState();
+}
+function swapAdminTeams(){
+  const first=document.getElementById("adminTeamSelect")?.value,second=document.getElementById("adminSwapTeamSelect")?.value;
+  const a=state.assignments?.[first],b=state.assignments?.[second];if(!first||!second||first===second||!a||!b)return toast("Choose two assigned teams");
+  if(!confirm(`Swap ${first} (${a.player}) with ${second} (${b.player})? This is an admin correction and does not need a vote.`))return;
+  pushUndo(`Admin swap ${first} / ${second}`);
+  const ownerA=a.player,ownerB=b.player,at=new Date().toISOString();
+  state.assignments[first]={...b,player:ownerB,adminCorrectedAt:at};
+  state.assignments[second]={...a,player:ownerA,adminCorrectedAt:at};
+  if(state.tradeLedger?.teams?.[first])state.tradeLedger.teams[first].owner=ownerB;
+  if(state.tradeLedger?.teams?.[second])state.tradeLedger.teams[second].owner=ownerA;
+  for(const proposal of state.tradeProposals||[])if(proposal.status==="voting"&&[first,second].some(team=>team===proposal.offeredTeam||team===proposal.requestedTeam)){proposal.status="invalid";proposal.error="Closed after an admin team correction";proposal.resolvedAt=at}
+  reconcileState();
+  state.history.push(`ADMIN PIN: corrected ${first} to ${ownerB} and ${second} to ${ownerA}`);
+  setLastAction(`Admin corrected ${first} / ${second}`);saveState();loadAdminTeamState();window.cvTrades?.render();toast("Team correction saved");
 }
 function editAdminBid(){
   const n=document.getElementById("adminTeamSelect")?.value,a=state.assignments[n];if(!n||!a||a.barrel)return toast("That team does not have a paid bid");
@@ -6182,7 +6239,7 @@ function renderBidPlayers(){
   renderQuickPlayers();
 }
 function renderHistory(){document.getElementById("history").innerHTML=state.history.length?state.history.slice().reverse().map(x=>`<div>• ${escapeHtml(x)}</div>`).join(""):"<span class='tiny'>No picks yet.</span>"}
-function renderAll(){renderPlayers();renderBidPlayers();renderHistory();drawWheel();renderWheelTeamBoard();updateSoundButton();updateSyncStatus();updateTickerForScreen(document.querySelector(".screen.active")?.id||"homeScreen");if(currentTeam){renderPricePressure(currentTeam);renderBidContext(currentTeam)}renderDraftBoard();renderBarrelMode();renderRecap();setLastAction(state.lastAction||"Draft ready");renderBidSafety()}
+function renderAll(){window.cvTrades?.render();renderPlayers();renderBidPlayers();renderHistory();drawWheel();renderWheelTeamBoard();updateSoundButton();updateSyncStatus();updateTickerForScreen(document.querySelector(".screen.active")?.id||"homeScreen");if(currentTeam){renderPricePressure(currentTeam);renderBidContext(currentTeam)}renderDraftBoard();renderBarrelMode();renderRecap();setLastAction(state.lastAction||"Draft ready");renderBidSafety()}
 
 function drawWheel(){
   const canvas=document.getElementById("wheel");if(!canvas)return;
@@ -6715,6 +6772,7 @@ function leaveTeamProfile(destination){
   if(destination==="competition")openCompetitionBoard();
   else if(destination==="board")openDraftBoard();
   else if(destination==="nerds")openStatsForNerds();
+  else if(destination==="trade")openTradeDesk();
   else openTeamsHub();
   window.scrollTo(0,0);
 }
@@ -6800,7 +6858,14 @@ function startBarrel(){openBarrelMode()}
 /* =====================================================================================
    SETTINGS / COMMISSIONER
    ===================================================================================== */
-function openSettings(){buildPeopleEditor();buildTeamEditorSelect();buildAdminTeamSelect();loadTeamEditor();document.getElementById("teamCapInput").value=state.teamCap;const ss=document.getElementById("starterSourceSelect");if(ss)ss.value=state.starterSource;const ls=document.getElementById("layoutSelect");if(ls)ls.value=document.body.classList.contains("readable")?"readable":"classic";const zs=document.getElementById("zoomSelect");if(zs)zs.value=localStorage.getItem("nbaDraftZoom")||"m";document.getElementById("settingsModal").classList.add("open");renderHistory();renderDataStatus()}
+let adminSettingsUnlocked=false;
+function unlockAdminSettings(){
+  const input=document.getElementById("adminPinInput"),error=document.getElementById("adminPinError");
+  if(input?.value!=="1122"){if(error)error.textContent="Incorrect PIN";if(input){input.value="";input.focus()}return}
+  adminSettingsUnlocked=true;document.querySelector("#settingsModal .settings-card")?.classList.remove("admin-locked");
+  const gate=document.getElementById("adminPinGate");if(gate)gate.hidden=true;if(error)error.textContent="";
+}
+function openSettings(){buildPeopleEditor();buildTeamEditorSelect();buildAdminTeamSelect();loadTeamEditor();document.getElementById("teamCapInput").value=state.teamCap;const ss=document.getElementById("starterSourceSelect");if(ss)ss.value=state.starterSource;const ls=document.getElementById("layoutSelect");if(ls)ls.value=document.body.classList.contains("readable")?"readable":"classic";const zs=document.getElementById("zoomSelect");if(zs)zs.value=localStorage.getItem("nbaDraftZoom")||"m";const modal=document.getElementById("settingsModal"),card=modal?.querySelector(".settings-card"),gate=document.getElementById("adminPinGate"),pin=document.getElementById("adminPinInput");if(card)card.classList.toggle("admin-locked",!adminSettingsUnlocked);if(gate)gate.hidden=adminSettingsUnlocked;if(pin&&!adminSettingsUnlocked){pin.value="";setTimeout(()=>pin.focus(),40)}modal?.classList.add("open");renderHistory();renderDataStatus()}
 function closeSettings(){document.getElementById("settingsModal").classList.remove("open")}
 function isSettingsOpen(){return document.getElementById("settingsModal")?.classList.contains("open")}
 function buildPeopleEditor(){
@@ -6824,7 +6889,7 @@ function savePeople(){
     let newName=inp.value.trim()||`Player ${i+1}`;
     while(seen.has(newName))newName+=" 2"; seen.add(newName);
     p.name=newName;p.budget=newBudget;p.remaining=Math.max(0,newBudget-spent);
-    if(oldName!==newName){renames.push([oldName,newName]);Object.values(state.assignments).forEach(a=>{if(a.player===oldName)a.player=newName});state.barrelOrder=state.barrelOrder.map(n=>n===oldName?newName:n)}
+    if(oldName!==newName){window.cvTrades?.renameOwner(oldName,newName);renames.push([oldName,newName]);Object.values(state.assignments).forEach(a=>{if(a.player===oldName)a.player=newName});state.barrelOrder=state.barrelOrder.map(n=>n===oldName?newName:n)}
     if(oldBudget!==newBudget)budgets.push([newName,oldBudget,newBudget]);
   });
   // keep the undo stack consistent with renames / budget edits so Undo never resurrects an old name or budget
@@ -6948,11 +7013,12 @@ setTimeout(cvStartSync,80);
 
 </script>
 <script src="/daily-availability.js?v=3"></script>
-<script src="/competition.js?v=comp43"></script>
+<script src="/competition.js?v=comp44"></script>
+<script src="/trades.js?v=1"></script>
 <script src="/nerd-studio.js?v=16"></script>
 <script src="/nba-insights.js?v=1"></script>
 <script src="/nba-news.js?v=5" defer></script>
 
-<nav class="mobile-nav" aria-label="Main navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button type="button" onclick="openSettings()">MORE</button></nav>
+<nav class="mobile-nav" aria-label="Main navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button type="button" onclick="openSettings()">MORE</button></nav>
 </body>
 </html>

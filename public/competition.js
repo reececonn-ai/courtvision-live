@@ -515,21 +515,64 @@
     });
   }
 
+  function ensureTradeLedger(records={}){
+    const ledger=state.tradeLedger&&typeof state.tradeLedger==="object"?state.tradeLedger:{banked:{},teams:{},events:[]};
+    ledger.banked=ledger.banked&&typeof ledger.banked==="object"?ledger.banked:{};
+    ledger.teams=ledger.teams&&typeof ledger.teams==="object"?ledger.teams:{};
+    ledger.events=Array.isArray(ledger.events)?ledger.events:[];
+    for(const p of state.players||[])if(!ledger.banked[p.name])ledger.banked[p.name]={w:0,l:0};
+    for(const [team,a] of Object.entries(state.assignments||{})){
+      if(!ledger.teams[team])ledger.teams[team]={owner:a.player,w:0,l:0,at:"season-start"};
+    }
+    state.tradeLedger=ledger;return ledger;
+  }
   function ownerSummaries(records){
+    const ledger=ensureTradeLedger(records);
     return state.players.map(p=>{
-      const teams=p.teams||[];
-      let w=0,l=0,projected=0,variance=0;
+      const teams=p.teams||[],bank=ledger.banked[p.name]||{w:0,l:0};
+      let w=Number(bank.w)||0,l=Number(bank.l)||0,projected=w,variance=0;
       const teamRows=teams.map(name=>{
         const r=records[name]||{w:0,l:0},played=r.w+r.l,remaining=Math.max(0,82-played);
+        const epoch=ledger.teams[name]?.owner===p.name?ledger.teams[name]:{owner:p.name,w:0,l:0};
+        const ownedW=Math.max(0,r.w-(Number(epoch.w)||0)),ownedL=Math.max(0,r.l-(Number(epoch.l)||0));
         const line=winLineFor(name);
         let pr=remaining?((Number.isFinite(line)?line:r.w+(remaining*.5))-r.w)/remaining:.5;
         pr=Math.max(.08,Math.min(.92,Number.isFinite(pr)?pr:.5));
-        const exp=r.w+pr*remaining;
-        w+=r.w;l+=r.l;projected+=exp;variance+=remaining*pr*(1-pr);
-        return {name,w:r.w,l:r.l,rank:r.rank||null,line,expected:exp};
+        const exp=r.w+pr*remaining,ownerExpected=ownedW+pr*remaining;
+        w+=ownedW;l+=ownedL;projected+=ownerExpected;variance+=remaining*pr*(1-pr);
+        return {name,w:r.w,l:r.l,rank:r.rank||null,line,expected:exp,ownerW:ownedW,ownerL:ownedL,ownerExpected,acquiredAtW:Number(epoch.w)||0,acquiredAtL:Number(epoch.l)||0};
       });
-      return {name:p.name,w,l,teams:teamRows,projected,variance,probability:0};
+      return {name:p.name,w,l,teams:teamRows,projected,variance,probability:0,bankedW:Number(bank.w)||0,bankedL:Number(bank.l)||0};
     });
+  }
+
+  function executeTrade(proposal){
+    const existing=state.tradeLedger?.events?.find(event=>event.id===proposal?.id);
+    if(existing)return {offeredRecord:existing.offeredRecord||{w:0,l:0},requestedRecord:existing.requestedRecord||{w:0,l:0},at:existing.at};
+    const offered=proposal?.offeredTeam,requested=proposal?.requestedTeam,requester=proposal?.requester,partner=proposal?.partner;
+    if(!offered||!requested||offered===requested)throw new Error("Invalid trade teams");
+    if(state.assignments?.[offered]?.player!==requester||state.assignments?.[requested]?.player!==partner)throw new Error("Team ownership changed before the vote finished");
+    const records=cache.records||{},ledger=ensureTradeLedger(records),settle=(team,owner)=>{
+      const r=records[team]||{w:0,l:0},epoch=ledger.teams[team]||{owner,w:0,l:0},bank=ledger.banked[owner]||(ledger.banked[owner]={w:0,l:0});
+      bank.w+=(Math.max(0,r.w-(Number(epoch.w)||0)));bank.l+=(Math.max(0,r.l-(Number(epoch.l)||0)));
+      return {w:r.w||0,l:r.l||0};
+    };
+    const offeredRecord=settle(offered,requester),requestedRecord=settle(requested,partner);
+    const offeredAssignment={...state.assignments[offered]},requestedAssignment={...state.assignments[requested]};
+    state.assignments[offered]={...requestedAssignment,player:partner,tradeId:proposal.id,tradedAt:new Date().toISOString()};
+    state.assignments[requested]={...offeredAssignment,player:requester,tradeId:proposal.id,tradedAt:new Date().toISOString()};
+    const at=new Date().toISOString();
+    ledger.teams[offered]={owner:partner,w:offeredRecord.w,l:offeredRecord.l,at,tradeId:proposal.id};
+    ledger.teams[requested]={owner:requester,w:requestedRecord.w,l:requestedRecord.l,at,tradeId:proposal.id};
+    ledger.events.push({id:proposal.id,at,requester,partner,offeredTeam:offered,requestedTeam:requested,offeredRecord,requestedRecord});
+    if(ledger.events.length>100)ledger.events=ledger.events.slice(-100);
+    reconcileState();
+    state.history.push("TRADE · "+requester+" sent "+offered+" to "+partner+" for "+requested+" · previous wins retained");
+    state.lastAction=requester+" and "+partner+" completed a trade";
+    saveState();
+    cache.at=0;
+    void refreshCompetitionBoard(true);
+    return {offeredRecord,requestedRecord,at};
   }
 
   function calculateProbabilities(rows,sims=5000){
@@ -1590,6 +1633,10 @@
       setTicker(window.cvCompetitionTicker?.length?window.cvCompetitionTicker:[{tag:"COMPETITION",text:"Daily rivalry board",kind:"draft"}],"COMP BOARD");
       return;
     }
+    if(id==="tradeScreen"){
+      setTicker([{tag:"TRADE DESK",text:"Propose a one-for-one team swap. Historical wins stay with the owner who earned them.",kind:"draft"}],"TRADE DESK");
+      return;
+    }
     if(id==="statsForNerdsScreen"){
       setTicker(window.cvNerdTicker?.length?window.cvNerdTicker:[{tag:"NERD ALERT",text:"Deep cuts, rivalry records and unnecessary specificity.",kind:"draft"}],"STATS FOR NERDS");
       return;
@@ -1636,6 +1683,9 @@
     ownerSummaries,
     calculateProbabilities,
     competitionTidbits,
+    records:()=>JSON.parse(JSON.stringify(cache.records||{})),
+    executeTrade,
+    ensureTradeLedger,
     competitionTickerItems,
     health:competitionHealth,
     refresh:refreshCompetitionBoard
