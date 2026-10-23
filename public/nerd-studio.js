@@ -48,6 +48,57 @@
       return {...t,owner:r.name,played,delta:played&&Number.isFinite(t.line)?t.w-played*t.line/82:null,form:last.filter(g=>g.won).length,formN:last.length,n:games.length,scoredN:scored.length,pf:scored.length?scored.reduce((n,g)=>n+g.pf,0)/scored.length:null,pa:scored.length?scored.reduce((n,g)=>n+g.pa,0)/scored.length:null,margin:scored.length?scored.reduce((n,g)=>n+g.pf-g.pa,0)/scored.length:null,close:scored.filter(g=>Math.abs(g.pf-g.pa)<=5),blowouts:scored.filter(g=>g.pf-g.pa>=15).length};
     }));
   }
+
+  const storyCache=new Map();
+  let storyBusy=false,briefContext=null;
+  function gameStories(g,data){
+    if(g.status!=="FINAL"||g.sample||(!g.homeWinner&&!g.awayWinner))return [];
+    const winner=g.homeWinner?g.home:g.away,loser=g.homeWinner?g.away:g.home,sign=g.homeWinner?1:-1;
+    let h=g.homeQuarters,a=g.awayQuarters;
+    const comp=data?.header?.competitions?.[0];
+    if(comp){for(const t of comp.competitors||[]){const q=t.linescores?.map(x=>x.value===null||x.value===undefined||x.value===""?NaN:Number(x.value));if(q?.length>=4&&q.every(Number.isFinite)&&q.reduce((s,v)=>s+v,0)===Number(t.score)){if(t.homeAway==="home")h=q;else if(t.homeAway==="away")a=q;}}}
+    const day=new Date(g.date).toLocaleDateString("en-AU",{day:"numeric",month:"short",timeZone:"Australia/Sydney"}),items=[],related=[winner,loser];
+    if(h?.length>=4&&a?.length>=4&&h.every(Number.isFinite)&&a.every(Number.isFinite)){
+      const half=sign*(h[0]+h[1]-a[0]-a[1]),second=sign*(h[2]+h[3]-a[2]-a[3]);
+      if(half<=-5&&second>0)items.push(['SECOND-HALF SURGE',winner,'Down '+Math.abs(half)+' at halftime against '+loser+', then won the second half by '+second+' and the game'+(h.length>4?' in overtime':'')+'. '+day+' (Sydney).',related]);
+      if(h.length>4||a.length>4)items.push(['OVERTIME DRAMA',winner,'Beat '+loser+' '+(g.homeWinner?g.homeScore:g.awayScore)+'–'+(g.homeWinner?g.awayScore:g.homeScore)+' after '+Math.max(h.length-4,a.length-4)+' overtime period(s). '+day+' (Sydney).',related]);
+    }
+    // Only chronological, cumulative scores can support comeback and late-lead claims.
+    const plays=(Array.isArray(data?.plays)?data.plays:Array.isArray(data?.scoringPlays)?data.scoringPlays:[]).filter(p=>p.homeScore!==null&&p.homeScore!==undefined&&p.awayScore!==null&&p.awayScore!==undefined&&Number.isFinite(Number(p.homeScore))&&Number.isFinite(Number(p.awayScore))&&Number(p.period?.number)>0&&/^\d+:\d{2}$/.test(p.clock?.displayValue||"")).map(p=>({...p,periodN:Number(p.period.number),seconds:p.clock.displayValue.split(":").reduce((m,v)=>m*60+Number(v),0),margin:sign*(Number(p.homeScore)-Number(p.awayScore))})).sort((a,b)=>a.periodN-b.periodN||b.seconds-a.seconds);
+    if(plays.length&&plays.some(p=>p.periodN===1)&&plays.some(p=>p.periodN>=4)){
+      const deficit=Math.max(0,...plays.map(p=>-p.margin));
+      if(deficit>=10)items.push(['COMEBACK KINGS',winner,'Trailed by '+deficit+' in the available play-by-play, then beat '+loser+'. '+day+' (Sydney).',related]);
+      if(deficit>=15)items.push(['LET IT SLIP',loser,'Led eventual winner '+winner+' by '+deficit+' in the available play-by-play but could not close it out. '+day+' (Sydney).',[loser,winner]]);
+      let lastSign=0,lateChanges=0;
+      for(const p of plays){const now=Math.sign(p.margin);if(now&&lastSign&&now!==lastSign&&p.periodN>=4&&p.seconds<=60)lateChanges++;if(now)lastSign=now;}
+      if(lateChanges>0)items.push(['DOWN TO THE WIRE',winner,lateChanges+' lead change(s) in the final minute of the fourth quarter or overtime against '+loser+'. '+day+' (Sydney).',related]);
+    }
+    return items;
+  }
+  function storyItems(recent){
+    const finals=[...recent].filter(g=>g.status==="FINAL"&&!g.sample).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    const key=g=>new Date(g.date).toLocaleDateString("en-CA",{timeZone:"Australia/Sydney"}),day=finals[0]?key(finals[0]):null,seen=new Set(),out=[];
+    for(const g of finals.filter(g=>key(g)===day)){if(seen.has(g.id))continue;seen.add(g.id);out.push(...gameStories(g,storyCache.get(String(g.id))?.data));}
+    // One example of each story keeps the digest varied.
+    return out.filter((x,i)=>out.findIndex(y=>y[0]===x[0])===i);
+  }
+  async function enrichBriefStories(rows,recent,demo){
+    briefContext={rows,recent,demo};
+    if(storyBusy||demo||!window.cvCompetition?.loadGameSummary)return;
+    const finals=[...recent].filter(g=>g.status==="FINAL"&&!g.sample&&/^\d+$/.test(String(g.id))).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    const key=g=>new Date(g.date).toLocaleDateString("en-CA",{timeZone:"Australia/Sydney"}),day=finals[0]?key(finals[0]):null;
+    const jobs=[...new Map(finals.filter(g=>key(g)===day).map(g=>[String(g.id),g])).values()].slice(0,16).filter(g=>{const c=storyCache.get(String(g.id));return !c||(!c.data&&Date.now()-c.at>120000)});
+    if(!jobs.length)return;storyBusy=true;
+    try{
+      let index=0;await Promise.all(Array.from({length:Math.min(3,jobs.length)},async()=>{while(index<jobs.length){const g=jobs[index++];try{const data=await window.cvCompetition.loadGameSummary(g);storyCache.set(String(g.id),{at:Date.now(),data});}catch(_){storyCache.set(String(g.id),{at:Date.now(),data:null});}}}));
+      while(storyCache.size>60)storyCache.delete(storyCache.keys().next().value);
+    }finally{storyBusy=false;}
+    const ctx=briefContext;if(!ctx)return;
+    const daily=document.querySelector("#nerdStudio .ns-daily");
+    if(daily&&latest?.recent===ctx.recent)daily.outerHTML=dailyBrief(ctx.rows,ctx.recent,ctx.demo);
+    renderCompetitionBrief(ctx.rows,ctx.recent,ctx.demo);
+  }
+
   function dailyInsights(rows,recent,demo){
     const teams=teamNumbers(rows,recent),eligible=teams.filter(t=>t.delta!==null),items=[];
     const high=[...eligible].sort((a,b)=>b.delta-a.delta)[0],low=[...eligible].sort((a,b)=>a.delta-b.delta)[0];
@@ -222,6 +273,7 @@
 
   function render(rows,games,recent,demo){
     latest={rows,games,recent,demo};
+    void enrichBriefStories(rows,recent,demo);
     const root=document.getElementById("nerdStudio");if(!root)return;
     const archive=document.getElementById("nerdClassic");
     if(archive)archive.remove();
@@ -235,6 +287,7 @@
 
   function renderCompetitionBrief(rows,recent,demo){
     const root=document.getElementById("competitionDailyNumbers");if(!root)return;
+    void enrichBriefStories(rows,recent,demo);
     const expanded=root.querySelector("details")?.open||false,position=root.querySelector(".cv-daily-highlights")?.scrollLeft||0,items=dailyInsights(rows,recent,demo);
     const card=item=>dailyCard(item,rows);
     const date=new Date().toLocaleDateString("en-AU",{day:"numeric",month:"short",timeZone:"Australia/Sydney"});

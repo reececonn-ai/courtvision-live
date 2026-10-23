@@ -391,6 +391,11 @@
     return out;
   }
 
+  function quarterValues(team){
+    const lines=team?.linescores;if(!Array.isArray(lines)||lines.length<4)return null;
+    const values=lines.map(x=>x.value===null||x.value===undefined||x.value===""?NaN:Number(x.value));
+    return values.every(Number.isFinite)&&values.reduce((a,b)=>a+b,0)===Number(team.score)?values:null;
+  }
   function parseScoreboard(data,includePlayoffs=false){
     const out=[];
     for(const ev of data?.events||[]){
@@ -412,6 +417,7 @@
         date:new Date(ev.date||comp.date||Date.now()),
         home:hn,away:an,status,detail,timeTbd:comp.timeValid===false||/\bTBD\b/i.test(detail),
         homeScore:Number(home?.score)||0,awayScore:Number(away?.score)||0,
+        homeQuarters:quarterValues(home),awayQuarters:quarterValues(away),
         homeWinner:completed?(home?.winner===true||Number(home?.score)>Number(away?.score)):false,
         awayWinner:completed?(away?.winner===true||Number(away?.score)>Number(home?.score)):false
       });
@@ -1623,6 +1629,7 @@
     demoCompetitionData,
     renderTeamDetail,
     gameWinChance,
+    loadGameSummary,
     chooseSlate,
     nextSydneyKey,
     shiftDateKey,
