@@ -56,24 +56,30 @@
     const winner=g.homeWinner?g.home:g.away,loser=g.homeWinner?g.away:g.home,sign=g.homeWinner?1:-1;
     let h=g.homeQuarters,a=g.awayQuarters;
     const comp=data?.header?.competitions?.[0];
-    if(comp){for(const t of comp.competitors||[]){const q=t.linescores?.map(x=>x.value===null||x.value===undefined||x.value===""?NaN:Number(x.value));if(q?.length>=4&&q.every(Number.isFinite)&&q.reduce((s,v)=>s+v,0)===Number(t.score)){if(t.homeAway==="home")h=q;else if(t.homeAway==="away")a=q;}}}
-    const day=new Date(g.date).toLocaleDateString("en-AU",{day:"numeric",month:"short",timeZone:"Australia/Sydney"}),items=[],related=[winner,loser];
+    if(comp){for(const t of comp.competitors||[]){const q=t.linescores?.map(x=>x.value===null||x.value===undefined||x.value===""?NaN:Number(x.value));if(q?.length>=4&&q.every(Number.isFinite)&&q.reduce((sum,v)=>sum+v,0)===Number(t.score)){if(t.homeAway==="home")h=q;else if(t.homeAway==="away")a=q;}}}
+    const day=new Date(g.date).toLocaleDateString("en-AU",{day:"numeric",month:"short",timeZone:"Australia/Sydney"}),related=[winner,loser];
+    let half=null,second=null,overtimes=0;
     if(h?.length>=4&&a?.length>=4&&h.every(Number.isFinite)&&a.every(Number.isFinite)){
-      const half=sign*(h[0]+h[1]-a[0]-a[1]),second=sign*(h[2]+h[3]-a[2]-a[3]);
-      if(half<=-5&&second>0)items.push(['SECOND-HALF SURGE',winner,'Down '+Math.abs(half)+' at halftime against '+loser+', then won the second half by '+second+' and the game'+(h.length>4?' in overtime':'')+'. '+day+' (Sydney).',related]);
-      if(h.length>4||a.length>4)items.push(['OVERTIME DRAMA',winner,'Beat '+loser+' '+(g.homeWinner?g.homeScore:g.awayScore)+'–'+(g.homeWinner?g.awayScore:g.homeScore)+' after '+Math.max(h.length-4,a.length-4)+' overtime period(s). '+day+' (Sydney).',related]);
+      half=sign*(h[0]+h[1]-a[0]-a[1]);second=sign*(h[2]+h[3]-a[2]-a[3]);overtimes=Math.max(h.length-4,a.length-4);
     }
-    // Only chronological, cumulative scores can support comeback and late-lead claims.
-    const plays=(Array.isArray(data?.plays)?data.plays:Array.isArray(data?.scoringPlays)?data.scoringPlays:[]).filter(p=>p.homeScore!==null&&p.homeScore!==undefined&&p.awayScore!==null&&p.awayScore!==undefined&&Number.isFinite(Number(p.homeScore))&&Number.isFinite(Number(p.awayScore))&&Number(p.period?.number)>0&&/^\d+:\d{2}$/.test(p.clock?.displayValue||"")).map(p=>({...p,periodN:Number(p.period.number),seconds:p.clock.displayValue.split(":").reduce((m,v)=>m*60+Number(v),0),margin:sign*(Number(p.homeScore)-Number(p.awayScore))})).sort((a,b)=>a.periodN-b.periodN||b.seconds-a.seconds);
-    if(plays.length&&plays.some(p=>p.periodN===1)&&plays.some(p=>p.periodN>=4)){
-      const deficit=Math.max(0,...plays.map(p=>-p.margin));
-      if(deficit>=10)items.push(['COMEBACK KINGS',winner,'Trailed by '+deficit+' in the available play-by-play, then beat '+loser+'. '+day+' (Sydney).',related]);
-      if(deficit>=15)items.push(['LET IT SLIP',loser,'Led eventual winner '+winner+' by '+deficit+' in the available play-by-play but could not close it out. '+day+' (Sydney).',[loser,winner]]);
-      let lastSign=0,lateChanges=0;
-      for(const p of plays){const now=Math.sign(p.margin);if(now&&lastSign&&now!==lastSign&&p.periodN>=4&&p.seconds<=60)lateChanges++;if(now)lastSign=now;}
-      if(lateChanges>0)items.push(['DOWN TO THE WIRE',winner,lateChanges+' lead change(s) in the final minute of the fourth quarter or overtime against '+loser+'. '+day+' (Sydney).',related]);
+    // Only chronological cumulative scores support largest-deficit and late-lead claims.
+    const plays=(Array.isArray(data?.plays)?data.plays:Array.isArray(data?.scoringPlays)?data.scoringPlays:[]).filter(p=>p.homeScore!==null&&p.homeScore!==undefined&&p.awayScore!==null&&p.awayScore!==undefined&&Number.isFinite(Number(p.homeScore))&&Number.isFinite(Number(p.awayScore))&&Number(p.period?.number)>0&&/^\d+:\d{2}$/.test(p.clock?.displayValue||"")).map(p=>({...p,periodN:Number(p.period.number),seconds:p.clock.displayValue.split(":").reduce((m,v)=>m*60+Number(v),0),margin:sign*(Number(p.homeScore)-Number(p.awayScore))})).sort((x,y)=>x.periodN-y.periodN||y.seconds-x.seconds);
+    const completePlays=plays.length&&plays.some(p=>p.periodN===1)&&plays.some(p=>p.periodN>=4);
+    const deficit=completePlays?Math.max(0,...plays.map(p=>-p.margin)):0;
+    let lastSign=0,lateChanges=0;
+    if(completePlays)for(const p of plays){const now=Math.sign(p.margin);if(now&&lastSign&&now!==lastSign&&p.periodN>=4&&p.seconds<=60)lateChanges++;if(now)lastSign=now;}
+    // One game gets one digest card. Combine supporting facts instead of repeating the matchup.
+    if(deficit>=10||half!==null&&half<=-5){
+      const parts=[];
+      if(deficit>=10)parts.push("came back from "+deficit+" down");
+      if(half!==null&&half<=-5&&second>0)parts.push("trailed by "+Math.abs(half)+" at halftime, then won the second half by "+second);
+      if(overtimes)parts.push("finished it in "+overtimes+" overtime period"+(overtimes===1?"":"s"));
+      if(lateChanges)parts.push(lateChanges+" final-minute lead change"+(lateChanges===1?"":"s"));
+      return [["COMEBACK KINGS",winner,parts.join("; ")+" to beat "+loser+". "+day+" (Sydney).",related]];
     }
-    return items;
+    if(overtimes)return [["OVERTIME DRAMA",winner,"Beat "+loser+" "+(g.homeWinner?g.homeScore:g.awayScore)+"–"+(g.homeWinner?g.awayScore:g.homeScore)+" after "+overtimes+" overtime period"+(overtimes===1?"":"s")+". "+day+" (Sydney).",related]];
+    if(lateChanges)return [["DOWN TO THE WIRE",winner,lateChanges+" lead change"+(lateChanges===1?"":"s")+" in the final minute against "+loser+". "+day+" (Sydney).",related]];
+    return [];
   }
   function storyItems(recent){
     const finals=[...recent].filter(g=>g.status==="FINAL"&&!g.sample).sort((a,b)=>new Date(b.date)-new Date(a.date));
