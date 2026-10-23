@@ -79,14 +79,17 @@
     }
     if(overtimes)return [["OVERTIME DRAMA",winner,"Beat "+loser+" "+(g.homeWinner?g.homeScore:g.awayScore)+"–"+(g.homeWinner?g.awayScore:g.homeScore)+" after "+overtimes+" overtime period"+(overtimes===1?"":"s")+". "+day+" (Sydney).",related]];
     if(lateChanges)return [["DOWN TO THE WIRE",winner,lateChanges+" lead change"+(lateChanges===1?"":"s")+" in the final minute against "+loser+". "+day+" (Sydney).",related]];
-    return [];
+    const winnerScore=g.homeWinner?g.homeScore:g.awayScore,loserScore=g.homeWinner?g.awayScore:g.homeScore,margin=Math.abs(winnerScore-loserScore);
+    if(margin<=5)return [["CLOSE ONE",winner,"Held off "+loser+" "+winnerScore+"–"+loserScore+" in a "+margin+"-point finish. "+day+" (Sydney).",related]];
+    if(margin>=15)return [["STATEMENT WIN",winner,"Beat "+loser+" "+winnerScore+"–"+loserScore+" by "+margin+". "+day+" (Sydney).",related]];
+    if(half!==null&&half>=8)return [["FRONT-RUNNERS",winner,"Led "+loser+" by "+half+" at halftime and finished with a "+winnerScore+"–"+loserScore+" win. "+day+" (Sydney).",related]];
+    return [["GAME IN A LINE",winner,"Beat "+loser+" "+winnerScore+"–"+loserScore+". "+day+" (Sydney).",related]];
   }
   function storyItems(recent){
     const finals=[...recent].filter(g=>g.status==="FINAL"&&!g.sample).sort((a,b)=>new Date(b.date)-new Date(a.date));
     const key=g=>new Date(g.date).toLocaleDateString("en-CA",{timeZone:"Australia/Sydney"}),day=finals[0]?key(finals[0]):null,seen=new Set(),out=[];
     for(const g of finals.filter(g=>key(g)===day)){if(seen.has(g.id))continue;seen.add(g.id);out.push(...gameStories(g,storyCache.get(String(g.id))?.data));}
-    // One example of each story keeps the digest varied.
-    return out.filter((x,i)=>out.findIndex(y=>y[0]===x[0])===i);
+    return out;
   }
   async function enrichBriefStories(rows,recent,demo){
     briefContext={rows,recent,demo};
@@ -135,8 +138,6 @@
     const finals=[...recent].filter(g=>g.status==="FINAL"&&(g.homeWinner||g.awayWinner)).sort((a,b)=>new Date(b.date)-new Date(a.date));
     const lastDay=finals[0]?new Date(finals[0].date).toLocaleDateString("en-CA",{timeZone:"Australia/Sydney"}):null;
     const latestDay=finals.filter(g=>new Date(g.date).toLocaleDateString("en-CA",{timeZone:"Australia/Sydney"})===lastDay);
-    const biggest=[...latestDay].filter(g=>Number.isFinite(g.homeScore)&&Number.isFinite(g.awayScore)).sort((a,b)=>Math.abs(b.homeScore-b.awayScore)-Math.abs(a.homeScore-a.awayScore))[0];
-    if(biggest&&Math.abs(biggest.homeScore-biggest.awayScore)>=10)items.push(['STATEMENT RESULT',biggest.homeWinner?biggest.home:biggest.away,'Won by '+Math.abs(biggest.homeScore-biggest.awayScore)+' against '+(biggest.homeWinner?biggest.away:biggest.home)+' on '+lastDay+' (Sydney).']);
     if(latestDay.length){
       const results=rows.map(r=>{const owned=new Set(r.teams.map(t=>t.name));let w=0,l=0;const seen=new Set();for(const g of latestDay){const id=g.id||[g.date,g.home,g.away].join("|");if(seen.has(id))continue;seen.add(id);for(const side of ["home","away"])if(owned.has(g[side])){if(g[side+"Winner"])w++;else l++;}}return {name:r.name,w,l};}).filter(r=>r.w+r.l>0).sort((a,b)=>(b.w-b.l)-(a.w-a.l)||b.w-a.w);
       if(results[0])items.push(['LATEST FINISHED DAY',results[0].name,results[0].w+'–'+results[0].l+' from owned teams on '+lastDay+' (Sydney).']);
