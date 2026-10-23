@@ -150,7 +150,7 @@
       return {r,results};
     }).filter(x=>x.results.length>=2&&x.results.every(g=>g.won)).sort((a,b)=>b.results.length-a.results.length||a.r.name.localeCompare(b.r.name));
     if(sweeps[0]){const x=sweeps[0];items.unshift(['SQUAD SWEEP',x.r.name,x.results.length+'–0 in completed owned-team games on '+lastDay+' (Sydney). Every available completed result went their way; other fixtures may still remain.',x.results.map(g=>g.team)]);}
-    return items;
+    return [...storyItems(recent),...items];
   }
 
   function dailyCard([tag,name,copy,related],rows){
