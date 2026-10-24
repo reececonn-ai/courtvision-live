@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp62">
+<link rel="stylesheet" href="/competition.css?v=comp63">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -4752,6 +4752,11 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 
         </header>
 
+        <section class="competition-owner-directory" aria-label="Owner profiles">
+          <div class="competition-owner-prompt"><span>OWNER PROFILES</span><strong>CLICK A NAME TO SEE THEIR FULL PORTFOLIO</strong></div>
+          <div class="competition-owner-links" id="competitionOwnerProfiles"></div>
+        </section>
+
         <section class="comp-lead-grid">
           <article class="comp-spotlight" id="competitionSpotlight">
             <div class="comp-loading">BUILDING THE RACE…</div>
@@ -4812,7 +4817,10 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 
     <section class="screen owner-portfolio-screen" id="ownerPortfolioScreen">
       <div class="owner-portfolio-shell">
-        <button type="button" class="owner-portfolio-back" onclick="openCompetitionBoard()"><span aria-hidden="true">←</span><strong>BACK TO COMPETITION BOARD</strong><small>Return to the live race</small></button>
+        <div class="owner-portfolio-nav">
+          <button type="button" class="owner-portfolio-back" onclick="openCompetitionBoard()"><span aria-hidden="true">←</span><strong>BACK TO COMPETITION BOARD</strong><small>Return to the live race</small></button>
+          <div class="owner-profile-switch"><span>VIEW ANOTHER OWNER</span><div id="ownerPortfolioSwitch"></div></div>
+        </div>
         <header class="owner-portfolio-hero" id="ownerPortfolioHero">
           <div><span class="comp-section-kicker">OWNER PORTFOLIO</span><h2 id="ownerPortfolioName">PORTFOLIO</h2><p id="ownerPortfolioStatus">Loading live competition data…</p></div>
           <div class="owner-portfolio-mark" id="ownerPortfolioMark">%</div>
@@ -7040,7 +7048,7 @@ setTimeout(cvStartSync,80);
 
 </script>
 <script src="/daily-availability.js?v=3"></script>
-<script src="/competition.js?v=comp47"></script>
+<script src="/competition.js?v=comp48"></script>
 <script src="/trades.js?v=1"></script>
 <script src="/nerd-studio.js?v=16"></script>
 <script src="/nba-insights.js?v=1"></script>

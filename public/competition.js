@@ -791,6 +791,16 @@
     const safe=esc(name).replace(/'/g,"&#39;");
     return '<button type="button" class="owner-portfolio-open '+extra+'" onclick="openOwnerPortfolio(\''+safe+'\')" aria-label="Open '+esc(name)+' portfolio">'+esc(label)+'</button>';
   }
+  function ownerProfilePills(rows,current=""){
+    return (rows||[]).map(r=>{
+      const safe=esc(r.name).replace(/'/g,"&#39;"),active=r.name===current;
+      return '<button type="button" class="owner-profile-pill'+(active?" active":"")+'" onclick="openOwnerPortfolio(\''+safe+'\')"'+(active?' aria-current="page"':'')+'><strong>'+esc(r.name)+'</strong><small>'+(active?"VIEWING NOW":"VIEW PROFILE →")+'</small></button>';
+    }).join("");
+  }
+  function renderOwnerProfileDirectory(rows){
+    const main=$("competitionOwnerProfiles");if(main)main.innerHTML=ownerProfilePills(rows);
+    const profile=$("ownerPortfolioSwitch");if(profile)profile.innerHTML=ownerProfilePills(rows,ownerPortfolioName);
+  }
   function portfolioGameLine(g){
     const ownAway=teamOwner(g.away)===ownerPortfolioName,ownTeam=ownAway?g.away:g.home,opponent=ownAway?g.home:g.away;
     const when=g.status==="IN"?(g.detail||"LIVE"):g.status==="FINAL"?"FINAL":daySydney(g.date)+" · "+timeSydney(g.date);
@@ -801,6 +811,7 @@
     const row=(competitionTickerRows||[]).find(r=>r.name===ownerPortfolioName);
     if(!row)return;
     const hero=$("ownerPortfolioHero"),name=$("ownerPortfolioName"),status=$("ownerPortfolioStatus"),mark=$("ownerPortfolioMark");
+    renderOwnerProfileDirectory(competitionTickerRows||[]);
     if(name)name.textContent=row.name;if(status)status.textContent=row.teams.length+" teams · live competition portfolio";if(mark)mark.textContent=row.winPct.toFixed(1)+"%";
     if(hero&&row.teams[0])hero.setAttribute("style",teamStyle(row.teams[0].name));
     const form=ownerRecentStats(cache.recent||[],10)[row.name]||{w:0,l:0,games:0,pf:0,pa:0};
@@ -891,6 +902,7 @@
     const today=todaysOwnerResults(games||[]);
     renderSpotlight(rows);
     renderRace(rows);
+    renderOwnerProfileDirectory(rows);
     el.innerHTML=rows.map((r,i)=>{
       const teams=r.teams.map(t=>'<button class="comp-team-chip" style="'+teamStyle(t.name)+'" onclick="previewTeamFromCompetition(\''+esc(t.name).replace(/'/g,"&#39;")+'\')"><img src="'+teamLogo(t.name)+'" alt=""><span>'+esc(shortTeam(t.name))+'</span><b>#'+(t.rank||"—")+' · '+t.w+"-"+t.l+'</b></button>').join("");
       const d=today[r.name]||{w:0,l:0,games:0};
