@@ -1063,6 +1063,17 @@
     });
   }
 
+  function gamesDisplayOrder(games){
+    const priority={IN:0,SCHEDULED:1,DELAYED:1,POSTPONED:1,CANCELLED:1,FINAL:2};
+    return [...(games||[])].sort((a,b)=>{
+      const ap=priority[a.status]??1,bp=priority[b.status]??1;
+      if(ap!==bp)return ap-bp;
+      const ad=+new Date(a.date||0),bd=+new Date(b.date||0);
+      if(a.status==="SCHEDULED"&&b.status==="SCHEDULED")return ad-bd;
+      return bd-ad;
+    });
+  }
+
   function renderGames(games,records={}){
     const el=$("competitionGames");if(!el)return;
     const todayKey=sydneyKey();
@@ -1072,7 +1083,7 @@
     const selectedKey=selectedSlateKey();
     let item=selectedKey===todayKey?{games,at:cache.at||Date.now()}:dateSlates.get(selectedKey);
     if(selectedKey!==todayKey&&!item){void loadDateSlate(selectedKey);item=dateSlates.get(selectedKey);}
-    games=item?.games||[];
+    games=gamesDisplayOrder(item?.games||[]);
     const title=$("competitionSlateTitle");if(title)title.textContent=slateOffset===0?"TODAY’S GAMES":slateOffset===1?"TOMORROW’S GAMES":"NBA GAMES";
     const dateEl=$("competitionSlateDate");if(dateEl)dateEl.textContent=daySydney(new Date(selectedKey+"T01:00:00Z")).toUpperCase()+" · SYDNEY";
     const picker=$("competitionGameDate");if(picker){picker.value=selectedKey;picker.min=firstSlate;picker.max=lastSlate;}
