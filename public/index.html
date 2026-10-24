@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp63">
+<link rel="stylesheet" href="/competition.css?v=comp64">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -4502,7 +4502,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
       <div class="wheel-caption">Drafted and passed teams are removed from the live wheel</div>
     </section>
 
-    <section class="screen reveal" id="revealScreen"><nav class="teams-profile-nav competition-hub-tabs" aria-label="Team profile navigation"><button type="button" onclick="leaveTeamProfile('competition')">COMPETITION</button><button type="button" class="active" aria-current="page" onclick="leaveTeamProfile('teams')">TEAM STATS</button><button type="button" onclick="leaveTeamProfile('nerds')">STATS FOR NERDS</button><button type="button" onclick="leaveTeamProfile('trade')">TRADE</button><button type="button" onclick="leaveTeamProfile('board')">DRAFT BOARD</button></nav>
+    <section class="screen reveal" id="revealScreen"><nav class="teams-profile-nav competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="leaveTeamProfile('competition')">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="leaveTeamProfile('nerds')">STATS FOR NERDS</button><button type="button" class="active" aria-current="page" onclick="leaveTeamProfile('teams')">TEAM STATS</button><button type="button" onclick="leaveTeamProfile('trade')">TRADE</button><button type="button" onclick="leaveTeamProfile('board')">DRAFT BOARD</button></nav>
       <div class="team-bg" id="teamBg"></div>
       <img class="logo-watermark" id="logoWatermark" alt="">
       <div class="light-beam beam1"></div><div class="light-beam beam2"></div>
@@ -4698,8 +4698,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
       <div class="barrel" id="barrelCount">Barrel: 0 teams</div>
     </section>
 
-    <section class="screen draft-board-screen" id="draftBoardScreen"><div class="board-hub-heading"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTradeDesk()">TRADE</button>
-          <button type="button" class="active" aria-current="page" onclick="openDraftBoard()">DRAFT BOARD</button></nav></div>
+    <section class="screen draft-board-screen" id="draftBoardScreen"><div class="board-hub-heading"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" class="active" aria-current="page" onclick="openDraftBoard()">DRAFT BOARD</button></nav></div>
       <div class="broadcast-top"><span class="live-dot">Draft Board</span><span id="boardTopStatus">League overview</span></div>
       <div class="board-shell">
         <div class="board-head">
@@ -4739,7 +4738,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
     </section>
 
     <section class="screen competition-screen" id="competitionScreen">
-      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button onclick="refreshCompetitionBoard(true)">REFRESH</button><span class="competition-hub-updated" id="competitionUpdated">NOT LOADED</span></nav>
+      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
         <header class="comp-topbar">
           <div class="comp-brand-lockup">
             <div class="comp-eyebrow">COURTVISION DAILY · AUSTRALIA/SYDNEY</div>
@@ -4751,11 +4750,6 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
           </div>
 
         </header>
-
-        <section class="competition-owner-directory" aria-label="Owner profiles">
-          <div class="competition-owner-prompt"><span>OWNER PROFILES</span><strong>CLICK A NAME TO SEE THEIR FULL PORTFOLIO</strong></div>
-          <div class="competition-owner-links" id="competitionOwnerProfiles"></div>
-        </section>
 
         <section class="comp-lead-grid">
           <article class="comp-spotlight" id="competitionSpotlight">
@@ -4817,10 +4811,8 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 
     <section class="screen owner-portfolio-screen" id="ownerPortfolioScreen">
       <div class="owner-portfolio-shell">
-        <div class="owner-portfolio-nav">
-          <button type="button" class="owner-portfolio-back" onclick="openCompetitionBoard()"><span aria-hidden="true">←</span><strong>BACK TO COMPETITION BOARD</strong><small>Return to the live race</small></button>
-          <div class="owner-profile-switch"><span>VIEW ANOTHER OWNER</span><div id="ownerPortfolioSwitch"></div></div>
-        </div>
+        <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav active" aria-current="page"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
+        <button type="button" class="owner-portfolio-back" onclick="openCompetitionBoard()"><span aria-hidden="true">←</span><strong>BACK TO COMPETITION BOARD</strong><small>Return to the live race</small></button>
         <header class="owner-portfolio-hero" id="ownerPortfolioHero">
           <div><span class="comp-section-kicker">OWNER PORTFOLIO</span><h2 id="ownerPortfolioName">PORTFOLIO</h2><p id="ownerPortfolioStatus">Loading live competition data…</p></div>
           <div class="owner-portfolio-mark" id="ownerPortfolioMark">%</div>
@@ -4845,7 +4837,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 
     <section class="screen trade-screen" id="tradeScreen">
       <div class="competition-shell trade-shell">
-        <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" class="active" aria-current="page" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
+        <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" class="active" aria-current="page" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
         <header class="trade-hero">
           <span class="comp-section-kicker">THE TRADE DESK</span>
           <h2>MAKE YOUR CASE.</h2>
@@ -4864,7 +4856,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 
     <section class="screen teams-hub-screen" id="teamsHubScreen">
   <div class="teams-hub-shell" style="width:100%!important;max-width:none!important;margin:0!important">
-    <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" class="active" aria-current="page" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
+    <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" class="active" aria-current="page" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
     <header class="teams-hub-head"><div class="comp-eyebrow">2026–27 NBA · FRANCHISE DIRECTORY</div><h2>TEAM STATS</h2><p>Rosters, injuries, recent results and upcoming games.</p></header>
     <div class="teams-hub-filter"><label for="teamsHubSearch">FIND A TEAM</label><input id="teamsHubSearch" type="search" placeholder="Search team or owner…" oninput="renderTeamsHub()" autocomplete="off"></div>
     <div id="teamsHubDetail" class="teams-hub-detail" hidden></div>
@@ -4872,7 +4864,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
   </div>
 </section>
 <section class="screen nerd-screen" id="statsForNerdsScreen">
-      <div class="nerd-shell" style="width:100%!important;max-width:none!important;margin:0!important"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" class="active" aria-current="page" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
+      <div class="nerd-shell" style="width:100%!important;max-width:none!important;margin:0!important"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" class="active" aria-current="page" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
         <header class="nerd-topbar">
           <div>
             <div class="nerd-eyebrow">COURTVISION DEEP CUTS · VERIFIED FROM COMPETITION DATA</div>
@@ -7048,12 +7040,12 @@ setTimeout(cvStartSync,80);
 
 </script>
 <script src="/daily-availability.js?v=3"></script>
-<script src="/competition.js?v=comp48"></script>
+<script src="/competition.js?v=comp49"></script>
 <script src="/trades.js?v=1"></script>
 <script src="/nerd-studio.js?v=16"></script>
 <script src="/nba-insights.js?v=1"></script>
 <script src="/nba-news.js?v=5" defer></script>
 
-<nav class="mobile-nav" aria-label="Main navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button type="button" onclick="openSettings()">MORE</button></nav>
+<nav class="mobile-nav" aria-label="Main navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button type="button" onclick="openSettings()">MORE</button></nav>
 </body>
 </html>
