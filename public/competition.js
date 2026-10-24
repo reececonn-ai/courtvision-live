@@ -542,7 +542,8 @@
         w+=ownedW;l+=ownedL;projected+=ownerExpected;variance+=remaining*pr*(1-pr);
         return {name,w:r.w,l:r.l,rank:r.rank||null,line,expected:exp,ownerW:ownedW,ownerL:ownedL,ownerExpected,acquiredAtW:Number(epoch.w)||0,acquiredAtL:Number(epoch.l)||0};
       });
-      return {name:p.name,w,l,teams:teamRows,projected,variance,probability:0,bankedW:Number(bank.w)||0,bankedL:Number(bank.l)||0};
+      const winPct=w+l?w/(w+l)*100:0;
+      return {name:p.name,w,l,winPct,teams:teamRows,projected,variance,probability:0,bankedW:Number(bank.w)||0,bankedL:Number(bank.l)||0};
     });
   }
 
@@ -586,7 +587,7 @@
       idx.forEach(i=>wins[i]+=1/idx.length);
     }
     rows.forEach((r,i)=>r.probability=wins[i]/sims*100);
-    return rows.sort((a,b)=>b.w-a.w||b.projected-a.projected);
+    return rows.sort((a,b)=>b.winPct-a.winPct||b.w-a.w||b.projected-a.projected);
   }
 
   function todaysOwnerResults(games){
@@ -710,16 +711,16 @@
     }
 
     if(rows.length){
-      const sorted=[...rows].sort((a,b)=>b.w-a.w||b.projected-a.projected);
+      const sorted=[...rows].sort((a,b)=>b.winPct-a.winPct||b.w-a.w||b.projected-a.projected);
       const leader=sorted[0],last=sorted[sorted.length-1];
-      add(9,"LEADER",leader.name+" leads the competition with "+leader.w+" combined team wins and a "+leader.probability.toFixed(1)+"% projected title chance.");
+      add(9,"LEADER",leader.name+" leads the competition at "+leader.winPct.toFixed(1)+"% across a "+leader.w+"-"+leader.l+" combined record.");
       if(sorted.length>=4){
-        const gap=leader.w-sorted[3].w;
-        if(gap<=3)add(8,"TIGHT RACE","Only "+gap+" win"+(gap===1?"":"s")+" separate 1st and 4th in the competition.");
+        const gap=leader.winPct-sorted[3].winPct;
+        if(gap<=8)add(8,"TIGHT RACE","Only "+gap.toFixed(1)+" percentage points separate 1st and 4th in the live table.");
       }
       if(last&&leader.w-last.w>=8)add(5,"GAP",leader.name+" currently has a "+(leader.w-last.w)+"-win cushion over "+last.name+" in the actual standings.");
-      const probs=[...rows].sort((a,b)=>b.probability-a.probability);
-      if(probs.length>=2&&probs[0].probability-probs[1].probability<5)add(7,"PHOTO FINISH",probs[0].name+" and "+probs[1].name+" are separated by only "+(probs[0].probability-probs[1].probability).toFixed(1)+" percentage points in title probability.");
+      const probs=[...rows].sort((a,b)=>b.winPct-a.winPct);
+      if(probs.length>=2&&probs[0].winPct-probs[1].winPct<5)add(7,"PHOTO FINISH",probs[0].name+" and "+probs[1].name+" are separated by only "+(probs[0].winPct-probs[1].winPct).toFixed(1)+" percentage points in live winning percentage.");
     }
 
     const dedup=[];
@@ -787,11 +788,11 @@
     const el=$("competitionSpotlight");if(!el)return;
     if(!rows.length){el.innerHTML='<div class="comp-loading">NO COMPETITION DATA YET</div>';return}
     const leader=rows[0],second=rows[1];
-    const gap=second?leader.w-second.w:leader.w;
+    const pctGap=second?leader.winPct-second.winPct:leader.winPct;
     const teamIcons=leader.teams.map(t=>'<button class="comp-spot-team" onclick="previewTeamFromCompetition(\''+esc(t.name).replace(/'/g,"&#39;")+'\')" title="'+esc(t.name)+'"><img src="'+teamLogo(t.name)+'" alt=""><span>#'+(t.rank||"—")+' · '+t.w+"-"+t.l+'</span></button>').join("");
-    const raceCopy=gap>0
-      ?leader.name+" is "+gap+" win"+(gap===1?"":"s")+" clear on actual results."
-      :leader.name+" has the tiebreaking edge on projected finish.";
+    const raceCopy=pctGap>0
+      ?leader.name+" leads the live table by "+pctGap.toFixed(1)+" percentage point"+(Math.abs(pctGap-1)<.05?"":"s")+"."
+      :leader.name+" has the tiebreaking edge on actual wins.";
     const leadColor=leader.teams?.[0]?.name?teamStyle(leader.teams[0].name):"";
     el.setAttribute("style",leadColor);
     el.innerHTML='<div class="comp-spotlight-inner">'+
@@ -803,7 +804,7 @@
         '<div class="comp-spotlight-copy">'+esc(raceCopy+" Their five teams are currently projected for "+leader.projected.toFixed(1)+" total wins. The chase is live.")+'</div>'+
       '</div>'+
       '<div class="comp-spotlight-numbers">'+
-        '<div><div class="comp-big-prob-label">CHANCE TO WIN IT ALL</div><div class="comp-big-prob">'+leader.probability.toFixed(1)+'<em>%</em></div></div>'+
+        '<div><div class="comp-big-prob-label">WINNING %</div><div class="comp-big-prob">'+leader.winPct.toFixed(1)+'<em>%</em></div></div>'+
         '<div class="comp-big-proj"><small>PROJECTED FINISH</small>'+leader.projected.toFixed(1)+' WINS</div>'+
       '</div>'+
     '</div>';
@@ -811,12 +812,12 @@
 
   function renderRace(rows){
     const el=$("competitionRace");if(!el)return;
-    const race=[...rows].sort((a,b)=>b.probability-a.probability||b.projected-a.projected);
+    const race=[...rows].sort((a,b)=>b.winPct-a.winPct||b.w-a.w||b.projected-a.projected);
     el.innerHTML=race.map((r,i)=>
-      '<div class="comp-race-row '+(i===0?'leader':'')+'" style="--prob:'+Math.max(1,r.probability)+'%">'+
+      '<div class="comp-race-row '+(i===0?'leader':'')+'" style="--prob:'+Math.max(1,r.winPct)+'%">'+
         '<div class="comp-race-rank">'+(i+1)+'</div>'+
         '<div class="comp-race-name"><div class="comp-race-name-line"><span>'+esc(r.name)+'</span><b class="comp-race-record" aria-label="'+r.w+' wins, '+r.l+' losses">'+r.w+'–'+r.l+'</b></div><small>'+r.projected.toFixed(1)+' projected wins</small></div>'+
-        '<div class="comp-race-pct">'+r.probability.toFixed(1)+'<span>%</span></div>'+
+        '<div class="comp-race-pct">'+r.winPct.toFixed(1)+'<span>%</span></div>'+
       '</div>'
     ).join("");
   }
@@ -833,8 +834,8 @@
       return '<article class="comp-player-card '+(i===0?'leader':'')+'">'+
         '<div class="comp-player-main">'+
           '<div class="comp-player-head"><div class="comp-card-rank">'+(i+1)+'</div><strong>'+esc(r.name)+'</strong><span class="comp-card-record">'+r.w+"-"+r.l+'</span></div>'+
-          '<div class="comp-card-meta"><span>'+daily+'</span><span>PROJECTED <b>'+r.projected.toFixed(1)+'</b> · TITLE <b>'+r.probability.toFixed(1)+'%</b></span></div>'+
-          '<div class="comp-prob"><i style="width:'+Math.max(1,r.probability)+'%"></i></div>'+
+          '<div class="comp-card-meta"><span>'+daily+'</span><span>PROJECTED <b>'+r.projected.toFixed(1)+'</b> · WINNING <b>'+r.winPct.toFixed(1)+'%</b></span></div>'+
+          '<div class="comp-prob"><i style="width:'+Math.max(1,r.winPct)+'%"></i></div>'+
           '<div class="comp-team-list">'+teams+'</div>'+
         '</div>'+
       '</article>';
@@ -1572,8 +1573,8 @@
     }
     const played=rows.some(r=>r.w+r.l>0);
     if(played){
-      const ranked=[...rows].sort((a,b)=>b.w-a.w||b.projected-a.projected),lead=ranked[0],second=ranked[1];
-      if(lead&&second){const gap=lead.w-second.w;add("THE CHASE",gap?lead.name+" is "+gap+" win"+(gap===1?"":"s")+" ahead of "+second.name+" on actual results.":lead.name+" and "+second.name+" are level on "+lead.w+" wins; projected finish breaks the tie.","draft");}
+      const ranked=[...rows].sort((a,b)=>b.winPct-a.winPct||b.w-a.w||b.projected-a.projected),lead=ranked[0],second=ranked[1];
+      if(lead&&second){const gap=lead.winPct-second.winPct;add("THE CHASE",gap?lead.name+" leads "+second.name+" by "+gap.toFixed(1)+" percentage points in live winning percentage.":lead.name+" and "+second.name+" are level at "+lead.winPct.toFixed(1)+"%.","draft");}
     }else{
       const projected=[...rows].sort((a,b)=>b.probability-a.probability);
       if(projected[0])add("PRESEASON PICK",projected[0].name+" has the highest projected title chance at "+projected[0].probability.toFixed(1)+"%. No regular-season wins are on the board yet.","draft");
