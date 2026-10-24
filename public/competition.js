@@ -470,7 +470,7 @@
   async function autoUpdateTick(){
     if(autoUpdateRunning||document.hidden)return;
     const active=document.querySelector(".screen.active")?.id;
-    if(active!=="competitionScreen"&&active!=="statsForNerdsScreen")return;
+    if(active!=="competitionScreen"&&active!=="statsForNerdsScreen"&&active!=="ownerPortfolioScreen")return;
     if(cache.dayKey!==sydneyKey()||Date.now()-cache.at>=CACHE_MS){await refreshCompetitionBoard(true);return;}
     if(isTestDraft())return;
     autoUpdateRunning=true;
@@ -784,6 +784,70 @@
     return "TODAY · "+d.w+"-"+d.l;
   }
 
+  let ownerPortfolioName="",ownerPortfolioLoadToken=0;
+  const ownerPortfolioSchedules=new Map();
+
+  function ownerButton(name,label=name,extra=""){
+    const safe=esc(name).replace(/'/g,"&#39;");
+    return '<button type="button" class="owner-portfolio-open '+extra+'" onclick="openOwnerPortfolio(\''+safe+'\')" aria-label="Open '+esc(name)+' portfolio">'+esc(label)+'</button>';
+  }
+  function portfolioGameLine(g){
+    const ownAway=teamOwner(g.away)===ownerPortfolioName,ownTeam=ownAway?g.away:g.home,opponent=ownAway?g.home:g.away;
+    const when=g.status==="IN"?(g.detail||"LIVE"):g.status==="FINAL"?"FINAL":daySydney(g.date)+" · "+timeSydney(g.date);
+    const score=(g.status==="IN"||g.status==="FINAL")?(g.awayScore+"–"+g.homeScore):"vs";
+    return '<article class="owner-game '+g.status.toLowerCase()+'" style="'+teamStyle(ownTeam)+'"><img src="'+teamLogo(ownTeam)+'" alt=""><div><small>'+esc(when)+'</small><strong>'+esc(shortTeam(ownTeam))+' <b>'+score+'</b> '+esc(shortTeam(opponent))+'</strong><span>'+esc(ownAway?"AWAY":"HOME")+'</span></div><img src="'+teamLogo(opponent)+'" alt=""></article>';
+  }
+  function renderOwnerPortfolio(){
+    const row=(competitionTickerRows||[]).find(r=>r.name===ownerPortfolioName);
+    if(!row)return;
+    const hero=$("ownerPortfolioHero"),name=$("ownerPortfolioName"),status=$("ownerPortfolioStatus"),mark=$("ownerPortfolioMark");
+    if(name)name.textContent=row.name;if(status)status.textContent=row.teams.length+" teams · live competition portfolio";if(mark)mark.textContent=row.winPct.toFixed(1)+"%";
+    if(hero&&row.teams[0])hero.setAttribute("style",teamStyle(row.teams[0].name));
+    const form=ownerRecentStats(cache.recent||[],10)[row.name]||{w:0,l:0,games:0,pf:0,pa:0};
+    const streak=ownerStreaks(cache.recent||[])[row.name]||{n:0,type:""};
+    const pointDiff=form.games?form.pf-form.pa:0;
+    const metrics=[
+      ["LIVE WINNING %",row.winPct.toFixed(1)+"%","Updates after every final"],
+      ["COMBINED RECORD",row.w+"–"+row.l,(row.w+row.l)+" owned results"],
+      ["PROJECTED FINISH",row.projected.toFixed(1),"Combined wins"],
+      ["TITLE MODEL",row.probability.toFixed(1)+"%","Advanced season forecast"],
+      ["LAST 10",form.games?form.w+"–"+form.l:"—","Across owned teams"],
+      ["POINT DIFFERENTIAL",form.games?(pointDiff>=0?"+":"")+pointDiff:"—","Recent scored games"],
+      ["CURRENT STREAK",streak.n?streak.n+(streak.type==="W"?"W":"L"):"—","Across the portfolio"],
+      ["BANKED RECORD",(row.bankedW||0)+"–"+(row.bankedL||0),"Kept through trades"]
+    ];
+    const metricsEl=$("ownerPortfolioMetrics");if(metricsEl)metricsEl.innerHTML=metrics.map(x=>'<article><small>'+x[0]+'</small><strong>'+x[1]+'</strong><span>'+x[2]+'</span></article>').join("");
+    const teamsEl=$("ownerPortfolioTeams");if(teamsEl)teamsEl.innerHTML=row.teams.map(t=>{
+      const games=t.w+t.l,pct=games?t.w/games*100:0,owned=t.ownerW+t.ownerL;
+      return '<button type="button" class="owner-team-card" style="'+teamStyle(t.name)+'" onclick="previewTeamFromCompetition(\''+esc(t.name).replace(/'/g,"&#39;")+'\')"><img src="'+teamLogo(t.name)+'" alt=""><div><small>'+esc(shortTeam(t.name))+'</small><strong>'+t.w+"–"+t.l+'</strong><span>'+pct.toFixed(1)+'% NBA win rate</span></div><div class="owner-team-owned"><b>'+t.ownerW+"–"+t.ownerL+'</b><small>'+ (owned?"SINCE OWNED":"NO RESULTS YET")+'</small></div></button>';
+    }).join("");
+    const teamNames=new Set(row.teams.map(t=>t.name));
+    const recent=(cache.recent||[]).filter(g=>g.status==="FINAL"&&(teamNames.has(g.home)||teamNames.has(g.away))).sort((a,b)=>b.date-a.date).slice(0,8);
+    const results=$("ownerPortfolioResults");if(results)results.innerHTML=recent.length?recent.map(portfolioGameLine).join(""):'<div class="portfolio-empty">No completed games yet.</div>';
+    const schedule=$("ownerPortfolioSchedule"),saved=ownerPortfolioSchedules.get(row.name);
+    if(schedule)schedule.innerHTML=saved?saved.length?saved.map(portfolioGameLine).join(""):'<div class="portfolio-empty">No games found in the next seven Sydney days.</div>':'<div class="portfolio-empty">Loading the next seven days…</div>';
+  }
+  async function loadOwnerPortfolioSchedule(name,teams,token){
+    try{
+      const keys=Array.from({length:8},(_,i)=>shiftDateKey(sydneyKey(),i));
+      const results=await Promise.allSettled(keys.map(async key=>{
+        const compact=key.replace(/-/g,"");
+        return parseScoreboard(await fetchNbaJson("/api/nba/scoreboard?dates="+compact,"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates="+compact,8000),true);
+      }));
+      if(token!==ownerPortfolioLoadToken)return;
+      const teamSet=new Set(teams),games=[...new Map(results.flatMap(r=>r.status==="fulfilled"?r.value:[]).map(g=>[g.id,g])).values()]
+        .filter(g=>g.status!=="FINAL"&&(teamSet.has(g.home)||teamSet.has(g.away))).sort((a,b)=>a.date-b.date).slice(0,12);
+      ownerPortfolioSchedules.set(name,games);if(ownerPortfolioName===name)renderOwnerPortfolio();
+    }catch(_){if(token===ownerPortfolioLoadToken){ownerPortfolioSchedules.set(name,[]);renderOwnerPortfolio()}}
+  }
+  function openOwnerPortfolio(name){
+    const row=(competitionTickerRows||[]).find(r=>r.name===name);if(!row)return;
+    ownerPortfolioName=name;showScreenLocal("ownerPortfolioScreen");renderOwnerPortfolio();window.scrollTo(0,0);
+    const token=++ownerPortfolioLoadToken;if(!ownerPortfolioSchedules.has(name))void loadOwnerPortfolioSchedule(name,row.teams.map(t=>t.name),token);
+    setTicker([{tag:"PORTFOLIO",text:name+"'s live records, form and upcoming games.",kind:"draft"}],name.toUpperCase());
+  }
+  window.openOwnerPortfolio=openOwnerPortfolio;
+
   function renderSpotlight(rows){
     const el=$("competitionSpotlight");if(!el)return;
     if(!rows.length){el.innerHTML='<div class="comp-loading">NO COMPETITION DATA YET</div>';return}
@@ -798,7 +862,7 @@
     el.innerHTML='<div class="comp-spotlight-inner">'+
       '<div>'+
         '<div class="comp-spotlight-label">CURRENT COMPETITION LEADER</div>'+
-        '<div class="comp-spotlight-name">'+esc(leader.name)+'</div>'+
+        '<div class="comp-spotlight-name">'+ownerButton(leader.name,leader.name,"spotlight")+'</div>'+
         '<div class="comp-spotlight-recordline"><div class="comp-spotlight-record">'+leader.w+"-"+leader.l+'</div><span>COMBINED RECORD ACROSS '+leader.teams.length+' TEAMS</span></div>'+
         '<div class="comp-spotlight-teams">'+teamIcons+'</div>'+
         '<div class="comp-spotlight-copy">'+esc(raceCopy+" Their five teams are currently projected for "+leader.projected.toFixed(1)+" total wins. The chase is live.")+'</div>'+
@@ -816,7 +880,7 @@
     el.innerHTML=race.map((r,i)=>
       '<div class="comp-race-row '+(i===0?'leader':'')+'" style="--prob:'+Math.max(1,r.winPct)+'%">'+
         '<div class="comp-race-rank">'+(i+1)+'</div>'+
-        '<div class="comp-race-name"><div class="comp-race-name-line"><span>'+esc(r.name)+'</span><b class="comp-race-record" aria-label="'+r.w+' wins, '+r.l+' losses">'+r.w+'–'+r.l+'</b></div><small>'+r.projected.toFixed(1)+' projected wins</small></div>'+
+        '<div class="comp-race-name"><div class="comp-race-name-line">'+ownerButton(r.name,r.name,"race")+'<b class="comp-race-record" aria-label="'+r.w+' wins, '+r.l+' losses">'+r.w+'–'+r.l+'</b></div><small>'+r.projected.toFixed(1)+' projected wins</small></div>'+
         '<div class="comp-race-pct">'+r.winPct.toFixed(1)+'<span>%</span></div>'+
       '</div>'
     ).join("");
@@ -833,7 +897,7 @@
       const daily=d.games?(d.w+"-"+d.l+" TODAY"):"NO FINALS TODAY";
       return '<article class="comp-player-card '+(i===0?'leader':'')+'">'+
         '<div class="comp-player-main">'+
-          '<div class="comp-player-head"><div class="comp-card-rank">'+(i+1)+'</div><strong>'+esc(r.name)+'</strong><span class="comp-card-record">'+r.w+"-"+r.l+'</span></div>'+
+          '<div class="comp-player-head"><div class="comp-card-rank">'+(i+1)+'</div>'+ownerButton(r.name,r.name,"table")+'<span class="comp-card-record">'+r.w+"-"+r.l+'</span></div>'+
           '<div class="comp-card-meta"><span>'+daily+'</span><span>PROJECTED <b>'+r.projected.toFixed(1)+'</b> · WINNING <b>'+r.winPct.toFixed(1)+'%</b></span></div>'+
           '<div class="comp-prob"><i style="width:'+Math.max(1,r.winPct)+'%"></i></div>'+
           '<div class="comp-team-list">'+teams+'</div>'+
@@ -841,6 +905,7 @@
       '</article>';
     }).join("");
     const badge=$("competitionModeBadge");if(badge){badge.textContent=demo?"DEMO DATA":regularSeasonStarted()?"LIVE NBA DATA":"SEASON PROJECTIONS";badge.classList.toggle("demo",demo)}
+    if(ownerPortfolioName&&document.querySelector(".screen.active")?.id==="ownerPortfolioScreen")renderOwnerPortfolio();
   }
 
   function gameStatusText(g){
@@ -1643,6 +1708,10 @@
   window.updateTickerForScreen=function(id){
     if(id==="competitionScreen"){
       setTicker(window.cvCompetitionTicker?.length?window.cvCompetitionTicker:[{tag:"COMPETITION",text:"Daily rivalry board",kind:"draft"}],"COMP BOARD");
+      return;
+    }
+    if(id==="ownerPortfolioScreen"){
+      setTicker([{tag:"PORTFOLIO",text:(ownerPortfolioName||"Owner")+" · live records, form and schedule.",kind:"draft"}],"PORTFOLIO");
       return;
     }
     if(id==="tradeScreen"){

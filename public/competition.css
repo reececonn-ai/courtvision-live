@@ -3482,3 +3482,30 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 .admin-pin-gate input:focus{outline:2px solid #5bc5ff;outline-offset:2px}
 .admin-pin-gate .btn{width:170px}
 .admin-pin-gate small{display:block;min-height:18px;margin-top:9px;color:#ff7e94}
+
+
+/* Owner portfolios */
+.owner-portfolio-screen{background:#030a13;overflow-y:auto}
+.owner-portfolio-shell{width:100%;max-width:1920px;margin:0 auto;padding:14px 14px 64px}
+.owner-portfolio-back{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:12px;align-items:center;width:min(430px,100%);margin-bottom:10px;border:1px solid #31516f;border-left:5px solid #59c8ff;padding:12px 15px;background:#0a1c2e;color:#fff;text-align:left}
+.owner-portfolio-back>span{grid-row:1/3;font-size:28px;color:#59c8ff}.owner-portfolio-back strong{font-size:13px;letter-spacing:.08em}.owner-portfolio-back small{color:#8fa9c1}
+.owner-portfolio-hero{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:220px;padding:28px 34px;border-top:4px solid var(--team1,#59c8ff);background:radial-gradient(circle at 85% 30%,color-mix(in srgb,var(--team1,#59c8ff) 24%,transparent),transparent 35%),linear-gradient(120deg,#102a42,#06111e)}
+.owner-portfolio-hero h2{margin:4px 0;font:900 clamp(52px,7vw,112px)/.9 Impact,"Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.02em}
+.owner-portfolio-hero p{color:#adc2d6;font-size:15px}
+.owner-portfolio-mark{font:900 clamp(58px,8vw,128px)/1 Impact,"Arial Narrow",sans-serif;color:#fff;text-shadow:0 0 32px color-mix(in srgb,var(--team1,#59c8ff) 55%,transparent)}
+.owner-portfolio-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid #243d55;border-top:0}
+.owner-portfolio-metrics article{display:grid;gap:4px;min-height:105px;padding:16px;border-right:1px solid #243d55;border-bottom:1px solid #243d55;background:#091827}
+.owner-portfolio-metrics article:nth-child(4n){border-right:0}.owner-portfolio-metrics small,.owner-portfolio-head span{color:#55c6ff;font-size:10px;font-weight:900;letter-spacing:.12em}.owner-portfolio-metrics strong{font:900 29px/1 Impact,"Arial Narrow",sans-serif}.owner-portfolio-metrics span{color:#8fa8bf;font-size:12px}
+.owner-portfolio-section{margin-top:12px;border:1px solid #243d55;background:#071522}
+.owner-portfolio-head{display:flex;align-items:end;justify-content:space-between;gap:15px;padding:15px 18px;border-bottom:1px solid #243d55}.owner-portfolio-head h3{margin:3px 0 0;font:900 25px/1 Impact,"Arial Narrow",sans-serif}.owner-portfolio-head>small{color:#7893aa;font-size:10px}
+.owner-team-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:12px}
+.owner-team-card{display:grid;grid-template-columns:52px minmax(0,1fr);grid-template-rows:auto auto;gap:8px 11px;min-height:132px;border:1px solid color-mix(in srgb,var(--team1) 52%,#243d55);border-top:4px solid var(--team1);padding:13px;background:linear-gradient(140deg,color-mix(in srgb,var(--team1) 18%,#081726),#071522);color:#fff;text-align:left}
+.owner-team-card>img{width:48px;height:48px;object-fit:contain}.owner-team-card>div:nth-child(2){min-width:0}.owner-team-card small,.owner-team-card span{display:block;color:#92abc1;font-size:10px}.owner-team-card strong{display:block;margin:2px 0;font-size:22px}.owner-team-owned{grid-column:1/3;display:flex;align-items:end;justify-content:space-between;padding-top:8px;border-top:1px solid rgba(255,255,255,.12)}.owner-team-owned b{font-size:17px}
+.owner-portfolio-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px}.owner-portfolio-columns .owner-portfolio-section{min-width:0}
+.owner-schedule,.owner-results{display:grid;gap:7px;padding:10px}
+.owner-game{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:10px;min-height:66px;border-left:4px solid var(--team1);padding:8px 11px;background:#0a1b2c}
+.owner-game>img{width:38px;height:38px;object-fit:contain}.owner-game>div{min-width:0}.owner-game small,.owner-game span{display:block;color:#87a2ba;font-size:10px}.owner-game strong{display:block;margin:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.owner-game strong b{color:#5dccff}
+.portfolio-empty{padding:28px;text-align:center;color:#88a2b9}
+.owner-portfolio-open{border:0;padding:0;background:transparent;color:inherit;font:inherit;text-align:left;text-transform:inherit;letter-spacing:inherit}.owner-portfolio-open:hover,.owner-portfolio-open:focus-visible{color:#65ccff;text-decoration:underline;text-underline-offset:4px}.owner-portfolio-open.spotlight{display:inline-block}
+@media(max-width:1100px){.owner-team-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.owner-portfolio-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.owner-portfolio-metrics article:nth-child(4n){border-right:1px solid #243d55}.owner-portfolio-metrics article:nth-child(2n){border-right:0}}
+@media(max-width:720px){.owner-portfolio-shell{padding:8px 6px 42px}.owner-portfolio-hero{min-height:170px;padding:22px 17px}.owner-portfolio-hero h2{font-size:52px}.owner-portfolio-mark{font-size:48px}.owner-portfolio-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.owner-portfolio-metrics article{min-height:92px;padding:12px}.owner-team-grid{grid-template-columns:1fr}.owner-portfolio-columns{grid-template-columns:1fr}.owner-portfolio-head{align-items:flex-start;flex-direction:column}.owner-game{grid-template-columns:36px minmax(0,1fr) 36px}.owner-game>img{width:32px;height:32px}}
