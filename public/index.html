@@ -4409,6 +4409,12 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 .cv-news-item:focus-visible{outline:2px solid #7dd3fc}
 .cv-team-news{margin:12px 0}
 @media(min-width:900px){#cvMorningNews{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* The commissioner sidebar is retired. Keep its DOM for legacy controls, but never render it. */
+.sidebar{display:none!important}
+.shell{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%!important;max-width:none!important}
+.stage{grid-column:1!important;width:100%!important;max-width:none!important}
+.broadcast-ticker,body.tv-mode .broadcast-ticker,body.readable .broadcast-ticker{left:0!important}
 </style>
 </head>
 <body>
@@ -4416,7 +4422,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 <canvas class="confetti" id="confetti"></canvas>
 
 <div class="shell" id="shell">
-  <aside class="sidebar">
+  <aside class="sidebar" hidden aria-hidden="true">
     <div class="player-list" id="playerList"></div>
     <div>
       <div class="kicker">Draft status</div>
