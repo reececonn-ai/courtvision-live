@@ -206,3 +206,48 @@ body.nbl-modal-open{overflow:hidden}
   .nbl-leader-category[open]>div{grid-template-columns:1fr}
   .nbl-leader-category[open] .nbl-leader-row:nth-child(odd){border-right:0}
 }
+
+
+/* One-page NBL navigation and compact information layers. */
+.nbl-jump{position:sticky;top:0;z-index:35;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:6px;background:rgba(4,15,12,.94);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(12px)}
+.nbl-jump a{display:grid;place-items:center;min-height:38px;color:#dff8ee;text-decoration:none;font-size:10px;font-weight:950;letter-spacing:.12em;border-radius:7px;background:#123027}
+.nbl-jump a:hover,.nbl-jump a:focus-visible{background:#f8ca3c;color:#07100e}
+.nbl-tldr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px}
+.nbl-tldr article{padding:13px;background:linear-gradient(145deg,#16362d,#0e241e);border-left:3px solid #f8ca3c;min-height:82px}
+.nbl-tldr small{display:block;color:#65dbae;font-size:9px;font-weight:950;letter-spacing:.1em;margin-bottom:7px}
+.nbl-tldr strong{font-size:12px;line-height:1.35}
+.nbl-player-search{display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:8px 10px;background:#0e241e;border:1px solid rgba(255,255,255,.09);border-radius:8px}
+.nbl-player-search span{font-size:9px;font-weight:900;color:#69d9ae;letter-spacing:.12em}
+.nbl-player-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#fff;font-size:13px}
+.nbl-leader-extra{display:none!important}
+.nbl-leader-category.show-all .nbl-leader-extra{display:grid!important}
+.nbl-leader-more{grid-column:1/-1;border:0;background:#17392f;color:#f8ca3c;padding:10px;font-size:9px;font-weight:950;letter-spacing:.1em}
+.nbl-upcoming{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:10px}
+.nbl-upcoming-day{background:#0d211c;border:1px solid rgba(255,255,255,.09)}
+.nbl-upcoming-day>header{padding:9px 11px;background:#17372e;color:#f8ca3c;font-size:11px;font-weight:950;text-transform:uppercase}
+.nbl-upcoming-day button{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:7px;width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.07);background:transparent;color:#fff;padding:10px;font-size:10px}
+.nbl-upcoming-day button:last-child{border-bottom:0}
+.nbl-upcoming-day button span{display:flex;align-items:center;gap:5px}.nbl-upcoming-day button span:last-child{justify-content:flex-end;text-align:right}
+.nbl-upcoming-day img{width:24px;height:24px;object-fit:contain}.nbl-upcoming-day b{color:#f8ca3c;white-space:nowrap}
+.nbl-ladder-row[type="button"]{width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.08);background:transparent;color:#f7fbf9;text-align:left;font:inherit}
+.nbl-ladder-row[type="button"]:hover,.nbl-ladder-row[type="button"]:focus-visible{background:#15352c;outline:0}
+.nbl-team-detail-head{display:flex;align-items:center;gap:14px;padding:12px;border-bottom:1px solid rgba(255,255,255,.1)}
+.nbl-team-detail-head img{width:72px;height:72px;object-fit:contain}.nbl-team-detail-head small{color:#64ddb0;font-size:9px;font-weight:900}.nbl-team-detail-head h2{font-size:34px;margin-top:3px}
+.nbl-team-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.nbl-team-schedule{background:#0d211c;padding:12px;border:1px solid rgba(255,255,255,.09)}
+.nbl-team-schedule h3{font-size:11px;color:#f8ca3c;letter-spacing:.1em;margin:5px 0 8px}
+.nbl-team-game-line{display:grid;grid-template-columns:62px 1fr auto;gap:8px;padding:9px 5px;border-bottom:1px solid rgba(255,255,255,.07);font-size:11px}
+.nbl-team-game-line span{color:#78a092}.nbl-team-game-line b{color:#f8ca3c}
+@media(max-width:900px){
+  .nbl-tldr{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nbl-upcoming{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}.nbl-upcoming-day{flex:0 0 min(84vw,340px);scroll-snap-align:start}
+}
+@media(max-width:820px){
+  .nbl-jump{top:0;margin:0 -2px}.nbl-jump a{min-height:42px;font-size:9px}
+  .nbl-tldr{grid-template-columns:1fr 1fr;padding:8px}.nbl-tldr article{min-height:76px;padding:10px}
+  .nbl-team-detail-grid{grid-template-columns:1fr}.nbl-team-detail-head img{width:52px;height:52px}.nbl-team-detail-head h2{font-size:25px}
+}
+@media(max-width:390px){.nbl-tldr{grid-template-columns:1fr}}
+
+.nbl-roster-player mark,.nbl-injury mark{display:inline-flex;margin-left:6px;padding:2px 5px;border-radius:999px;background:#8a2638;color:#fff;font-size:7px;font-weight:950;text-decoration:none}
+.nbl-injury.new{border-left-color:#f8ca3c;background:#172b22}
