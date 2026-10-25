@@ -3608,3 +3608,31 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
   text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 6px rgba(0,0,0,.55);
 }
 .comp-team-chip b{color:rgba(255,255,255,.82)}
+
+
+/* Two-colour matchup halves — Competition */
+#competitionGames .comp-game-side{
+  border-top:4px solid var(--team2,#fff)!important;
+  background:
+    linear-gradient(180deg,rgba(2,7,14,.10),rgba(2,7,14,.58)),
+    linear-gradient(125deg,var(--team1,#2d78c7) 0%,var(--team1,#2d78c7) 44%,var(--team2,#fff) 100%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15)!important;
+}
+#competitionGames .comp-game-side.home{
+  border-left:1px solid rgba(255,255,255,.22)!important;
+  background:
+    linear-gradient(180deg,rgba(2,7,14,.10),rgba(2,7,14,.58)),
+    linear-gradient(235deg,var(--team1,#2d78c7) 0%,var(--team1,#2d78c7) 44%,var(--team2,#fff) 100%)!important;
+}
+#competitionGames .comp-game-side.away{
+  border-left:4px solid var(--team1,#2d78c7)!important;
+}
+#competitionGames .comp-game-copy strong,
+#competitionGames .comp-game-owner,
+#competitionGames .comp-game-teamline{
+  color:#fff!important;
+  text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 7px rgba(0,0,0,.55);
+}
+#competitionGames .comp-game-side img{
+  filter:drop-shadow(0 3px 5px rgba(0,0,0,.7))!important;
+}
