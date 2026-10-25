@@ -323,6 +323,10 @@
   }
 
   let deepView="season";
+  function deepShell(){
+    return '<details class="ns-section ns-deep" id="nsDeep" data-deep-lazy><summary><span><small>DEEP ARCHIVE</small><strong>Open every team statistic</strong></span><b>EXPAND +</b></summary><div class="ns-deep-body"><p class="ns-note">Detailed tables load when you open this section.</p></div></details>';
+  }
+
   function deepStats(rows,recent){
     const teams=deepData(rows,recent),id=[["name","Team"],["owner","Owner"]];
     const season=deepTable("nsDeepSeason","Season & expectations","Win pace = current win rate × 82. Expected wins so far = preseason line × games played ÷ 82. Gap = actual wins − expected wins so far. Pace is descriptive; projected finish is the existing competition forecast.",[...id,["played","GP"],["w","W"],["l","L"],["winPct","Win %"],["remaining","Left"],["line","Preseason"],["expectedNow","Expected so far"],["delta","Gap"],["pace","82-game pace"],["expected","Projected finish"]],teams);
@@ -333,6 +337,14 @@
     return '<details class="ns-section ns-deep" id="nsDeep"><summary><span><small>DEEP ARCHIVE</small><strong>Open every team statistic</strong></span><b>EXPAND +</b></summary><div class="ns-deep-body"><p class="ns-note">Choose one category at a time. Sort any column. — means unavailable, never zero.</p><label class="ns-deep-picker"><span>STAT CATEGORY</span><select data-deep-view>'+option("season","Season & expectations")+option("score","Scoring & consistency")+option("form","Form, venue & pressure")+'</select></label>'+panel("season",season)+panel("score",score)+panel("form",form)+'<details class="ns-deep-defs"><summary>How to read the numbers</summary><p>Streak is the current run within the available window. Missing scoring results are excluded. Margin SD measures game-to-game variation. Possession-based ratings and lineup on/off are not inferred from final scores.</p></details></div></details>';
   }
   function bindDeep(root,rows,recent){
+    const lazy=root.querySelector("#nsDeep[data-deep-lazy]");
+    if(lazy)lazy.addEventListener("toggle",()=>{
+      if(!lazy.open)return;
+      const slot=root.querySelector("#nsDeepSlot");if(!slot)return;
+      slot.innerHTML=deepStats(rows,recent);
+      const loaded=slot.querySelector("#nsDeep");if(loaded)loaded.open=true;
+      bindDeep(root,rows,recent);
+    },{once:true});
     root.querySelector("[data-deep-view]")?.addEventListener("change",event=>{
       deepView=event.target.value;
       root.querySelectorAll("[data-deep-panel]").forEach(panel=>panel.hidden=panel.dataset.deepPanel!==deepView);
@@ -349,7 +361,6 @@
 
   function render(rows,games,recent,demo){
     latest={rows,games,recent,demo};
-    void enrichBriefStories(rows,recent,demo);
     const root=document.getElementById("nerdStudio");if(!root)return;
     document.getElementById("nerdClassic")?.remove();
     root.innerHTML='<section class="ns-section ns-squad"><div class="ns-section-title"><span class="ns-kicker">PICK YOUR NAME</span><h3>Compared with you</h3></div><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></section>'+
@@ -357,7 +368,7 @@
       '<section class="ns-section ns-momentum"><div class="ns-section-title"><span class="ns-kicker">OWNER MOMENTUM</span><h3>Every twist. Every contender.</h3></div>'+historyChart(rows,demo,root.clientWidth||960)+'</section>'+
       '<section class="ns-section" id="nsTeamLab"><div class="ns-section-title"><span class="ns-kicker">EXPECTATION TRACKER</span><h3>Who’s beating the line?</h3></div><div id="nsValueContent">'+performanceLab(rows,recent)+'</div></section>'+
       strengthMatrix(rows)+
-      '<div id="nsDeepSlot">'+deepStats(rows,recent)+'</div>';
+      '<div id="nsDeepSlot">'+deepShell()+'</div>';
     bindSquad(root,rows,recent);
     bindDeep(root,rows,recent);
   }

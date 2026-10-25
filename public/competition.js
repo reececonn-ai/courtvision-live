@@ -1283,8 +1283,14 @@
   }
 
   function renderStatsForNerds(rows,games,recent,demo){
-    window.cvNerdStudio?.render(rows,games,recent,demo);
     const status=$("nerdStatus");if(status)status.textContent=(demo?"DEMO DATA · ":"")+"Deep stats from current records, recent results and saved daily snapshots · auto-checking every 2 minutes.";
+    if(window.cvNerdStudio){
+      window.cvNerdStudio.render(rows,games,recent,demo);
+      const ticker=[...rows].sort((a,b)=>b.projected-a.projected).slice(0,4).map((r,i)=>({tag:"POWER #"+(i+1),text:r.name+" · "+r.projected.toFixed(1)+" projected wins · "+r.probability.toFixed(1)+"% title chance.",kind:"draft"}));
+      window.cvNerdTicker=ticker;
+      if(document.querySelector(".screen.active")?.id==="statsForNerdsScreen")setTicker(ticker,"STATS FOR NERDS");
+      return;
+    }
 
     const form=ownerRecentStats(recent,10);
     const heroBits=competitionTidbits(rows,games,recent);
