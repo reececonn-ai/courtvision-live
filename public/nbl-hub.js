@@ -259,7 +259,7 @@
       return '<div class="nbl-team-game-line"><span>'+esc(new Intl.DateTimeFormat("en-AU",{timeZone:SYDNEY,day:"numeric",month:"short"}).format(new Date(g.start_time)))+'</span><strong>vs '+esc(teamName(opp))+'</strong><b>'+esc(right)+'</b></div>';
     };
     detail.innerHTML='<div class="nbl-team-detail-head"><img src="'+esc(logo(team))+'" alt=""><div><small>TEAM SNAPSHOT</small><h2>'+esc(teamName(team))+'</h2></div></div><div class="nbl-team-detail-grid">'+rosterColumn(team)+'<section class="nbl-team-schedule"><h3>NEXT 3</h3>'+next.map(line).join("")+'<h3>RECENT FORM</h3>'+recent.map(line).join("")+'</section></div>';
-    modal.hidden=false;document.body.classList.add("nbl-modal-open");
+    modal.hidden=false;modal.scrollTop=0;detail.scrollTop=0;document.body.classList.add("nbl-modal-open");
   };
 
   function gameRoster(team){
@@ -274,11 +274,20 @@
   }
   function rosterColumn(team){
     const roster=gameRoster(team);
-    return '<section class="nbl-game-roster"><header><img src="'+esc(logo(team))+'" alt=""><div><small>FULL ROSTER</small><strong>'+esc(teamName(team))+'</strong></div></header><div>'+roster.map(x=>{const p=x.player||x.athlete||x;const name=p.displayName||p.fullName||[p.first_name,p.last_name].filter(Boolean).join(" ");return '<span><b>'+(x.jersey_number||"–")+'</b>'+esc(name)+'<small>'+esc(x.playing_position||p.position?.abbreviation||"")+'</small></span>'}).join("")+'</div></section>';
+    return '<details class="nbl-game-roster"><summary><img src="'+esc(logo(team))+'" alt=""><div><small>FULL ROSTER · '+roster.length+' PLAYERS</small><strong>'+esc(teamName(team))+'</strong></div><i>⌄</i></summary><div>'+roster.map(x=>{const p=x.player||x.athlete||x;const name=p.displayName||p.fullName||[p.first_name,p.last_name].filter(Boolean).join(" ");return '<span><b>'+(x.jersey_number||"–")+'</b>'+esc(name)+'<small>'+esc(x.playing_position||p.position?.abbreviation||"")+'</small></span>'}).join("")+'</div></details>';
   }
   function statValue(x,key){const n=Number(x?.[key]);return Number.isFinite(n)?n:null}
+  function formatMinutes(value){
+    if(value==null||value==="")return "–";
+    const text=String(value);
+    if(text.includes(":"))return text;
+    const n=Number(value);if(!Number.isFinite(n))return text;
+    let minutes=Math.floor(n),seconds=Math.round((n-minutes)*60);
+    if(seconds===60){minutes++;seconds=0}
+    return minutes+":"+String(seconds).padStart(2,"0");
+  }
   function boxScoreRows(data){
-    const rows=[];
+    const found=[];
     (function walk(v){
       if(!v||typeof v!=="object")return;
       if(Array.isArray(v))return v.forEach(walk);
@@ -286,13 +295,18 @@
       const pts=statValue(v,"points"),reb=statValue(v,"rebounds"),ast=statValue(v,"assists");
       if(p&&(pts!==null||reb!==null||ast!==null)){
         const name=p.displayName||p.fullName||[p.first_name,p.last_name].filter(Boolean).join(" ");
-        const team=v.team?.team_code||v.team?.abbreviation||p.team?.team_code||"";
-        const minutes=v.minutes??v.minutes_played??"–";
-        rows.push({name,team,pts:pts??0,reb:reb??0,ast:ast??0,minutes});
+        const team=v.team?.team_code||v.team?.abbreviation||p.team?.team_code||p.team?.abbreviation||"";
+        found.push({id:String(p.id||"").trim(),name,team,pts:pts??0,reb:reb??0,ast:ast??0,minutes:formatMinutes(v.minutes??v.minutes_played)});
       }
       Object.values(v).forEach(walk);
     })(data);
-    return rows.filter((x,i,a)=>a.findIndex(y=>y.name===x.name&&y.team===x.team)===i).sort((a,b)=>b.pts-a.pts);
+    const unique=new Map();
+    found.forEach(row=>{
+      const key=row.id||row.name.toLowerCase();
+      const current=unique.get(key);
+      if(!current||(!current.team&&row.team)||current.minutes==="–"&&row.minutes!=="–")unique.set(key,{...(current||{}),...row});
+    });
+    return [...unique.values()].sort((a,b)=>b.pts-a.pts||b.reb-a.reb||a.name.localeCompare(b.name));
   }
   function boxScoreTable(rows){
     if(!rows.length)return '<div class="nbl-game-awaiting"><strong>BOX SCORE PENDING</strong><span>Live player statistics will appear here once the official NBL game feed begins.</span></div>';
@@ -306,7 +320,7 @@
     detail.innerHTML='<div class="nbl-game-detail-head"><small>'+(state==="in"?"LIVE":state==="post"?"FINAL":"UPCOMING")+' · '+esc(game.venue?.name||"")+'</small><div><span><img src="'+esc(logo(away))+'" alt=""><strong>'+esc(teamName(away))+'</strong></span><b>'+esc(score)+'</b><span><img src="'+esc(logo(home))+'" alt=""><strong>'+esc(teamName(home))+'</strong></span></div></div>'+
       '<div class="nbl-game-rosters">'+rosterColumn(away)+rosterColumn(home)+'</div>'+
       '<section class="nbl-game-box"><h3>'+(state==="pre"?"GAME STATS":"LIVE BOX SCORE")+'</h3><div id="nblGameBox"><div class="nbl-game-awaiting"><span>Checking the official game feed…</span></div></div></section>';
-    modal.hidden=false;document.body.classList.add("nbl-modal-open");
+    modal.hidden=false;modal.scrollTop=0;detail.scrollTop=0;document.body.classList.add("nbl-modal-open");
     try{
       const data=await fetchJson("/api/nbl/summary?event="+encodeURIComponent(id));
       const box=document.getElementById("nblGameBox");if(box)box.innerHTML=boxScoreTable(boxScoreRows(data));
