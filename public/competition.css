@@ -3801,13 +3801,28 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 .nba-ladder-table thead th{font-size:12px;color:#9eb8d1;background:#0b1d2e}
 .nba-ladder-table th:first-child,.nba-ladder-table td:first-child{width:32px;text-align:center;color:#819db8}
 .nba-ladder-table th:nth-child(2){width:43%;text-align:left}
-.nba-ladder-table tbody tr:nth-child(even){background:#0c1d2d}
-.nba-ladder-table tbody tr:hover{background:#142c42}
+.nba-ladder-table tbody tr{background:linear-gradient(105deg,color-mix(in srgb,var(--team1) 15%,#0b1928),color-mix(in srgb,var(--team2) 6%,#0b1928) 72%,#0b1928)}
+.nba-ladder-table tbody tr:hover{background:linear-gradient(105deg,color-mix(in srgb,var(--team1) 23%,#102338),color-mix(in srgb,var(--team2) 10%,#102338))}
 .nba-ladder-team{display:flex;align-items:center;gap:13px;max-width:100%;text-align:left;background:none;border:0;border-left:3px solid var(--team1);padding:4px 8px;color:#fff;cursor:pointer;min-height:44px}
 .nba-ladder-team img{width:34px;height:34px;object-fit:contain;flex:none}.nba-ladder-team span{min-width:0}
 .nba-ladder-team strong{display:block;font-size:14px}.nba-ladder-team small{display:block;font-size:11px;color:#97b3cc;margin-top:4px;font-weight:400}
 .nba-ladder-team .nba-ladder-short{display:none}
 .nba-ladder-note{padding:14px 18px;font:12px/1.6 Arial,sans-serif;color:#a0b8ce;margin:0}
+.nba-ladder-groups{display:grid;gap:18px}
+.nba-ladder-group{min-width:0}
+.nba-ladder-grouped{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 12px;padding:0 12px}
+.nba-ladder-grouped .nba-ladder-group{border:1px solid #263d51;border-radius:6px;overflow:hidden}
+.nba-ladder-grouped .nba-ladder-caption{padding:14px 10px;display:block;font-size:14px}
+.nba-ladder-grouped .nba-ladder-caption span{display:block;margin-top:5px;font-size:10px}
+.nba-ladder-grouped .nba-ladder-table th,.nba-ladder-grouped .nba-ladder-table td{padding:8px 3px}
+.nba-ladder-grouped .nba-ladder-table th:first-child,.nba-ladder-grouped .nba-ladder-table td:first-child{width:24px}
+.nba-ladder-grouped .nba-ladder-table th:nth-child(2){width:38%}
+.nba-ladder-grouped .nba-ladder-table thead th{font-size:11px}
+.nba-ladder-grouped .nba-ladder-team{gap:6px;padding:3px 4px;border-left-width:2px}
+.nba-ladder-grouped .nba-ladder-team img{width:27px;height:27px}
+.nba-ladder-grouped .nba-ladder-team .nba-ladder-full{display:none}
+.nba-ladder-grouped .nba-ladder-team .nba-ladder-short{display:block}
+@media(max-width:700px){.nba-ladder-grouped{grid-template-columns:1fr;padding:0;gap:18px}.nba-ladder-grouped .nba-ladder-group{border-inline:0;border-radius:0}}
 @media(max-width:600px){
  .nba-ladder-controls{padding:12px;gap:10px}.nba-ladder-tabs{width:100%;flex-wrap:nowrap}.nba-ladder-tabs button{flex:1;padding:10px 7px;font-size:13px}
  .nba-ladder-controls label{width:100%;justify-content:space-between}.nba-ladder-controls select{max-width:70%;min-width:0}

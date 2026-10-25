@@ -940,25 +940,26 @@
     Pacific:{conference:'West',teams:['GS','LAC','LAL','PHX','SAC']},
     Southwest:{conference:'West',teams:['DAL','HOU','MEM','NO','SA']}
   };
-  let nbaLadderView='league',nbaLadderGroup='East',nbaLadderRecords={},nbaLadderDemo=false;
+  let nbaLadderView='league',nbaLadderRecords={},nbaLadderDemo=false;
   function renderNbaLadder(records=nbaLadderRecords,demo=nbaLadderDemo){
     nbaLadderRecords=records;nbaLadderDemo=demo;
     const target=$('nbaLadder');if(!target)return;
-    document.querySelectorAll('[data-ladder-view]').forEach(button=>{button.setAttribute('aria-pressed',String(button.dataset.ladderView===nbaLadderView));button.onclick=()=>{nbaLadderView=button.dataset.ladderView;nbaLadderGroup=nbaLadderView==='division'?'Atlantic':'East';renderNbaLadder()}});
-    const groups=nbaLadderView==='division'?Object.keys(nbaDivisions):['East','West'],select=$('nbaLadderGroup'),label=$('nbaLadderGroupLabel');
-    if(label)label.hidden=nbaLadderView==='league';
-    if(select){select.innerHTML=groups.map(g=>'<option value="'+g+'"'+(g===nbaLadderGroup?' selected':'')+'>'+g+(nbaLadderView==='conference'?'ern Conference':' Division')+'</option>').join('');select.onchange=()=>{nbaLadderGroup=select.value;renderNbaLadder()}}
+    document.querySelectorAll('[data-ladder-view]').forEach(button=>{button.setAttribute('aria-pressed',String(button.dataset.ladderView===nbaLadderView));button.onclick=()=>{nbaLadderView=button.dataset.ladderView;renderNbaLadder()}});
+    const groups=nbaLadderView==='division'?Object.keys(nbaDivisions):nbaLadderView==='conference'?['East','West']:['League'];
     const all=TEAM_DATA.map(meta=>{
       const division=Object.keys(nbaDivisions).find(d=>nbaDivisions[d].teams.includes(meta[1])),r=records[meta[0]],known=!!r&&Number.isFinite(r.w)&&Number.isFinite(r.l),w=known?r.w:!regularSeasonStarted()?0:null,l=known?r.l:!regularSeasonStarted()?0:null;
       return {name:meta[0],abbr:meta[1],division,conference:nbaDivisions[division]?.conference,w,l,known:w!==null&&l!==null,pct:w!==null&&w+l?w/(w+l):null,seed:Number.isFinite(r?.rank)&&r.rank>0?r.rank:null};
     });
-    const shown=all.filter(t=>nbaLadderView==='league'||(nbaLadderView==='conference'?t.conference===nbaLadderGroup:t.division===nbaLadderGroup));
+    const tables=groups.map(group=>{
+    const shown=all.filter(t=>nbaLadderView==='league'||(nbaLadderView==='conference'?t.conference===group:t.division===group));
     shown.sort((a,b)=>Number(b.known)-Number(a.known)||(b.pct??-1)-(a.pct??-1)||(b.w??-1)-(a.w??-1)||(nbaLadderView!=='league'?(a.seed??99)-(b.seed??99):0)||a.name.localeCompare(b.name));
-    const leader=shown.find(t=>t.known&&t.w+t.l>0),title=nbaLadderView==='league'?'League · all 30 teams':nbaLadderView==='conference'?nbaLadderGroup+'ern Conference':nbaLadderGroup+' Division';
-    target.innerHTML='<div class="nba-ladder-caption"><strong>'+title+'</strong><span>'+(demo?'SAMPLE DATA · ':'')+shown.filter(t=>t.known).length+'/'+shown.length+' records available</span></div><table class="nba-ladder-table"><caption class="sr-only">'+title+' standings</caption><thead><tr><th scope="col">#</th><th scope="col">Team</th><th scope="col">W</th><th scope="col">L</th><th scope="col">Win %</th><th scope="col"><abbr title="Games behind group leader">GB</abbr></th></tr></thead><tbody>'+shown.map((t,i)=>{
+    const leader=shown.find(t=>t.known&&t.w+t.l>0),title=nbaLadderView==='league'?'League · all 30 teams':nbaLadderView==='conference'?group+'ern Conference':group+' Division';
+    return '<section class="nba-ladder-group" aria-label="'+title+'"><div class="nba-ladder-caption"><strong>'+title+'</strong><span>'+(demo?'SAMPLE DATA · ':'')+shown.filter(t=>t.known).length+'/'+shown.length+' records available</span></div><table class="nba-ladder-table"><caption class="sr-only">'+title+' standings</caption><thead><tr><th scope="col">#</th><th scope="col">Team</th><th scope="col">W</th><th scope="col">L</th><th scope="col">Win %</th><th scope="col"><abbr title="Games behind group leader">GB</abbr></th></tr></thead><tbody>'+shown.map((t,i)=>{
       const gb=leader&&t.known?((leader.w-t.w)+(t.l-leader.l))/2:null,rank=t.known?i+1:'—';
       return '<tr style="'+teamStyle(t.name)+'"><td>'+rank+'</td><th scope="row"><button type="button" class="nba-ladder-team" data-ladder-team="'+esc(t.name)+'"><img src="'+teamLogo(t.name)+'" alt="" loading="lazy"><span><strong class="nba-ladder-full">'+esc(t.name)+'</strong><strong class="nba-ladder-short">'+esc(t.abbr)+'</strong><small>'+esc(teamOwner(t.name)||'Unowned')+'</small></span></button></th><td>'+(t.w??'—')+'</td><td>'+(t.l??'—')+'</td><td>'+(t.pct===null?'—':(t.pct*100).toFixed(1))+'</td><td>'+(gb===null||gb===0?'—':gb.toFixed(1).replace('.0',''))+'</td></tr>';
-    }).join('')+'</tbody></table><p class="nba-ladder-note">Team records, not owner totals. GB = games behind this group’s leader. '+(nbaLadderView==='league'?'Equal records are listed alphabetically; this is not playoff seeding.':'Equal records use the supplied conference seed where available, then team name.')+' Missing records are shown as —.</p>';
+    }).join('')+'</tbody></table></section>';
+    }).join('');
+    target.innerHTML='<div class="nba-ladder-groups'+(nbaLadderView==='league'?'':' nba-ladder-grouped')+'">'+tables+'</div><p class="nba-ladder-note">Team records, not owner totals. GB = games behind each group’s leader. '+(nbaLadderView==='league'?'Equal records are listed alphabetically; this is not playoff seeding.':'Equal records use the supplied conference seed where available, then team name.')+' Missing records are shown as —.</p>';
     target.querySelectorAll('[data-ladder-team]').forEach(button=>button.onclick=()=>previewTeamFromCompetition(button.dataset.ladderTeam));
   }
 
