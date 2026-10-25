@@ -3681,7 +3681,8 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 
 
 /* Stats for Nerds rethink — progressive analytics */
-#nerdStudio{display:grid;gap:14px}
+#nerdStudio{display:grid;gap:14px;min-width:0}
+#nerdStudio>*{min-width:0}
 #nerdStudio .ns-section{margin:0!important;border:1px solid rgba(111,163,207,.22);background:linear-gradient(180deg,rgba(9,24,39,.96),rgba(5,14,24,.98));box-shadow:none}
 #nerdStudio .ns-section-title{border-bottom:1px solid rgba(111,163,207,.18)}
 .ns-momentum svg{max-height:310px}

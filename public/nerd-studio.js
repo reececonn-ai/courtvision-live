@@ -265,6 +265,10 @@
     const meta=typeof teamByName==="function"?teamByName(name):null;
     return '<img src="'+logoUrl(meta?.[1]||"")+'" alt="" loading="lazy">';
   }
+  function shortTeam(name){
+    const meta=typeof teamByName==="function"?teamByName(name):null;
+    return meta?.[1]||name;
+  }
   function numbersLab(rows,games,recent){
     const ownerForm=rows.map(r=>({r,f:formFor(r.name,recent)}));
     const ordered=[...ownerForm].sort((a,b)=>b.r.projected-a.r.projected);
@@ -274,7 +278,7 @@
       return '<article class="ns-power-card" style="--owner:'+colour(x.r.name,rows)+'"><header><b>#'+(i+1)+'</b><strong>'+esc(x.r.name)+'</strong><em>'+x.r.probability.toFixed(1)+'%</em></header><div class="ns-power-logos">'+teams.map(t=>teamMark(t.name)).join("")+'</div><div class="ns-visual-track"><i style="width:'+(x.r.projected/maxProjected*100)+'%"></i></div><footer><span>'+x.r.w+'–'+x.r.l+' actual</span><span>'+x.f.w+'–'+x.f.l+' recent</span><b>'+x.r.projected.toFixed(1)+' projected wins</b></footer></article>';
     }).join("");
 
-    const now=Date.now(),end=now+7*86400000,upcoming=(games||[]).filter(g=>g.status!=="FINAL"&&new Date(g.date).getTime()>=now&&new Date(g.date).getTime()<end);
+    const now=Date.now(),end=now+3*86400000,upcoming=(games||[]).filter(g=>g.status!=="FINAL"&&new Date(g.date).getTime()>=now&&new Date(g.date).getTime()<end);
     const workloadData=rows.map(r=>{
       const owned=new Set(r.teams.map(t=>t.name)),fixtures=upcoming.flatMap(g=>[g.home,g.away].filter(t=>owned.has(t)).map(t=>({team:t,date:g.date,opp:g.home===t?g.away:g.home}))).sort((a,b)=>new Date(a.date)-new Date(b.date));
       return {r,fixtures};
@@ -282,7 +286,7 @@
     const maxLoad=Math.max(1,...workloadData.map(x=>x.fixtures.length));
     const workload=workloadData.map(x=>{
       const next=x.fixtures[0];
-      return '<article class="ns-workload-row"><div class="ns-workload-owner"><strong>'+esc(x.r.name)+'</strong><span>'+x.fixtures.length+' owned-team game'+(x.fixtures.length===1?'':'s')+'</span></div><div class="ns-workload-bar"><i style="width:'+(x.fixtures.length/maxLoad*100)+'%"></i></div><div class="ns-next-game">'+(next?teamMark(next.team)+teamMark(next.opp)+'<span>'+esc(shortTeam(next.team))+' vs '+esc(shortTeam(next.opp))+'<small>'+new Date(next.date).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",timeZone:"Australia/Sydney"})+'</small></span>':'<span>No game loaded<small>Next seven days</small></span>')+'</div></article>';
+      return '<article class="ns-workload-row"><div class="ns-workload-owner"><strong>'+esc(x.r.name)+'</strong><span>'+x.fixtures.length+' owned-team game'+(x.fixtures.length===1?'':'s')+'</span></div><div class="ns-workload-bar"><i style="width:'+(x.fixtures.length/maxLoad*100)+'%"></i></div><div class="ns-next-game">'+(next?teamMark(next.team)+teamMark(next.opp)+'<span>'+esc(shortTeam(next.team))+' vs '+esc(shortTeam(next.opp))+'<small>'+new Date(next.date).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",timeZone:"Australia/Sydney"})+'</small></span>':'<span>No game loaded<small>Next three days</small></span>')+'</div></article>';
     }).join("");
 
     const steady=deepData(rows,recent).filter(t=>t.scoredN>=2&&Number.isFinite(t.spread)).sort((a,b)=>a.spread-b.spread).slice(0,10);
@@ -306,7 +310,7 @@
 
     return '<div class="ns-scroll-feed">'+
       '<section class="ns-section ns-feed-block ns-power"><div class="ns-section-title"><span class="ns-kicker">POWER BOARD</span><h3>Who is strongest right now?</h3><p>Actual form, projected finish and the teams driving it.</p></div><div class="ns-power-grid">'+power+'</div></section>'+
-      '<section class="ns-section ns-feed-block ns-workload"><div class="ns-section-title"><span class="ns-kicker">NEXT SEVEN DAYS</span><h3>Who has the busiest road ahead?</h3><p>More games mean more chances to move the competition.</p></div><div class="ns-workload-list">'+workload+'</div></section>'+
+      '<section class="ns-section ns-feed-block ns-workload"><div class="ns-section-title"><span class="ns-kicker">COMING UP</span><h3>Who has the busiest immediate schedule?</h3><p>The next three days, loaded quickly. More games mean more chances to move.</p></div><div class="ns-workload-list">'+workload+'</div></section>'+
       '<section class="ns-section ns-feed-block ns-consistency"><div class="ns-section-title"><span class="ns-kicker">STEADY HANDS</span><h3>Which teams are most consistent?</h3><p>Lower game-to-game margin variation ranks higher.</p></div><div class="ns-steady-grid">'+consistency+'</div></section>'+
       '<section class="ns-section ns-feed-block ns-portfolios"><div class="ns-section-title"><span class="ns-kicker">CARRYING / HOLDING BACK</span><h3>What is shaping every portfolio?</h3><p>The strongest pillar, the weakest link and the team beating its line.</p></div><div class="ns-portfolio-story-grid">'+portfolios+'</div></section>'+
     '</div>';

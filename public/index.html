@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
-<link rel="stylesheet" href="/competition.css?v=comp72">
+<link rel="stylesheet" href="/competition.css?v=comp73">
 <link rel="stylesheet" href="/nbl-hub.css?v=10">
 <style>
 :root{
@@ -7088,16 +7088,16 @@ window.addEventListener("resize",drawWheel);
 initDisplayMode();applyRuntimeModes();preloadLogos();renderAll();
 // Landing view is Competition, not the old auction UI.
 showScreenLocal("competitionScreen");
-// Auto-sync only when the cache is missing or older than 6 hours; the button forces a refresh.
-if(!state.liveSyncAt||daysAgo(state.liveSyncAt)>0.25) setTimeout(()=>syncLeagueData(false),700);
+// Full roster/depth/player sync is intentionally manual. It can issue hundreds of
+// requests and must never slow Competition or Stats for Nerds on page load.
 setTimeout(cvStartSync,80);
 
 </script>
 <script src="/daily-availability.js?v=3"></script>
 <script src="/nbl-hub.js?v=11"></script>
-<script src="/competition.js?v=comp54"></script>
+<script src="/competition.js?v=comp55"></script>
 <script src="/trades.js?v=1"></script>
-<script src="/nerd-studio.js?v=20"></script>
+<script src="/nerd-studio.js?v=21"></script>
 <script src="/nba-insights.js?v=1"></script>
 <script src="/nba-news.js?v=5" defer></script>
 

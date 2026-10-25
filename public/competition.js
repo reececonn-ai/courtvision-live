@@ -23,7 +23,9 @@
   const moneyText=n=>typeof money==="function"?money(n):Number(n||0).toFixed(0);
   const teamMeta=name=>typeof teamByName==="function"?teamByName(name):TEAM_DATA.find(t=>t[0]===name);
   const teamOwner=name=>state.assignments?.[name]?.player||null;
-  const isTestDraft=()=>false; // Production uses live data regardless of legacy test markers.
+  // Test data is available only through the hidden QA helper; there are no
+  // production testing controls.
+  const isTestDraft=()=>Array.isArray(state.history)&&state.history.some(x=>String(x).startsWith("TEST DRAFT"));
 
   function sydneyParts(date=new Date()){
     const p=new Intl.DateTimeFormat("en-AU",{timeZone:TZ,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false})
@@ -381,14 +383,9 @@
       const out=parseStandings(data);
       if(Object.keys(out).length>=24)return out;
     }catch(e){}
-    const out={};
-    await runPool(TEAM_DATA,async t=>{
-      try{
-        const data=await fetchJSON("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/"+espnTeamKey(t[1])+"?season="+SEASON_YEAR,7000,"no-store");
-        const r=parseTeamRecord(data,t[0]);if(r)out[t[0]]=r;
-      }catch(e){}
-    },6);
-    return out;
+    // Do not fan a standings failure out into 30 individual team requests. Keep
+    // the last good table visible and let the next scheduled refresh retry.
+    return cache.records||{};
   }
 
   function quarterValues(team){
@@ -427,7 +424,7 @@
 
   async function fetchScoreboards(){
     const now=new Date(),keys=[];
-    for(let d=-8;d<=2;d++)keys.push(compactDate(addDays(now,d)));
+    for(let d=-4;d<=2;d++)keys.push(compactDate(addDays(now,d)));
     const all=[];
     await runPool([...new Set(keys)],async key=>{
       try{
@@ -435,7 +432,7 @@
         const data=await fetchNbaJson("/api/nba/scoreboard?dates="+encodeURIComponent(key),direct,8000);
         all.push(...parseScoreboard(data));
       }catch(e){}
-    },8);
+    },7);
     const dedupe=[...new Map(all.map(g=>[g.id,g])).values()];
     const todayKey=sydneyKey(now);
     return {
@@ -1744,6 +1741,32 @@
   }
   window.openCompetitionBoard=openCompetitionBoard;
   window.refreshCompetitionBoard=refreshCompetitionBoard;
+
+  // Hidden QA fixture used by automated desktop/mobile checks. Keeping this
+  // callable prevents visual tests from depending on live NBA endpoints.
+  function loadTestDraft(skipConfirm=false){
+    if(!skipConfirm&&!confirm("Load QA fixture data?"))return;
+    if(!state.players?.length)return;
+    const sorted=[...TEAM_DATA].sort((a,b)=>(winLineFor(b[0])||0)-(winLineFor(a[0])||0));
+    const order=[];let round=0;
+    while(order.length<sorted.length){
+      const inds=[...state.players.keys()];if(round%2)inds.reverse();
+      for(const i of inds)if(order.length<sorted.length)order.push(i);
+      round++;
+    }
+    state.teamCap=Math.ceil(30/state.players.length);
+    state.assignments={};state.available=[];state.passed=[];state.barrelQueue=[];state.barrelCurrent=null;state.onTheBoard=null;state.liveSpin=null;state.undoStack=[];
+    state.players.forEach(p=>{p.teams=[];p.remaining=p.budget});
+    sorted.forEach((t,idx)=>{
+      const p=state.players[order[idx]],amount=idx%6===0?0:Math.max(.5,Math.min(p.remaining,1+(idx%5)));
+      state.assignments[t[0]]={player:p.name,amount,barrel:amount===0};
+      p.teams.push(t[0]);if(amount)p.remaining=Math.max(0,p.remaining-amount);
+    });
+    state.history=["TEST DRAFT · QA FIXTURE",...Object.entries(state.assignments).map(([n,a])=>"TEST: "+n+" → "+a.player)];
+    state.lastAction="QA fixture loaded";state.lastScreen="competitionScreen";
+    reconcileState();saveState();renderAll();openCompetitionBoard();
+  }
+  window.loadTestDraft=loadTestDraft;
 
   // Extend the existing ticker router without changing the draft ticker behavior.
   const baseTicker=window.updateTickerForScreen||updateTickerForScreen;
