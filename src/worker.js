@@ -144,6 +144,44 @@ async function cachedNbaResponse(request, upstreamUrl, ttl, ctx, bypass = false)
   return response;
 }
 
+
+async function cachedNblResponse(request, upstreamUrl, ttl, ctx, bypass = false) {
+  const cache = caches.default;
+  const cacheUrl = new URL(request.url);
+  cacheUrl.searchParams.delete("fresh");
+  const cacheKey = new Request(cacheUrl.toString(), { method: "GET" });
+  if (!bypass) {
+    const hit = await cache.match(cacheKey);
+    if (hit) return new Response(hit.body, { status: hit.status, headers: hit.headers });
+  }
+  const upstream = await fetch(upstreamUrl, {
+    signal: AbortSignal.timeout(9000),
+    headers: {
+      "accept": "application/json",
+      "origin": "https://nbl.com.au",
+      "referer": "https://nbl.com.au/",
+      "user-agent": "Mozilla/5.0 CourtVision-NBL-Hub",
+      "sec-fetch-site": "same-site",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-dest": "empty"
+    },
+    cf: { cacheTtl: 0, cacheEverything: false },
+  });
+  if (!upstream.ok) return json({ ok: false, error: "Official NBL feed unavailable", status: upstream.status }, 502);
+  const body = await upstream.text();
+  const response = new Response(body, {
+    status: 200,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "public, max-age=" + ttl,
+      "x-courtvision-source": "nbl.com.au",
+      "x-courtvision-upstream-fetched-at": new Date().toISOString()
+    }
+  });
+  ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  return response;
+}
+
 function defaultState(room) {
   return {
     version: 1,
@@ -423,33 +461,32 @@ export default {
       if (request.method !== "GET") return json({ ok: false, error: "Method not allowed" }, 405);
       const kind = url.pathname.slice("/api/nbl/".length);
       const fresh = url.searchParams.get("fresh") === "1";
-      let upstream = "", ttl = 120;
+      const year = "2026";
+      const base = "https://prod.rosetta.nbl.com.au/get/";
+      let upstream = "", ttl = 180;
       if (kind === "scoreboard") {
-        const dates = String(url.searchParams.get("dates") || "").replace(/\D/g, "");
-        if (!/^\d{8}$/.test(dates)) return json({ ok: false, error: "Invalid date" }, 400);
-        upstream = "https://site.api.espn.com/apis/site/v2/sports/basketball/nbl/scoreboard?dates=" + dates;
+        upstream = base + "nbl/matches/in/season/" + year + "/regular?limit=400&offset=0";
         ttl = 90;
       } else if (kind === "standings") {
-        const season = String(url.searchParams.get("season") || "2027");
-        if (!/^\d{4}$/.test(season)) return json({ ok: false, error: "Invalid season" }, 400);
-        upstream = "https://site.api.espn.com/apis/v2/sports/basketball/nbl/standings?season=" + season;
+        upstream = base + "nbl/standings/" + year + "/regular";
         ttl = 300;
-      } else if (kind === "statistics") {
-        upstream = "https://site.api.espn.com/apis/site/v2/sports/basketball/nbl/statistics";
-        ttl = 900;
-      } else if (kind === "injuries") {
-        upstream = "https://site.api.espn.com/apis/site/v2/sports/basketball/nbl/injuries";
-        ttl = 900;
+      } else if (kind === "players") {
+        upstream = base + "nbl/players/in/season/" + year;
+        ttl = 1800;
       } else if (kind === "summary") {
         const event = String(url.searchParams.get("event") || "");
-        if (!/^\d{1,15}$/.test(event)) return json({ ok: false, error: "Invalid event" }, 400);
-        upstream = "https://site.api.espn.com/apis/site/v2/sports/basketball/nbl/summary?event=" + event;
+        if (!/^[a-z0-9-]{1,80}$/i.test(event)) return json({ ok: false, error: "Invalid match" }, 400);
+        upstream = base + "match/" + encodeURIComponent(event);
         ttl = 60;
+      } else if (kind === "injuries") {
+        upstream = "https://site.api.espn.com/apis/site/v2/sports/basketball/nbl/injuries";
+        try { return await cachedNbaResponse(request, upstream, 900, ctx, fresh); }
+        catch (_) { return json({ ok: false, error: "Injury feed temporarily unavailable" }, 502); }
       } else {
         return json({ ok: false, error: "Unknown NBL feed" }, 404);
       }
-      try { return await cachedNbaResponse(request, upstream, ttl, ctx, fresh); }
-      catch (_) { return json({ ok: false, error: "NBL feed temporarily unavailable" }, 502); }
+      try { return await cachedNblResponse(request, upstream, ttl, ctx, fresh); }
+      catch (_) { return json({ ok: false, error: "Official NBL feed temporarily unavailable" }, 502); }
     }
 
     if (url.pathname === "/api/nba/standings") {
