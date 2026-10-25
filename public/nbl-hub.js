@@ -149,7 +149,9 @@
   window.openNblHub=function(){
     showScreenLocal("nblHubScreen");
     if(!root().innerHTML)root().innerHTML=shell();
-    if(window.syncOwnerProfileSelects)window.syncOwnerProfileSelects();
+    const own=root().querySelector(".owner-profile-nav-select");
+    const source=[...document.querySelectorAll(".owner-profile-nav-select")].find(x=>x!==own&&x.options.length>1);
+    if(own&&source)own.innerHTML=source.innerHTML;
     if(!loaded)load(false);
   };
   window.refreshNblHub=function(){load(true)};
