@@ -810,7 +810,7 @@
   function portfolioGameLine(g){
     const ownAway=teamOwner(g.away)===ownerPortfolioName,ownTeam=ownAway?g.away:g.home,opponent=ownAway?g.home:g.away;
     const when=g.status==="IN"?(g.detail||"LIVE"):g.status==="FINAL"?"FINAL":daySydney(g.date)+" · "+timeSydney(g.date);
-    const score=(g.status==="IN"||g.status==="FINAL")?(g.awayScore+"–"+g.homeScore):"vs";
+    const score=(g.status==="IN"||g.status==="FINAL")?(ownAway?g.awayScore+"–"+g.homeScore:g.homeScore+"–"+g.awayScore):"vs";
     return '<article class="owner-game '+g.status.toLowerCase()+'" style="'+teamStyle(ownTeam)+'"><img src="'+teamLogo(ownTeam)+'" alt=""><div><small>'+esc(when)+'</small><strong>'+esc(shortTeam(ownTeam))+' <b>'+score+'</b> '+esc(shortTeam(opponent))+'</strong><span>'+esc(ownAway?"AWAY":"HOME")+'</span></div><img src="'+teamLogo(opponent)+'" alt=""></article>';
   }
   function renderOwnerPortfolio(){
