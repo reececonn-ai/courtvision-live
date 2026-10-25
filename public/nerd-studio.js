@@ -269,6 +269,10 @@
     const meta=typeof teamByName==="function"?teamByName(name):null;
     return meta?.[1]||name;
   }
+  function teamStyle(name){
+    const meta=typeof teamByName==="function"?teamByName(name):null;
+    return "--team1:"+(meta?.[2]||"#63c8ff")+";--team2:"+(meta?.[3]||"#a9e3ff")+";";
+  }
   function numbersLab(rows,games,recent){
     const ownerForm=rows.map(r=>({r,f:formFor(r.name,recent)}));
     const ordered=[...ownerForm].sort((a,b)=>b.r.projected-a.r.projected);
