@@ -906,7 +906,7 @@
     el.innerHTML=race.map((r,i)=>
       '<div class="comp-race-row '+(i===0?'leader':'')+'" style="--prob:'+Math.max(1,r.winPct)+'%">'+
         '<div class="comp-race-rank">'+(i+1)+'</div>'+
-        '<div class="comp-race-name"><div class="comp-race-name-line">'+ownerButton(r.name,r.name,"race")+'<b class="comp-race-record" aria-label="'+r.w+' wins, '+r.l+' losses">'+r.w+'–'+r.l+'</b></div><small>PRESEASON '+r.preseasonProjected.toFixed(1)+' · LIVE '+r.liveProjected.toFixed(1)+' WINS</small></div>'+
+        '<div class="comp-race-name"><div class="comp-race-name-line">'+ownerButton(r.name,r.name,"race")+'<b class="comp-race-record" aria-label="'+r.w+' wins, '+r.l+' losses">'+r.w+'–'+r.l+'</b></div><small class="comp-projection-stack"><span>PRESEASON <b>'+r.preseasonProjected.toFixed(1)+' WINS</b></span><span>LIVE PROJECTION <b>'+r.liveProjected.toFixed(1)+' WINS</b></span></small></div>'+
         '<div class="comp-race-pct">'+r.winPct.toFixed(1)+'<span>%</span></div>'+
       '</div>'
     ).join("");
@@ -925,7 +925,7 @@
       return '<article class="comp-player-card '+(i===0?'leader':'')+'">'+
         '<div class="comp-player-main">'+
           '<div class="comp-player-head"><div class="comp-card-rank">'+(i+1)+'</div>'+ownerButton(r.name,r.name,"table")+'<span class="comp-card-record">'+r.w+"-"+r.l+'</span></div>'+
-          '<div class="comp-card-meta"><span>'+daily+'</span><span>PRESEASON <b>'+r.preseasonProjected.toFixed(1)+'</b> · LIVE <b>'+r.liveProjected.toFixed(1)+'</b> · WINNING <b>'+r.winPct.toFixed(1)+'%</b></span></div>'+
+          '<div class="comp-card-meta"><span>'+daily+'</span><span class="comp-card-forecast"><span>PRESEASON <b>'+r.preseasonProjected.toFixed(1)+'</b></span><span>LIVE PROJECTION <b>'+r.liveProjected.toFixed(1)+'</b></span><span>WINNING <b>'+r.winPct.toFixed(1)+'%</b></span></span></div>'+
           '<div class="comp-prob"><i style="width:'+Math.max(1,r.winPct)+'%"></i></div>'+
           '<div class="comp-team-list">'+teams+'</div>'+
         '</div>'+
