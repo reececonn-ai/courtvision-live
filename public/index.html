@@ -4469,6 +4469,9 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
     bottom:calc(var(--phone-nav-height) + var(--phone-ticker-height) + 12px)!important;
   }
 }
+
+/* Legacy draft shortcut overlay is permanently retired. */
+.presentation-tools{display:none!important}
 </style>
 </head>
 <body>
@@ -5122,11 +5125,6 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
       <div class="history" id="history"></div>
     </div>
   </div>
-</div>
-
-<div class="presentation-tools" id="presentationTools">
-  <button onclick="togglePresentationMode()">CONTROLS · C</button>
-  <button onclick="openDraftBoard()">BOARD · B</button>
 </div>
 
 <div class="toast" id="toast"></div>
