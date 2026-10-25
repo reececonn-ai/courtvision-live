@@ -6,7 +6,7 @@
   let latest=null,classic=false;
   const colour=(name,rows)=>palette[Math.max(0,[...rows].map(r=>r.name).sort().indexOf(name))%palette.length];
   function formFor(name,recent){
-    const teams=new Set(latest.rows.find(r=>r.name===name)?.teams.map(t=>t.name)||[]);
+    const teams=new Set(latest.rows.find(r=>r.name===name)?.teams?.map(t=>t.name)||[]);
     const results=[];
     for(const g of [...recent].filter(g=>g.status==="FINAL").sort((a,b)=>b.date-a.date)){
       for(const side of ["home","away"]){if(teams.has(g[side]))results.push({won:g[side+"Winner"],margin:g[side+"Score"]-g[(side==="home"?"away":"home")+"Score"]});}

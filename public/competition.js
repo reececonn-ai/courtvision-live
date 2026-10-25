@@ -1495,7 +1495,14 @@
       renderStatsForNerds(rows,cache.games||[],cache.recent||[],cache.demo);
     }else{
       const snap=(state.competitionSnapshots||[]).filter(s=>Array.isArray(s.rows)&&s.rows.length&&!s.demo).sort((a,b)=>String(b.key||"").localeCompare(String(a.key||"")))[0];
-      if(snap)renderStatsForNerds(snap.rows,[],[],false);
+      if(snap){
+        // Saved snapshots intentionally store only compact owner totals. Rejoin
+        // them with the current portfolios before the richer analytics view maps
+        // team logos and carry/drag data.
+        const saved=new Map(snap.rows.map(r=>[r.name,r]));
+        const rows=ownerSummaries({}).map(r=>({...r,...(saved.get(r.name)||{}),teams:r.teams}));
+        renderStatsForNerds(rows,[],[],false);
+      }
     }
     void refreshStatsForNerds(false);
   }
