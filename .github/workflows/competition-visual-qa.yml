@@ -93,6 +93,19 @@ jobs:
               if comp["mode"]!="DEMO DATA":
                   raise SystemExit("Competition demo badge missing")
 
+              ladder=d.execute_script("""
+                const counts=[],root=document.querySelector('.nba-ladder-panel');
+                counts.push(document.querySelectorAll('#nbaLadder tbody tr').length);
+                document.querySelector('[data-ladder-view="conference"]').click();
+                for(const value of ['East','West']){const s=document.querySelector('#nbaLadderGroup');s.value=value;s.dispatchEvent(new Event('change'));counts.push(document.querySelectorAll('#nbaLadder tbody tr').length);}
+                document.querySelector('[data-ladder-view="division"]').click();
+                for(const value of ['Atlantic','Central','Southeast','Northwest','Pacific','Southwest']){const s=document.querySelector('#nbaLadderGroup');s.value=value;s.dispatchEvent(new Event('change'));counts.push(document.querySelectorAll('#nbaLadder tbody tr').length);}
+                document.querySelector('[data-ladder-view="league"]').click();
+                return {counts,placed:!!root?.previousElementSibling?.querySelector('#competitionLeaderboard')};
+              """)
+              if ladder["counts"]!=[30,15,15,5,5,5,5,5,5] or not ladder["placed"]:
+                  raise SystemExit("NBA ladder placement or filters failed: "+json.dumps(ladder))
+
               d.execute_script("openStatsForNerds()")
               time.sleep(.6)
               nerd=d.execute_script("""
