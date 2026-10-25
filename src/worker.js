@@ -497,7 +497,16 @@ export default {
           const seasons = await fetchOfficialNblJson(base + "nbl/seasons");
           const season = (Array.isArray(seasons?.data) ? seasons.data : []).find(x => String(x.year) === year && String(x.season_type).toLowerCase() === "regular");
           if (!season?.id) return json({ ok: false, error: "Current NBL season unavailable" }, 502);
-          upstream = base + "nbl/stats/leaders/for/season/id/" + encodeURIComponent(season.id) + "?limit=12&sort=-points_average";
+          const metrics = {
+            points: "points_average",
+            rebounds: "rebounds_average",
+            assists: "assists_average",
+            steals: "steals_average",
+            blocks: "blocks_average"
+          };
+          const metric = String(url.searchParams.get("metric") || "points");
+          if (!metrics[metric]) return json({ ok: false, error: "Unknown leader category" }, 400);
+          upstream = base + "nbl/stats/leaders/for/season/id/" + encodeURIComponent(season.id) + "?limit=12&sort=-" + metrics[metric];
           ttl = 600;
         } catch (_) {
           return json({ ok: false, error: "NBL leaders temporarily unavailable" }, 502);

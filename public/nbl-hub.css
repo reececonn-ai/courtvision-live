@@ -94,3 +94,19 @@ body[data-screen="nblHubScreen"] .shell{background:#07100e!important}
 .nbl-player-group:not([open]){padding-bottom:4px}
 .nbl-player-group:not([open]) .nbl-player-group-head{margin-bottom:4px}
 .nbl-player-group:not([open]) .nbl-roster-list{display:none}
+
+
+.nbl-leader-categories{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-items:start}
+.nbl-leader-category{background:#0d211c;border:1px solid rgba(255,255,255,.09);border-radius:10px;overflow:hidden}
+.nbl-leader-category>header{display:flex;align-items:center;justify-content:space-between;padding:10px;background:#16352c;border-bottom:2px solid #f8ca3c}
+.nbl-leader-category>header strong{font-size:11px;letter-spacing:.08em}
+.nbl-leader-category>header span{color:#f8ca3c;font-size:9px;font-weight:900}
+.nbl-leader-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:center;gap:7px;padding:8px;border-bottom:1px solid rgba(255,255,255,.06)}
+.nbl-leader-row:last-child{border-bottom:0}
+.nbl-leader-row>b{color:#78988a;font-size:10px}
+.nbl-leader-row span{min-width:0}
+.nbl-leader-row span strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px}
+.nbl-leader-row span small{display:block;color:#729487;font-size:8px;margin-top:2px}
+.nbl-leader-row em{color:#f8ca3c;font-size:15px;font-weight:950;font-style:normal}
+@media(max-width:1250px){.nbl-leader-categories{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:820px){.nbl-leader-categories{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}.nbl-leader-category{flex:0 0 min(78vw,280px);scroll-snap-align:start}}

@@ -68,16 +68,26 @@
     return groups.map(g=>'<details class="nbl-player-group" '+(g.live?'open':'')+'><summary class="nbl-player-group-head"><img src="'+esc(logo(g.team))+'" alt=""><strong>'+esc(teamName(g.team))+'</strong><small>'+(g.live?'LIVE · ':'')+g.roster.length+' players</small><i>⌄</i></summary><div class="nbl-roster-list">'+(g.roster.length?g.roster.map(x=>{const p=x.player||x.athlete||x;const name=p.displayName||p.fullName||[p.first_name,p.last_name].filter(Boolean).join(" ");const jersey=x.jersey_number||p.jersey||"–";const pos=x.playing_position||p.position?.abbreviation||"";return '<div class="nbl-roster-player"><b>'+esc(jersey)+'</b><span><strong>'+esc(name)+'</strong><small>'+esc(pos)+'</small></span></div>'}).join(""):'<div class="nbl-empty">Official roster pending.</div>')+'</div></details>').join("");
   }
 
-  function leagueLeadersHtml(data){
-    const rows=feedData(data);
-    if(!rows.length)return '<div class="nbl-empty">The official league leaders feed is temporarily unavailable.</div>';
-    return rows.slice(0,10).map((x,i)=>{
-      const p=x.player||x.athlete||x;
-      const name=p.displayName||p.fullName||[p.first_name,p.last_name].filter(Boolean).join(" ")||"Player";
-      const team=x.team||p.team||{};
-      const value=x.points_average??x.average??x.value??x.displayValue??"–";
-      const photo=p.headshot?.href||p.image||p.photo||"";
-      return '<div class="nbl-leader">'+(photo?'<img src="'+esc(photo)+'" alt="">':'<span class="nbl-leader-rank">'+(i+1)+'</span>')+'<span><small>POINTS PER GAME</small><strong>'+esc(name)+'</strong></span><span><b>'+esc(Number.isFinite(Number(value))?Number(value).toFixed(1):value)+'</b><em>'+esc(team.team_code||team.abbreviation||teamName(team))+'</em></span></div>';
+  function leagueLeadersHtml(feeds){
+    const categories=[
+      ["SCORING","PPG","points_average"],
+      ["REBOUNDS","RPG","rebounds_average"],
+      ["ASSISTS","APG","assists_average"],
+      ["STEALS","SPG","steals_average"],
+      ["BLOCKS","BPG","blocks_average"]
+    ];
+    return categories.map((cat,index)=>{
+      const rows=feedData(feeds[index]);
+      return '<section class="nbl-leader-category"><header><strong>'+cat[0]+'</strong><span>'+cat[1]+'</span></header><div>'+
+        (rows.length?rows.slice(0,8).map((x,i)=>{
+          const p=x.player||x.athlete||x;
+          const name=p.displayName||p.fullName||[p.first_name,p.last_name].filter(Boolean).join(" ")||"Player";
+          const team=x.team||p.team||{};
+          const raw=x[cat[2]]??x.average??x.value??x.displayValue??"–";
+          const value=Number.isFinite(Number(raw))?Number(raw).toFixed(1):raw;
+          return '<div class="nbl-leader-row"><b>'+(i+1)+'</b><span><strong>'+esc(name)+'</strong><small>'+esc(team.team_code||team.abbreviation||teamName(team))+'</small></span><em>'+esc(value)+'</em></div>';
+        }).join(""):'<p class="nbl-empty">Unavailable</p>')+
+      '</div></section>';
     }).join("");
   }
 
@@ -105,7 +115,7 @@
     '<section class="nbl-section"><div class="nbl-section-head"><div><small>SYDNEY TIME</small><h3>Games tonight</h3></div><span id="nblDateLabel"></span></div><div class="nbl-games" id="nblGames"></div></section>'+
     '<section class="nbl-section"><div class="nbl-section-head"><div><small>FULL GAME-NIGHT ROSTERS</small><h3>Players tonight</h3></div><span>EVERY PLAYER · EVERY TEAM PLAYING</span></div><div class="nbl-players nbl-players-full" id="nblPlayers"></div></section>'+
     '<div class="nbl-main-grid"><section class="nbl-section"><div class="nbl-section-head"><div><small>LIVE TABLE</small><h3>NBL ladder</h3></div><span>P · W · L · WIN%</span></div><div class="nbl-ladder" id="nblLadder"></div></section>'+
-    '<section class="nbl-section"><div class="nbl-section-head"><div><small>OFFICIAL NBL NUMBERS</small><h3>League leaders</h3></div><span>POINTS PER GAME</span></div><div class="nbl-leaders" id="nblLeaders"></div></section></div>'+
+    '<section class="nbl-section"><div class="nbl-section-head"><div><small>OFFICIAL NBL NUMBERS</small><h3>League leaders</h3></div><span>TOP 8 IN EACH CATEGORY</span></div><div class="nbl-leaders nbl-leader-categories" id="nblLeaders"></div></section></div>'+
     '<section class="nbl-section"><div class="nbl-section-head"><div><small>AVAILABILITY</small><h3>Injury report</h3></div><span>TONIGHT’S TEAMS FIRST</span></div><div class="nbl-injuries" id="nblInjuries"></div></section>'+
     '<p class="nbl-source">Games, scores, ladder and player rosters: official NBL.com.au live data · Injury availability: live basketball feed.</p></div>';
   }
@@ -118,7 +128,11 @@
       fetchJson("/api/nbl/standings"+q),
       fetchJson("/api/nbl/players"+q),
       fetchJson("/api/nbl/injuries"+q),
-      fetchJson("/api/nbl/leaders"+q)
+      fetchJson("/api/nbl/leaders?metric=points"+(force?"&fresh=1":"")),
+      fetchJson("/api/nbl/leaders?metric=rebounds"+(force?"&fresh=1":"")),
+      fetchJson("/api/nbl/leaders?metric=assists"+(force?"&fresh=1":"")),
+      fetchJson("/api/nbl/leaders?metric=steals"+(force?"&fresh=1":"")),
+      fetchJson("/api/nbl/leaders?metric=blocks"+(force?"&fresh=1":""))
     ]);
     const get=i=>results[i].status==="fulfilled"?results[i].value:{};
     const allGames=feedData(get(0)).sort((a,b)=>Date.parse(a.start_time)-Date.parse(b.start_time));
@@ -128,7 +142,7 @@
     document.getElementById("nblGames").innerHTML=games.length?games.map(gameCard).join(""):'<div class="nbl-empty">No NBL games tonight. The ladder and injury report are still current.</div>';
     document.getElementById("nblPlayers").innerHTML=playersHtml(playerRows(players,games));
     document.getElementById("nblLadder").innerHTML=ladderHtml(get(1));
-    document.getElementById("nblLeaders").innerHTML=leagueLeadersHtml(get(4));
+    document.getElementById("nblLeaders").innerHTML=leagueLeadersHtml([get(4),get(5),get(6),get(7),get(8)]);
     document.getElementById("nblInjuries").innerHTML=injuriesHtml(injuryItems(get(3),games));
     const officialOk=results.slice(0,3).filter(x=>x.status==="fulfilled").length;
     setStatus(officialOk===3?"Official NBL feed live · updated "+new Intl.DateTimeFormat("en-AU",{timeZone:SYDNEY,hour:"numeric",minute:"2-digit"}).format(new Date()):officialOk+" of 3 official NBL feeds available",officialOk?"":"error");
