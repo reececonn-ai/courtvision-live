@@ -435,7 +435,7 @@
         const data=await fetchNbaJson("/api/nba/scoreboard?dates="+encodeURIComponent(key),direct,8000);
         all.push(...parseScoreboard(data));
       }catch(e){}
-    },4);
+    },8);
     const dedupe=[...new Map(all.map(g=>[g.id,g])).values()];
     const todayKey=sydneyKey(now);
     return {
@@ -1473,14 +1473,15 @@
   }
 
   async function refreshStatsForNerds(force=false){
-    const status=$("nerdStatus");if(status)status.textContent="Crunching the nerd stuff…";
+    const status=$("nerdStatus");if(status)status.textContent="Updating live numbers…";
     try{
       const data=await getCompetitionData(force);
-      await loadSeasonMemory(force);
       const rows=calculateProbabilities(ownerSummaries(data.records||{}));
       saveCompetitionSnapshot(rows,data.demo);
       renderStatsForNerds(rows,data.games||[],data.recent||[],data.demo);
       renderMovement(rows,data.demo);
+      // Season history improves the next visit, but must never hold up the visible page.
+      void loadSeasonMemory(force);
     }catch(e){
       console.warn("Stats for Nerds failed",e);
       if(status)status.textContent="Stats unavailable · try Refresh";
@@ -1491,7 +1492,15 @@
   function openStatsForNerds(){
     showScreenLocal("statsForNerdsScreen");
     ensureAutoUpdate();
-    refreshStatsForNerds(false);
+    // Paint immediately from memory while fresh live data loads in the background.
+    if(cache.records){
+      const rows=calculateProbabilities(ownerSummaries(cache.records||{}));
+      renderStatsForNerds(rows,cache.games||[],cache.recent||[],cache.demo);
+    }else{
+      const snap=(state.competitionSnapshots||[]).filter(s=>Array.isArray(s.rows)&&s.rows.length&&!s.demo).sort((a,b)=>String(b.key||"").localeCompare(String(a.key||"")))[0];
+      if(snap)renderStatsForNerds(snap.rows,[],[],false);
+    }
+    void refreshStatsForNerds(false);
   }
   window.openStatsForNerds=openStatsForNerds;
 
