@@ -395,8 +395,7 @@
       numbersLab(rows,games,recent)+
       '<section class="ns-section ns-momentum"><div class="ns-section-title"><span class="ns-kicker">OWNER MOMENTUM</span><h3>Every twist. Every contender.</h3></div>'+historyChart(rows,demo,root.clientWidth||960)+'</section>'+
       '<section class="ns-section" id="nsTeamLab"><div class="ns-section-title"><span class="ns-kicker">EXPECTATION TRACKER</span><h3>Who’s beating the line?</h3></div><div id="nsValueContent">'+performanceLab(rows,recent)+'</div></section>'+
-      strengthMatrix(rows)+
-      '<div id="nsDeepSlot">'+deepShell()+'</div>';
+      strengthMatrix(rows);
     bindSquad(root,rows,recent);
     root.querySelectorAll('[data-power-owner]').forEach(button=>button.addEventListener('click',()=>{
       const r=rows[Number(button.dataset.powerOwner)];if(!r)return;
