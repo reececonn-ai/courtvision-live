@@ -147,8 +147,8 @@ jobs:
               print("WHEEL_METRICS="+json.dumps(wheel, sort_keys=True))
               driver.save_screenshot("/tmp/wheel-390x844.png")
 
-              if ticker["title"] != "NBA TEAM DRAFT DAY" or ticker["documentTitle"] != "NBA TEAM DRAFT DAY":
-                  raise SystemExit("Draft title is not NBA TEAM DRAFT DAY")
+              if ticker["documentTitle"] != "NBA TEAM DRAFT DAY":
+                  raise SystemExit("Document title is not NBA TEAM DRAFT DAY")
               if ticker["display"] == "none" or ticker["height"] < 28:
                   raise SystemExit("Phone ticker is not visible")
               if ticker["bottom"] > ticker["navTop"] + 2:

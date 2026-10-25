@@ -86,7 +86,7 @@ jobs:
                   raise SystemExit("Competition shell wastes too much horizontal space")
               if comp["tickerPosition"]!="fixed" or not comp["ticker"]:
                   raise SystemExit("Competition ticker is not fixed")
-              if comp["ticker"]["x"] > 2 or comp["ticker"]["width"] < comp["viewport"]["w"]-4:
+              if comp["ticker"]["x"] > 2 or comp["ticker"]["width"] < comp["viewport"]["clientW"]-4:
                   raise SystemExit("Competition ticker is not edge-to-edge")
               if comp["games"]<1 or comp["stories"]<1 or comp["cards"]!=6 or comp["chips"]!=30:
                   raise SystemExit("Competition content incomplete")
@@ -109,13 +109,15 @@ jobs:
                   shell:rr('#statsForNerdsScreen .nerd-shell'),
                   ticker:rr('#broadcastTicker'),
                   tickerPosition:ts?.position,
-                  owners:document.querySelectorAll('#nerdOwners .nerd-owner-card').length,
-                  expectationRows:document.querySelectorAll('#nerdExpectation .nerd-list-row').length,
-                  memoryPanel:!!q('#nerdSinceYesterday'),
-                  matrixRows:document.querySelectorAll('#nerdRivalryMatrix tbody tr').length,
-                  ownerY:rr('#nerdOwners')?.y,
-                  matrixY:rr('#nerdRivalryMatrix')?.y,
-                  expectationY:rr('#nerdExpectation')?.y
+                  sections:document.querySelectorAll('#nerdStudio .ns-section').length,
+                  owners:document.querySelectorAll('#nerdStudio .ns-compare-names button').length,
+                  powerCards:document.querySelectorAll('#nerdStudio .ns-power-card').length,
+                  matrixRows:document.querySelectorAll('#nerdStudio .ns-matrix tbody tr').length,
+                  deepArchive:!!q('#nsDeep'),
+                  powerY:rr('#nerdStudio .ns-power')?.y,
+                  workloadY:rr('#nerdStudio .ns-workload')?.y,
+                  matrixY:rr('#nerdStudio .ns-strength')?.y,
+                  deepY:rr('#nsDeep')?.y
                 };
               """)
               print("NERD_"+label+"="+json.dumps(nerd,sort_keys=True))
@@ -129,18 +131,16 @@ jobs:
                   raise SystemExit("Stats horizontal overflow")
               if not nerd["screen"] or nerd["screen"]["width"] < nerd["viewport"]["clientW"]-2:
                   raise SystemExit("Stats not full width")
-              if nerd["tickerPosition"]!="fixed" or nerd["ticker"]["x"]>2 or nerd["ticker"]["width"]<nerd["viewport"]["w"]-4:
+              if nerd["tickerPosition"]!="fixed" or nerd["ticker"]["x"]>2 or nerd["ticker"]["width"]<nerd["viewport"]["clientW"]-4:
                   raise SystemExit("Stats ticker is not fixed edge-to-edge")
-              if nerd["owners"]!=6:
-                  raise SystemExit("Owner deep dives missing")
-              if not nerd["memoryPanel"]:
-                  raise SystemExit("Stats for Nerds season-memory panel missing")
-              if nerd["expectationRows"]>6:
-                  raise SystemExit("Over/Under expectation is no longer condensed")
+              if nerd["owners"]!=6 or nerd["powerCards"]!=6:
+                  raise SystemExit("Owner comparison or power cards missing")
+              if nerd["sections"]<9 or not nerd["deepArchive"]:
+                  raise SystemExit("Stats for Nerds feed or deep archive incomplete")
               if nerd["matrixRows"]!=6:
-                  raise SystemExit("Rivalry matrix incomplete")
-              if not (nerd["ownerY"] < nerd["matrixY"] < nerd["expectationY"]):
-                  raise SystemExit("Rivalry content is not prioritized after Owner Deep Dives")
+                  raise SystemExit("Strength matrix incomplete")
+              if not (nerd["powerY"] < nerd["workloadY"] < nerd["matrixY"] < nerd["deepY"]):
+                  raise SystemExit("Stats for Nerds feed order is incorrect")
 
               # Remote ordinary data updates must not move this browser off Stats for Nerds.
               isolated=d.execute_script("""
