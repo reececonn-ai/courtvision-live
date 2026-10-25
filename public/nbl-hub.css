@@ -110,3 +110,31 @@ body[data-screen="nblHubScreen"] .shell{background:#07100e!important}
 .nbl-leader-row em{color:#f8ca3c;font-size:15px;font-weight:950;font-style:normal}
 @media(max-width:1250px){.nbl-leader-categories{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:820px){.nbl-leader-categories{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}.nbl-leader-category{flex:0 0 min(78vw,280px);scroll-snap-align:start}}
+
+
+/* NBL information hierarchy: leaders are the feature; ladder is compact supporting data. */
+.nbl-leaders-feature{margin-top:20px}
+.nbl-leader-categories{grid-template-columns:repeat(3,minmax(260px,1fr))!important;gap:12px!important;padding:14px!important}
+.nbl-leader-category>header{padding:13px 14px!important}
+.nbl-leader-category>header strong{font-size:14px!important}
+.nbl-leader-category>header span{font-size:11px!important}
+.nbl-leader-row{grid-template-columns:26px minmax(0,1fr) auto!important;gap:10px!important;padding:10px 12px!important;min-height:51px}
+.nbl-leader-row>b{font-size:12px!important}
+.nbl-leader-row span strong{font-size:13px!important}
+.nbl-leader-row span small{font-size:9px!important}
+.nbl-leader-row em{font-size:21px!important}
+.nbl-bottom-grid{display:grid;grid-template-columns:minmax(540px,.95fr) minmax(380px,1.05fr);gap:18px;align-items:start}
+.nbl-ladder-compact .nbl-ladder-row{min-height:38px!important;grid-template-columns:24px minmax(135px,1fr) repeat(5,42px)!important}
+.nbl-ladder-compact .nbl-ladder-row.head{min-height:28px!important}
+.nbl-ladder-compact .nbl-ladder-team img{width:23px;height:23px}
+.nbl-ladder-compact .nbl-ladder-row .rank{font-size:14px}
+@media(max-width:1100px){
+  .nbl-leader-categories{grid-template-columns:repeat(2,minmax(260px,1fr))!important}
+  .nbl-bottom-grid{grid-template-columns:1fr}
+}
+@media(max-width:820px){
+  .nbl-leader-categories{display:flex!important;padding:9px!important;gap:9px!important}
+  .nbl-leader-category{flex:0 0 min(84vw,340px)!important}
+  .nbl-bottom-grid{display:block}
+  .nbl-bottom-grid>.nbl-section{margin-top:12px}
+}

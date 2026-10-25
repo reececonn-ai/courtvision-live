@@ -118,10 +118,10 @@
     '<header class="nbl-hero"><div><span class="nbl-kicker">OFFICIAL NBL DATA · ONE PAGE</span><h2>NBL TONIGHT</h2><p>Tonight’s games, every player, the ladder and availability.</p></div><button class="nbl-refresh" type="button" onclick="refreshNblHub()">↻ REFRESH</button></header>'+
     '<div id="nblHubStatus" class="nbl-status loading"><i></i><span>Loading the official NBL feed…</span></div>'+
     '<section class="nbl-section"><div class="nbl-section-head"><div><small>SYDNEY TIME</small><h3>Games tonight</h3></div><span id="nblDateLabel"></span></div><div class="nbl-games" id="nblGames"></div></section>'+
-    '<section class="nbl-section"><div class="nbl-section-head"><div><small>FULL GAME-NIGHT ROSTERS</small><h3>Players tonight</h3></div><span>EVERY PLAYER · EVERY TEAM PLAYING</span></div><div class="nbl-players nbl-players-full" id="nblPlayers"></div></section>'+
-    '<div class="nbl-main-grid"><section class="nbl-section"><div class="nbl-section-head"><div><small>LIVE TABLE</small><h3>NBL ladder</h3></div><span>P · W · L · WIN%</span></div><div class="nbl-ladder" id="nblLadder"></div></section>'+
-    '<section class="nbl-section"><div class="nbl-section-head"><div><small>OFFICIAL NBL NUMBERS</small><h3>League leaders</h3></div><span>TOP 8 IN EACH CATEGORY</span></div><div class="nbl-leaders nbl-leader-categories" id="nblLeaders"></div></section></div>'+
-    '<section class="nbl-section"><div class="nbl-section-head"><div><small>AVAILABILITY</small><h3>Injury report</h3></div><span>TONIGHT’S TEAMS FIRST</span></div><div class="nbl-injuries" id="nblInjuries"></div></section>'+
+    '<section class="nbl-section nbl-leaders-feature"><div class="nbl-section-head"><div><small>OFFICIAL NBL NUMBERS</small><h3>League leaders</h3></div><span>TOP 8 IN EACH CATEGORY</span></div><div class="nbl-leaders nbl-leader-categories" id="nblLeaders"></div></section>'+
+    '<section class="nbl-section"><div class="nbl-section-head"><div><small>FULL GAME-NIGHT ROSTERS</small><h3>Players tonight</h3></div><span>LIVE TEAMS OPEN · OTHERS COLLAPSED</span></div><div class="nbl-players nbl-players-full" id="nblPlayers"></div></section>'+
+    '<div class="nbl-bottom-grid"><section class="nbl-section nbl-ladder-compact"><div class="nbl-section-head"><div><small>LIVE TABLE</small><h3>NBL ladder</h3></div><span>P · W · L · WIN%</span></div><div class="nbl-ladder" id="nblLadder"></div></section>'+
+    '<section class="nbl-section"><div class="nbl-section-head"><div><small>AVAILABILITY</small><h3>Injury report</h3></div><span>TONIGHT’S TEAMS FIRST</span></div><div class="nbl-injuries" id="nblInjuries"></div></section></div>'+
     '<p class="nbl-source">Games, scores, ladder and player rosters: official NBL.com.au live data · Injury availability: live basketball feed.</p></div>';
   }
   async function load(force){
