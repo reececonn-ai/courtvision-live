@@ -86,3 +86,11 @@ body[data-screen="nblHubScreen"] .shell{background:#07100e!important}
   .nbl-roster-list{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:430px){.nbl-roster-list{grid-template-columns:1fr}}
+
+.nbl-player-group>summary{list-style:none;cursor:pointer}
+.nbl-player-group>summary::-webkit-details-marker{display:none}
+.nbl-player-group-head i{color:#f8ca3c;font-style:normal;transition:transform .2s}
+.nbl-player-group[open] .nbl-player-group-head i{transform:rotate(180deg)}
+.nbl-player-group:not([open]){padding-bottom:4px}
+.nbl-player-group:not([open]) .nbl-player-group-head{margin-bottom:4px}
+.nbl-player-group:not([open]) .nbl-roster-list{display:none}

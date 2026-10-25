@@ -3535,3 +3535,10 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 .owner-portfolio-shell>.competition-hub-tabs{margin-bottom:10px}
 .owner-portfolio-shell>.owner-portfolio-back{width:min(430px,100%);margin-bottom:10px}
 @media(max-width:820px){.mobile-nav .owner-profile-nav{flex:0 0 auto;min-width:132px;height:38px}.mobile-nav .owner-profile-nav .nav-select-label{font-size:9px}.mobile-nav .owner-profile-nav-select{min-height:38px}}
+
+
+/* Show the fixed preseason line beside the projection that moves after every final. */
+.comp-big-proj{display:grid!important;gap:3px!important}
+.comp-big-proj span{display:block;color:#a8bad1;font-size:clamp(16px,1.7vw,25px);font-weight:850;line-height:1}
+.comp-big-proj b{display:block;color:#55b7ff;font-size:clamp(21px,2.2vw,34px);font-weight:1000;line-height:1}
+.comp-big-proj small+span{margin-bottom:8px}

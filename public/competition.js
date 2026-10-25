@@ -530,20 +530,26 @@
     const ledger=ensureTradeLedger(records);
     return state.players.map(p=>{
       const teams=p.teams||[],bank=ledger.banked[p.name]||{w:0,l:0};
-      let w=Number(bank.w)||0,l=Number(bank.l)||0,projected=w,variance=0;
+      let w=Number(bank.w)||0,l=Number(bank.l)||0,preseasonProjected=w,liveProjected=w,variance=0;
       const teamRows=teams.map(name=>{
         const r=records[name]||{w:0,l:0},played=r.w+r.l,remaining=Math.max(0,82-played);
         const epoch=ledger.teams[name]?.owner===p.name?ledger.teams[name]:{owner:p.name,w:0,l:0};
         const ownedW=Math.max(0,r.w-(Number(epoch.w)||0)),ownedL=Math.max(0,r.l-(Number(epoch.l)||0));
         const line=winLineFor(name);
-        let pr=remaining?((Number.isFinite(line)?line:r.w+(remaining*.5))-r.w)/remaining:.5;
-        pr=Math.max(.08,Math.min(.92,Number.isFinite(pr)?pr:.5));
-        const exp=r.w+pr*remaining,ownerExpected=ownedW+pr*remaining;
-        w+=ownedW;l+=ownedL;projected+=ownerExpected;variance+=remaining*pr*(1-pr);
-        return {name,w:r.w,l:r.l,rank:r.rank||null,line,expected:exp,ownerW:ownedW,ownerL:ownedL,ownerExpected,acquiredAtW:Number(epoch.w)||0,acquiredAtL:Number(epoch.l)||0};
+        let preseasonRate=Number.isFinite(line)?line/82:.5;
+        preseasonRate=Math.max(.08,Math.min(.92,preseasonRate));
+        const priorGames=20;
+        let liveRate=played?(preseasonRate*priorGames+r.w)/(priorGames+played):preseasonRate;
+        liveRate=Math.max(.08,Math.min(.92,liveRate));
+        const preseasonExpected=r.w+preseasonRate*remaining;
+        const liveExpected=r.w+liveRate*remaining;
+        const ownerPreseasonExpected=ownedW+preseasonRate*remaining;
+        const ownerLiveExpected=ownedW+liveRate*remaining;
+        w+=ownedW;l+=ownedL;preseasonProjected+=ownerPreseasonExpected;liveProjected+=ownerLiveExpected;variance+=remaining*liveRate*(1-liveRate);
+        return {name,w:r.w,l:r.l,rank:r.rank||null,line,expected:liveExpected,preseasonExpected,liveExpected,ownerW:ownedW,ownerL:ownedL,ownerExpected:ownerLiveExpected,ownerPreseasonExpected,acquiredAtW:Number(epoch.w)||0,acquiredAtL:Number(epoch.l)||0};
       });
       const winPct=w+l?w/(w+l)*100:0;
-      return {name:p.name,w,l,winPct,teams:teamRows,projected,variance,probability:0,bankedW:Number(bank.w)||0,bankedL:Number(bank.l)||0};
+      return {name:p.name,w,l,winPct,teams:teamRows,projected:liveProjected,liveProjected,preseasonProjected,variance,probability:0,bankedW:Number(bank.w)||0,bankedL:Number(bank.l)||0};
     });
   }
 
@@ -826,7 +832,8 @@
     const metrics=[
       ["LIVE WINNING %",row.winPct.toFixed(1)+"%","Updates after every final"],
       ["COMBINED RECORD",row.w+"–"+row.l,(row.w+row.l)+" owned results"],
-      ["PROJECTED FINISH",row.projected.toFixed(1),"Combined wins"],
+      ["PRESEASON PROJECTION",row.preseasonProjected.toFixed(1),"Original combined wins"],
+      ["LIVE PROJECTION",row.liveProjected.toFixed(1),"Updates after every final"],
       ["TITLE MODEL",row.probability.toFixed(1)+"%","Advanced season forecast"],
       ["LAST 10",form.games?form.w+"–"+form.l:"—","Across owned teams"],
       ["POINT DIFFERENTIAL",form.games?(pointDiff>=0?"+":"")+pointDiff:"—","Recent scored games"],
@@ -888,7 +895,7 @@
       '</div>'+
       '<div class="comp-spotlight-numbers">'+
         '<div><div class="comp-big-prob-label">WINNING %</div><div class="comp-big-prob">'+leader.winPct.toFixed(1)+'<em>%</em></div></div>'+
-        '<div class="comp-big-proj"><small>PROJECTED FINISH</small>'+leader.projected.toFixed(1)+' WINS</div>'+
+        '<div class="comp-big-proj"><small>PRESEASON PROJECTION</small><span>'+leader.preseasonProjected.toFixed(1)+' WINS</span><small>LIVE PROJECTION</small><b>'+leader.liveProjected.toFixed(1)+' WINS</b></div>'+
       '</div>'+
     '</div>';
   }
@@ -899,7 +906,7 @@
     el.innerHTML=race.map((r,i)=>
       '<div class="comp-race-row '+(i===0?'leader':'')+'" style="--prob:'+Math.max(1,r.winPct)+'%">'+
         '<div class="comp-race-rank">'+(i+1)+'</div>'+
-        '<div class="comp-race-name"><div class="comp-race-name-line">'+ownerButton(r.name,r.name,"race")+'<b class="comp-race-record" aria-label="'+r.w+' wins, '+r.l+' losses">'+r.w+'–'+r.l+'</b></div><small>'+r.projected.toFixed(1)+' projected wins</small></div>'+
+        '<div class="comp-race-name"><div class="comp-race-name-line">'+ownerButton(r.name,r.name,"race")+'<b class="comp-race-record" aria-label="'+r.w+' wins, '+r.l+' losses">'+r.w+'–'+r.l+'</b></div><small>PRESEASON '+r.preseasonProjected.toFixed(1)+' · LIVE '+r.liveProjected.toFixed(1)+' WINS</small></div>'+
         '<div class="comp-race-pct">'+r.winPct.toFixed(1)+'<span>%</span></div>'+
       '</div>'
     ).join("");
@@ -918,7 +925,7 @@
       return '<article class="comp-player-card '+(i===0?'leader':'')+'">'+
         '<div class="comp-player-main">'+
           '<div class="comp-player-head"><div class="comp-card-rank">'+(i+1)+'</div>'+ownerButton(r.name,r.name,"table")+'<span class="comp-card-record">'+r.w+"-"+r.l+'</span></div>'+
-          '<div class="comp-card-meta"><span>'+daily+'</span><span>PROJECTED <b>'+r.projected.toFixed(1)+'</b> · WINNING <b>'+r.winPct.toFixed(1)+'%</b></span></div>'+
+          '<div class="comp-card-meta"><span>'+daily+'</span><span>PRESEASON <b>'+r.preseasonProjected.toFixed(1)+'</b> · LIVE <b>'+r.liveProjected.toFixed(1)+'</b> · WINNING <b>'+r.winPct.toFixed(1)+'%</b></span></div>'+
           '<div class="comp-prob"><i style="width:'+Math.max(1,r.winPct)+'%"></i></div>'+
           '<div class="comp-team-list">'+teams+'</div>'+
         '</div>'+

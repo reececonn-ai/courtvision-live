@@ -145,6 +145,25 @@ async function cachedNbaResponse(request, upstreamUrl, ttl, ctx, bypass = false)
 }
 
 
+
+async function fetchOfficialNblJson(upstreamUrl) {
+  const response = await fetch(upstreamUrl, {
+    signal: AbortSignal.timeout(9000),
+    headers: {
+      "accept": "application/json",
+      "origin": "https://nbl.com.au",
+      "referer": "https://nbl.com.au/",
+      "user-agent": "Mozilla/5.0 CourtVision-NBL-Hub",
+      "sec-fetch-site": "same-site",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-dest": "empty"
+    },
+    cf: { cacheTtl: 0, cacheEverything: false },
+  });
+  if (!response.ok) throw new Error("Official NBL feed unavailable");
+  return response.json();
+}
+
 async function cachedNblResponse(request, upstreamUrl, ttl, ctx, bypass = false) {
   const cache = caches.default;
   const cacheUrl = new URL(request.url);
@@ -473,6 +492,16 @@ export default {
       } else if (kind === "players") {
         upstream = base + "nbl/players/in/season/" + year;
         ttl = 1800;
+      } else if (kind === "leaders") {
+        try {
+          const seasons = await fetchOfficialNblJson(base + "nbl/seasons");
+          const season = (Array.isArray(seasons?.data) ? seasons.data : []).find(x => String(x.year) === year && String(x.season_type).toLowerCase() === "regular");
+          if (!season?.id) return json({ ok: false, error: "Current NBL season unavailable" }, 502);
+          upstream = base + "nbl/stats/leaders/for/season/id/" + encodeURIComponent(season.id) + "?limit=12&sort=-points_average";
+          ttl = 600;
+        } catch (_) {
+          return json({ ok: false, error: "NBL leaders temporarily unavailable" }, 502);
+        }
       } else if (kind === "summary") {
         const event = String(url.searchParams.get("event") || "");
         if (!/^[a-z0-9-]{1,80}$/i.test(event)) return json({ ok: false, error: "Invalid match" }, 400);
