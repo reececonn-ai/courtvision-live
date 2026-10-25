@@ -173,7 +173,7 @@
   function dailyBrief(rows,recent,demo){
     const items=dailyInsights(rows,recent,demo);
     const stamp=new Date().toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",timeZone:"Australia/Sydney"});
-    return '<section class="ns-section ns-daily"><div class="ns-section-title"><span class="ns-kicker">THE DAILY TL:DR · '+esc(stamp)+(demo?' · SAMPLE DATA':'')+'</span><h3>Your numbers, in a minute.</h3></div>'+
+    return '<section class="ns-section ns-daily"><div class="ns-section-title"><span class="ns-kicker">THE NUMBERS TODAY · '+esc(stamp)+(demo?' · SAMPLE DATA':'')+'</span><h3>The competition in one minute.</h3></div>'+
       (items.length?'<div class="ns-daily-grid">'+items.slice(0,6).map(item=>dailyCard(item,rows)).join("")+'</div>'+(items.length>6?'<details class="ns-deep-defs"><summary>More daily TL:DR · '+(items.length-6)+'</summary><div class="ns-daily-grid">'+items.slice(6).map(item=>dailyCard(item,rows)).join("")+'</div></details>':''):'<p>No meaningful performance signals yet. The daily brief fills in as results arrive—no games means no hot takes.</p>')+
       '<p class="ns-note">Refreshes with the competition data. Early-season signals can swing sharply; recent form uses the available results window.</p><a href="#nsTeamLab">Explore team performance ↓</a></section>';
   }
@@ -261,19 +261,37 @@
     const ordered=[...data].sort((a,b)=>{const av=a[sort.key],bv=b[sort.key];if(av===null||av===undefined)return bv==null?0:1;if(bv==null)return -1;return sort.dir*(typeof av==="number"?av-bv:String(av).localeCompare(String(bv)))});
     return '<article class="ns-deep-group" id="'+id+'"><h4>'+title+'</h4><p class="ns-note">'+note+'</p><div class="ns-table-scroll" tabindex="0" role="region" aria-label="'+title+'"><table class="ns-table"><thead><tr>'+columns.map(([key,label])=>'<th scope="col"'+(key===sort.key?' aria-sort="'+(sort.dir===1?'ascending':'descending')+'"':'')+'><button type="button" data-deep-table="'+id+'" data-deep-key="'+key+'">'+label+(key===sort.key?(sort.dir===1?' ↑':' ↓'):' ↕')+'</button></th>').join("")+'</tr></thead><tbody>'+ordered.map(t=>'<tr>'+columns.map(([key,label],i)=>{let v=t[key];if(v===null||v===undefined)v="—";else if(typeof v==="number")v=Number.isInteger(v)?String(v):v.toFixed(1);return '<'+(i===0?'th scope="row"':'td')+'>'+esc(v)+'</'+(i===0?'th':'td')+'>'}).join("")+'</tr>').join("")+'</tbody></table></div></article>';
   }
+  function strengthMatrix(rows){
+    const ordered=projectedOrder(rows);
+    const cells=ordered.map(a=>'<tr><th>'+esc(a.name)+'</th>'+ordered.map(b=>{
+      if(a.name===b.name)return '<td class="self">—</td>';
+      const gap=a.projected-b.projected,cls=gap>.05?'positive':gap<-.05?'negative':'even';
+      return '<td class="'+cls+'" title="'+esc(a.name)+' is '+(gap>=0?'+':'')+gap.toFixed(1)+' projected wins versus '+esc(b.name)+'">'+(gap>=0?'+':'')+gap.toFixed(1)+'</td>';
+    }).join("")+'</tr>').join("");
+    return '<section class="ns-section ns-strength"><div class="ns-section-title"><span class="ns-kicker">STRENGTH MATRIX</span><h3>How everyone stacks up.</h3></div><p class="ns-note">Each cell is the projected-win advantage of the owner on the left over the owner above. Green leads; pink trails.</p><div class="ns-table-scroll" tabindex="0"><table class="ns-matrix"><thead><tr><th>OWNER</th>'+ordered.map(r=>'<th>'+esc(r.name)+'</th>').join("")+'</tr></thead><tbody>'+cells+'</tbody></table></div></section>';
+  }
+
+  let deepView="season";
   function deepStats(rows,recent){
     const teams=deepData(rows,recent),id=[["name","Team"],["owner","Owner"]];
-    return '<section class="ns-section ns-deep" id="nsDeep"><div class="ns-section-title"><span class="ns-kicker">THE FULL SPREADSHEET ENERGY</span><h3>For the number addicts.</h3></div><p class="ns-note">Every owned team. Click a column heading to sort. Tables scroll sideways on smaller screens. — means unavailable, never zero. Season records and projections use the competition model; every recent statistic uses only the loaded final-game window.</p><nav class="ns-deep-nav" aria-label="Advanced statistics"><a href="#nsDeepSeason">Season &amp; expectations</a><a href="#nsDeepScore">Scoring</a><a href="#nsDeepForm">Form &amp; splits</a><a href="#nerdArchive">Records &amp; owner analysis</a></nav>'+
-      deepTable("nsDeepSeason","Season & expectations","Win pace = current win rate × 82. Expected wins so far = preseason line × games played ÷ 82. Gap = actual wins − expected wins so far. Pace is descriptive; projected finish is the existing competition forecast.",[...id,["played","GP"],["w","W"],["l","L"],["winPct","Win %"],["remaining","Left"],["line","Preseason"],["expectedNow","Expected so far"],["delta","Gap"],["pace","82-game pace"],["expected","Projected finish"]],teams)+
-      deepTable("nsDeepScore","Scoring & consistency","PPG and allowed are per scored game. Margin is points per game, not per 100 possessions. Margin SD measures game-to-game variation (lower = more consistent). Best and worst are single-game margins.",[...id,["scoredN","Scored GP"],["pf","PPG"],["pa","Allowed"],["margin","Avg margin"],["spread","Margin SD"],["best","Best margin"],["worst","Worst margin"],["blowouts","Wins by 15+"]],teams)+
-      deepTable("nsDeepForm","Form, venue & pressure games","All splits below cover available recent finals, not full-season splits. L5/L10 use up to five/ten available games. Close = decided by 5 or fewer; big = decided by at least 15. These are final-score categories, not NBA clutch-time statistics.",[...id,["n","Window GP"],["recentRecord","Window W–L"],["last5","L5"],["last10","L10"],["streak","Streak*"],["homeRecord","Home W–L"],["awayRecord","Away W–L"],["closeRecord","Close W–L"],["bigRecord","Big W–L"]],teams)+
-      '<details class="ns-deep-defs"><summary>How to read the numbers</summary><p>Streak* is the current run within the available window and may extend beyond it. A missing scoring result is excluded from scoring calculations. Margin SD uses the population standard deviation of available margins. Owner aggregates below may count both teams from an internal matchup because both results count towards their squad.</p><p>Possession-based offensive/defensive ratings, true shooting, effective field-goal percentage, turnover rate and lineup on/off need box-score or possession feeds. They are not inferred from final scores. Existing team-specific detailed feeds remain available in Team Stats.</p></details></section>';
+    const season=deepTable("nsDeepSeason","Season & expectations","Win pace = current win rate × 82. Expected wins so far = preseason line × games played ÷ 82. Gap = actual wins − expected wins so far. Pace is descriptive; projected finish is the existing competition forecast.",[...id,["played","GP"],["w","W"],["l","L"],["winPct","Win %"],["remaining","Left"],["line","Preseason"],["expectedNow","Expected so far"],["delta","Gap"],["pace","82-game pace"],["expected","Projected finish"]],teams);
+    const score=deepTable("nsDeepScore","Scoring & consistency","PPG and allowed are per scored game. Margin is points per game, not per 100 possessions. Margin SD measures game-to-game variation (lower = more consistent). Best and worst are single-game margins.",[...id,["scoredN","Scored GP"],["pf","PPG"],["pa","Allowed"],["margin","Avg margin"],["spread","Margin SD"],["best","Best margin"],["worst","Worst margin"],["blowouts","Wins by 15+"]],teams);
+    const form=deepTable("nsDeepForm","Form, venue & pressure games","All splits cover available recent finals. L5/L10 use up to five/ten games. Close = decided by 5 or fewer; big = decided by at least 15.",[...id,["n","Window GP"],["recentRecord","Window W–L"],["last5","L5"],["last10","L10"],["streak","Streak*"],["homeRecord","Home W–L"],["awayRecord","Away W–L"],["closeRecord","Close W–L"],["bigRecord","Big W–L"]],teams);
+    const option=(value,label)=>'<option value="'+value+'"'+(deepView===value?' selected':'')+'>'+label+'</option>';
+    const panel=(value,html)=>'<div class="ns-deep-panel" data-deep-panel="'+value+'"'+(deepView===value?'':' hidden')+'>'+html+'</div>';
+    return '<details class="ns-section ns-deep" id="nsDeep"><summary><span><small>DEEP ARCHIVE</small><strong>Open every team statistic</strong></span><b>EXPAND +</b></summary><div class="ns-deep-body"><p class="ns-note">Choose one category at a time. Sort any column. — means unavailable, never zero.</p><label class="ns-deep-picker"><span>STAT CATEGORY</span><select data-deep-view>'+option("season","Season & expectations")+option("score","Scoring & consistency")+option("form","Form, venue & pressure")+'</select></label>'+panel("season",season)+panel("score",score)+panel("form",form)+'<details class="ns-deep-defs"><summary>How to read the numbers</summary><p>Streak is the current run within the available window. Missing scoring results are excluded. Margin SD measures game-to-game variation. Possession-based ratings and lineup on/off are not inferred from final scores.</p></details></div></details>';
   }
   function bindDeep(root,rows,recent){
+    root.querySelector("[data-deep-view]")?.addEventListener("change",event=>{
+      deepView=event.target.value;
+      root.querySelectorAll("[data-deep-panel]").forEach(panel=>panel.hidden=panel.dataset.deepPanel!==deepView);
+    });
     root.querySelectorAll("[data-deep-table]").forEach(button=>button.addEventListener("click",()=>{
       const id=button.dataset.deepTable,key=button.dataset.deepKey,old=deepSort[id];
       deepSort[id]={key,dir:old?.key===key?-old.dir:1};
-      root.querySelector("#nsDeepSlot").innerHTML=deepStats(rows,recent);bindDeep(root,rows,recent);
+      root.querySelector("#nsDeepSlot").innerHTML=deepStats(rows,recent);
+      const details=root.querySelector("#nsDeep");if(details)details.open=true;
+      bindDeep(root,rows,recent);
       root.querySelector('[data-deep-table="'+id+'"][data-deep-key="'+key+'"]')?.focus({preventScroll:true});
     }));
   }
@@ -282,12 +300,13 @@
     latest={rows,games,recent,demo};
     void enrichBriefStories(rows,recent,demo);
     const root=document.getElementById("nerdStudio");if(!root)return;
-    const archive=document.getElementById("nerdClassic");
-    if(archive)archive.remove();
-    root.innerHTML=dailyBrief(rows,recent,demo)+'<section class="ns-section ns-squad"><div class="ns-section-title"><span class="ns-kicker">PICK YOUR NAME</span><h3>Compared with you</h3></div><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></section>'+
-      '<section class="ns-section"><div class="ns-section-title"><span class="ns-kicker">FOLLOW THE RACE</span><h3>Every twist. Every contender.</h3></div>'+historyChart(rows,demo,root.clientWidth||960)+'</section>'+
-      '<section class="ns-section" id="nsTeamLab"><div class="ns-section-title"><span class="ns-kicker">TEAM PERFORMANCE</span><h3>Who’s beating expectations?</h3></div><div id="nsValueContent">'+performanceLab(rows,recent)+'</div></section><div id="nsArchiveSlot"></div><div id="nsDeepSlot">'+deepStats(rows,recent)+'</div>';
-    if(archive)root.querySelector("#nsArchiveSlot").appendChild(archive);
+    document.getElementById("nerdClassic")?.remove();
+    root.innerHTML=dailyBrief(rows,recent,demo)+
+      '<section class="ns-section ns-squad"><div class="ns-section-title"><span class="ns-kicker">PICK YOUR NAME</span><h3>Compared with you</h3></div><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></section>'+
+      '<section class="ns-section ns-momentum"><div class="ns-section-title"><span class="ns-kicker">OWNER MOMENTUM</span><h3>Every twist. Every contender.</h3></div>'+historyChart(rows,demo,root.clientWidth||960)+'</section>'+
+      '<section class="ns-section" id="nsTeamLab"><div class="ns-section-title"><span class="ns-kicker">EXPECTATION TRACKER</span><h3>Who’s beating the line?</h3></div><div id="nsValueContent">'+performanceLab(rows,recent)+'</div></section>'+
+      strengthMatrix(rows)+
+      '<div id="nsDeepSlot">'+deepStats(rows,recent)+'</div>';
     bindSquad(root,rows,recent);
     bindDeep(root,rows,recent);
   }

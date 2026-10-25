@@ -3678,3 +3678,44 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
   border-left-color:var(--team1,#d73e57)!important;
   border-right-color:var(--team2,#fff)!important;
 }
+
+
+/* Stats for Nerds rethink — progressive analytics */
+#nerdStudio{display:grid;gap:14px}
+#nerdStudio .ns-section{margin:0!important;border:1px solid rgba(111,163,207,.22);background:linear-gradient(180deg,rgba(9,24,39,.96),rgba(5,14,24,.98));box-shadow:none}
+#nerdStudio .ns-section-title{border-bottom:1px solid rgba(111,163,207,.18)}
+.ns-momentum svg{max-height:310px}
+.ns-strength .ns-table-scroll{padding:10px}
+.ns-matrix{width:100%;border-collapse:separate;border-spacing:3px;font:800 11px Arial,sans-serif}
+.ns-matrix th{padding:9px 7px;color:#b8cbe0;text-align:center;text-transform:uppercase}
+.ns-matrix tbody th{text-align:left;color:#fff}
+.ns-matrix td{min-width:64px;padding:12px 7px;border-radius:4px;background:#102033;color:#dce8f5;text-align:center}
+.ns-matrix td.positive{background:rgba(26,122,91,.42);color:#9ff0cf}
+.ns-matrix td.negative{background:rgba(164,48,83,.36);color:#ffc1d0}
+.ns-matrix td.even,.ns-matrix td.self{background:#111d2a;color:#8095aa}
+.ns-deep{overflow:hidden}
+.ns-deep>summary{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:82px;padding:16px 20px;cursor:pointer;list-style:none;background:linear-gradient(100deg,#0d2942,#09131e)}
+.ns-deep>summary::-webkit-details-marker{display:none}
+.ns-deep>summary span{display:grid;gap:3px}
+.ns-deep>summary small{color:#63c8ff;font-size:9px;font-weight:950;letter-spacing:.16em}
+.ns-deep>summary strong{color:#fff;font-family:Impact,"Arial Narrow",sans-serif;font-size:28px;font-weight:400;letter-spacing:.025em}
+.ns-deep>summary>b{color:#63c8ff;font-size:11px;letter-spacing:.1em}
+.ns-deep[open]>summary>b{font-size:0}
+.ns-deep[open]>summary>b::after{content:"CLOSE −";font-size:11px}
+.ns-deep-body{padding:14px}
+.ns-deep-picker{display:grid;grid-template-columns:auto minmax(230px,420px);align-items:center;gap:12px;margin:6px 0 12px}
+.ns-deep-picker>span{color:#8ca6bf;font-size:10px;font-weight:950;letter-spacing:.12em}
+.ns-deep-picker select{width:100%;padding:11px 38px 11px 12px;border:1px solid #355673;border-radius:5px;background:#0d2235;color:#fff;font-size:13px;font-weight:900}
+.ns-deep-panel[hidden]{display:none!important}
+.ns-deep .ns-deep-group{margin-top:0}
+@media(max-width:820px){
+ #nerdStudio{gap:8px}
+ .ns-strength .ns-table-scroll{padding:5px}
+ .ns-matrix{font-size:9px}
+ .ns-matrix th{padding:7px 4px}
+ .ns-matrix td{min-width:49px;padding:10px 4px}
+ .ns-deep>summary{min-height:68px;padding:12px}
+ .ns-deep>summary strong{font-size:22px}
+ .ns-deep-body{padding:8px}
+ .ns-deep-picker{grid-template-columns:1fr;gap:5px}
+}
