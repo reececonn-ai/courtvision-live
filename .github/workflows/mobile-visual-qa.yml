@@ -234,18 +234,14 @@ jobs:
               print("TEAM_PREVIEW="+json.dumps({"before":preview_before,"preview":preview}, sort_keys=True))
               driver.save_screenshot("/tmp/team-preview-390x844.png")
 
-              if preview["active"] != "revealScreen" or not preview["previewMode"]:
-                  raise SystemExit("Team preview did not open the reveal profile")
+              if preview["active"] != "teamsHubScreen":
+                  raise SystemExit("Draft Board team did not open Team Stats")
               if preview["onTheBoard"] is not None:
                   raise SystemExit("Team preview changed onTheBoard")
               if preview["lastScreen"] != preview_before["lastScreen"]:
                   raise SystemExit("Team preview changed shared lastScreen")
-              if preview["exitDisplay"] == "none":
-                  raise SystemExit("Team preview back control is hidden")
-              if preview["assignDisplay"] != "none":
-                  raise SystemExit("Team preview still exposes bid actions")
 
-              driver.execute_script("closeTeamPreview()")
+              driver.execute_script("openDraftBoard()")
               time.sleep(0.25)
               preview_close = driver.execute_script("""
                 return {active:document.querySelector('.screen.active')?.id,onTheBoard:state.onTheBoard,lastScreen:state.lastScreen,currentTeam};
