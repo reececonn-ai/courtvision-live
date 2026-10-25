@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NBA TEAM DRAFT DAY</title>
 <link rel="stylesheet" href="/competition.css?v=comp64">
+<link rel="stylesheet" href="/nbl-hub.css?v=1">
 <style>
 :root{
   --bg:#03050a; --panel:#0b1020; --text:#f7f9ff; --muted:#9ca7bd; --accent:#ffffff;
@@ -4751,7 +4752,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
       <div class="barrel" id="barrelCount">Barrel: 0 teams</div>
     </section>
 
-    <section class="screen draft-board-screen" id="draftBoardScreen"><div class="board-hub-heading"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" class="active" aria-current="page" onclick="openDraftBoard()">DRAFT BOARD</button></nav></div>
+    <section class="screen draft-board-screen" id="draftBoardScreen"><div class="board-hub-heading"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openNblHub()">NBL HUB</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" class="active" aria-current="page" onclick="openDraftBoard()">DRAFT BOARD</button></nav></div>
       <div class="broadcast-top"><span class="live-dot">Draft Board</span><span id="boardTopStatus">League overview</span></div>
       <div class="board-shell">
         <div class="board-head">
@@ -4790,8 +4791,10 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
       </div>
     </section>
 
+    <section class="screen" id="nblHubScreen"><div id="nblHubRoot" style="width:100%"></div></section>
+
     <section class="screen competition-screen" id="competitionScreen">
-      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
+      <div class="competition-shell"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" class="active" aria-current="page" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openNblHub()">NBL HUB</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
         <header class="comp-topbar">
           <div class="comp-brand-lockup">
             <div class="comp-eyebrow">COURTVISION DAILY · AUSTRALIA/SYDNEY</div>
@@ -4864,7 +4867,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 
     <section class="screen owner-portfolio-screen" id="ownerPortfolioScreen">
       <div class="owner-portfolio-shell">
-        <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav active" aria-current="page"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
+        <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav active" aria-current="page"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openNblHub()">NBL HUB</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
         <button type="button" class="owner-portfolio-back" onclick="openCompetitionBoard()"><span aria-hidden="true">←</span><strong>BACK TO COMPETITION BOARD</strong><small>Return to the live race</small></button>
         <header class="owner-portfolio-hero" id="ownerPortfolioHero">
           <div><span class="comp-section-kicker">OWNER PORTFOLIO</span><h2 id="ownerPortfolioName">PORTFOLIO</h2><p id="ownerPortfolioStatus">Loading live competition data…</p></div>
@@ -4890,7 +4893,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
 
     <section class="screen trade-screen" id="tradeScreen">
       <div class="competition-shell trade-shell">
-        <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" class="active" aria-current="page" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
+        <nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openNblHub()">NBL HUB</button><button type="button" class="active" aria-current="page" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
         <header class="trade-hero">
           <span class="comp-section-kicker">THE TRADE DESK</span>
           <h2>MAKE YOUR CASE.</h2>
@@ -4917,7 +4920,7 @@ body.teams-profile-view #revealScreen .decision-stage{display:none!important}
   </div>
 </section>
 <section class="screen nerd-screen" id="statsForNerdsScreen">
-      <div class="nerd-shell" style="width:100%!important;max-width:none!important;margin:0!important"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" class="active" aria-current="page" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
+      <div class="nerd-shell" style="width:100%!important;max-width:none!important;margin:0!important"><nav class="competition-hub-tabs" aria-label="Competition navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" class="active" aria-current="page" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openNblHub()">NBL HUB</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button></nav>
         <header class="nerd-topbar">
           <div>
             <div class="nerd-eyebrow">COURTVISION DEEP CUTS · VERIFIED FROM COMPETITION DATA</div>
@@ -7093,12 +7096,13 @@ setTimeout(cvStartSync,80);
 
 </script>
 <script src="/daily-availability.js?v=3"></script>
+<script src="/nbl-hub.js?v=1"></script>
 <script src="/competition.js?v=comp50"></script>
 <script src="/trades.js?v=1"></script>
 <script src="/nerd-studio.js?v=16"></script>
 <script src="/nba-insights.js?v=1"></script>
 <script src="/nba-news.js?v=5" defer></script>
 
-<nav class="mobile-nav" aria-label="Main navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button type="button" onclick="openSettings()">MORE</button></nav>
+<nav class="mobile-nav" aria-label="Main navigation"><button type="button" onclick="openCompetitionBoard()">COMPETITION</button><label class="owner-profile-nav"><span class="nav-select-label">OWNER PROFILE</span><select class="owner-profile-nav-select" aria-label="Choose owner profile" onchange="chooseOwnerProfile(this)"><option value="">OWNER PROFILE</option></select></label><button type="button" onclick="openStatsForNerds()">STATS FOR NERDS</button><button type="button" onclick="openTeamsHub()">TEAM STATS</button><button type="button" onclick="openNblHub()">NBL HUB</button><button type="button" onclick="openTradeDesk()">TRADE</button><button type="button" onclick="openDraftBoard()">DRAFT BOARD</button><button type="button" onclick="openSettings()">MORE</button></nav>
 </body>
 </html>
