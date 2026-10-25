@@ -76,34 +76,23 @@
       ["STEALS","SPG","steals_average"],
       ["BLOCKS","BPG","blocks_average"]
     ];
-    return categories.map((cat,index)=>{
-      const metric=cat[2];
-      const valueOf=x=>{
-        const n=Number(x?.[metric]??x?.average??x?.value??x?.displayValue);
-        return Number.isFinite(n)?n:-Infinity;
-      };
+    const panels=categories.map((cat,index)=>{
+      const metric=cat[2],valueOf=x=>{const n=Number(x?.[metric]??x?.average??x?.value??x?.displayValue);return Number.isFinite(n)?n:-Infinity};
       const rows=feedData(feeds[index]).slice().sort((a,b)=>valueOf(b)-valueOf(a));
-      return '<details class="nbl-leader-category"><summary><strong>'+cat[0]+'</strong><span>'+cat[1]+'</span><i>⌄</i></summary><div>'+
-        (rows.length?rows.slice(0,8).map((x,i)=>{
-          const p=x.player||x.athlete||x;
-          const name=p.displayName||p.fullName||[p.first_name,p.last_name].filter(Boolean).join(" ")||"Player";
-          const team=x.team||p.team||{};
-          const raw=x[cat[2]]??x.average??x.value??x.displayValue??"–";
-          const value=Number.isFinite(Number(raw))?Number(raw).toFixed(1):raw;
-          return '<div class="nbl-leader-row '+(i>=5?'nbl-leader-extra':'')+'"><b>'+(i+1)+'</b><span><strong>'+esc(name)+'</strong><small>'+esc(team.team_code||team.abbreviation||teamName(team))+'</small></span><em>'+esc(value)+'</em></div>';
-        }).join(""):'<p class="nbl-empty">Unavailable</p>')+
-      (rows.length>5?'<button type="button" class="nbl-leader-more" onclick="toggleNblLeaderDepth(this,event)">SHOW 3 MORE</button>':'')+
-      '</div></details>';
+      const list=rows.slice(0,8).map((x,i)=>{
+        const p=x.player||x.athlete||x;
+        const name=p.displayName||p.fullName||[p.first_name,p.last_name].filter(Boolean).join(" ")||"Player";
+        const team=x.team||p.team||{},raw=x[metric]??x.average??x.value??x.displayValue??"–";
+        const value=Number.isFinite(Number(raw))?Number(raw).toFixed(1):raw;
+        return '<div class="nbl-leader-row '+(i>=5?'nbl-leader-extra':'')+'"><b>'+(i+1)+'</b><span><strong>'+esc(name)+'</strong><small>'+esc(team.team_code||team.abbreviation||teamName(team))+'</small></span><em>'+esc(value)+'</em></div>';
+      }).join("");
+      return '<section class="nbl-single-leader-panel" data-leader-panel="'+index+'" '+(index?'hidden':'')+'><header><strong>'+cat[0]+'</strong><span>'+cat[1]+'</span></header><div>'+(list||'<p class="nbl-empty">Unavailable</p>')+'</div>'+(rows.length>5?'<button type="button" class="nbl-leader-more" onclick="toggleNblLeaderDepth(this,event)">SHOW 3 MORE</button>':'')+'</section>';
     }).join("");
+    return '<label class="nbl-leader-picker"><span>STAT CATEGORY</span><select onchange="showNblLeaderCategory(this.value)">'+categories.map((x,i)=>'<option value="'+i+'">'+x[0]+' · '+x[1]+'</option>').join("")+'</select></label>'+panels;
   }
-
-  function bindLeaderDropdowns(){
-    const root=document.getElementById("nblLeaders");if(!root)return;
-    root.querySelectorAll(".nbl-leader-category").forEach(item=>item.addEventListener("toggle",()=>{
-      if(!item.open)return;
-      root.querySelectorAll(".nbl-leader-category[open]").forEach(other=>{if(other!==item)other.open=false});
-    }));
-  }
+  window.showNblLeaderCategory=function(index){
+    document.querySelectorAll("#nblLeaders [data-leader-panel]").forEach(panel=>panel.hidden=panel.dataset.leaderPanel!==String(index));
+  };
 
   function injuryItems(data,games){
     const names=new Set(games.flatMap(g=>[teamName(g.home_team),teamName(g.away_team)]).map(x=>x.toLowerCase()));
@@ -166,7 +155,6 @@
     annotateRosterAvailability();
     document.getElementById("nblLadder").innerHTML=ladderHtml(get(1));
     document.getElementById("nblLeaders").innerHTML=leagueLeadersHtml([get(4),get(5),get(6),get(7),get(8)]);
-    bindLeaderDropdowns();
     document.getElementById("nblInjuries").innerHTML=injuriesHtml(injuryList);
     document.getElementById("nblUpcoming").innerHTML=upcomingHtml(allGames);
     document.querySelectorAll("[data-nbl-open-game]").forEach(b=>b.addEventListener("click",()=>openNblGame(b.dataset.nblOpenGame)));
@@ -203,7 +191,7 @@
   window.filterNblPlayers=filterNblPlayers;
   window.toggleNblLeaderDepth=function(button,event){
     event?.stopPropagation();
-    const category=button.closest(".nbl-leader-category");
+    const category=button.closest(".nbl-leader-category, .nbl-single-leader-panel");
     const expanded=category.classList.toggle("show-all");
     button.textContent=expanded?"SHOW TOP 5":"SHOW 3 MORE";
   };

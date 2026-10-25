@@ -307,3 +307,22 @@ body.nbl-modal-open{overflow:hidden}
   .nbl-section-head span{font-size:10px;line-height:1.2;text-align:right}
   .nbl-ladder .nbl-ladder-row{font-size:11px!important}
 }
+
+
+/* One category at a time keeps League Leaders compact. */
+.nbl-leader-categories{display:block!important;padding:10px!important}
+.nbl-leader-picker{display:grid;grid-template-columns:auto minmax(180px,320px);align-items:center;gap:12px;margin-bottom:8px}
+.nbl-leader-picker>span{color:#6c9b89;font-size:11px;font-weight:950;letter-spacing:.12em}
+.nbl-leader-picker select{width:100%;border:1px solid #3c6658;background:#102c24;color:#fff;padding:11px 38px 11px 12px;border-radius:8px;font-size:13px;font-weight:900}
+.nbl-single-leader-panel{background:#0d211c;border:1px solid rgba(255,255,255,.09);border-radius:10px;overflow:hidden}
+.nbl-single-leader-panel[hidden]{display:none!important}
+.nbl-single-leader-panel>header{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;background:#17372e;border-bottom:2px solid #f8ca3c}
+.nbl-single-leader-panel>header strong{font-size:15px}.nbl-single-leader-panel>header span{color:#f8ca3c;font-size:12px;font-weight:950}
+.nbl-single-leader-panel>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.nbl-single-leader-panel .nbl-leader-row:nth-child(odd){border-right:1px solid rgba(255,255,255,.06)}
+.nbl-single-leader-panel.show-all .nbl-leader-extra{display:grid!important}
+@media(max-width:820px){
+  .nbl-leader-picker{grid-template-columns:1fr;gap:5px}
+  .nbl-single-leader-panel>div{grid-template-columns:1fr}
+  .nbl-single-leader-panel .nbl-leader-row:nth-child(odd){border-right:0}
+}
