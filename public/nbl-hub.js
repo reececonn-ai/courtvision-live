@@ -77,7 +77,12 @@
       ["BLOCKS","BPG","blocks_average"]
     ];
     return categories.map((cat,index)=>{
-      const rows=feedData(feeds[index]);
+      const metric=cat[2];
+      const valueOf=x=>{
+        const n=Number(x?.[metric]??x?.average??x?.value??x?.displayValue);
+        return Number.isFinite(n)?n:-Infinity;
+      };
+      const rows=feedData(feeds[index]).slice().sort((a,b)=>valueOf(b)-valueOf(a));
       return '<section class="nbl-leader-category"><header><strong>'+cat[0]+'</strong><span>'+cat[1]+'</span></header><div>'+
         (rows.length?rows.slice(0,8).map((x,i)=>{
           const p=x.player||x.athlete||x;
