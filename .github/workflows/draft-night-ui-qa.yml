@@ -269,7 +269,7 @@ jobs:
               nerd={
                 "screen":rect("#statsForNerdsScreen"),
                 "ticker":rect("#broadcastTicker"),
-                "owners":js("return document.querySelectorAll('#nerdOwners .nerd-owner-card').length")
+                "owners":js("return document.querySelectorAll('#nerdStudio .ns-power-card').length")
               }
               print("NERD",json.dumps(nerd,sort_keys=True))
               shot("nerds-"+label)
