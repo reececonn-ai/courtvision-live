@@ -83,7 +83,7 @@
         return Number.isFinite(n)?n:-Infinity;
       };
       const rows=feedData(feeds[index]).slice().sort((a,b)=>valueOf(b)-valueOf(a));
-      return '<section class="nbl-leader-category"><header><strong>'+cat[0]+'</strong><span>'+cat[1]+'</span></header><div>'+
+      return '<details class="nbl-leader-category"><summary><strong>'+cat[0]+'</strong><span>'+cat[1]+'</span><i>⌄</i></summary><div>'+
         (rows.length?rows.slice(0,8).map((x,i)=>{
           const p=x.player||x.athlete||x;
           const name=p.displayName||p.fullName||[p.first_name,p.last_name].filter(Boolean).join(" ")||"Player";
@@ -92,8 +92,16 @@
           const value=Number.isFinite(Number(raw))?Number(raw).toFixed(1):raw;
           return '<div class="nbl-leader-row"><b>'+(i+1)+'</b><span><strong>'+esc(name)+'</strong><small>'+esc(team.team_code||team.abbreviation||teamName(team))+'</small></span><em>'+esc(value)+'</em></div>';
         }).join(""):'<p class="nbl-empty">Unavailable</p>')+
-      '</div></section>';
+      '</div></details>';
     }).join("");
+  }
+
+  function bindLeaderDropdowns(){
+    const root=document.getElementById("nblLeaders");if(!root)return;
+    root.querySelectorAll(".nbl-leader-category").forEach(item=>item.addEventListener("toggle",()=>{
+      if(!item.open)return;
+      root.querySelectorAll(".nbl-leader-category[open]").forEach(other=>{if(other!==item)other.open=false});
+    }));
   }
 
   function injuryItems(data,games){
@@ -150,6 +158,7 @@
     document.getElementById("nblPlayers").innerHTML=playersHtml(playerRows(players,games));
     document.getElementById("nblLadder").innerHTML=ladderHtml(get(1));
     document.getElementById("nblLeaders").innerHTML=leagueLeadersHtml([get(4),get(5),get(6),get(7),get(8)]);
+    bindLeaderDropdowns();
     document.getElementById("nblInjuries").innerHTML=injuriesHtml(injuryItems(get(3),games));
     const officialOk=results.slice(0,3).filter(x=>x.status==="fulfilled").length;
     setStatus(officialOk===3?"Official NBL feed live · updated "+new Intl.DateTimeFormat("en-AU",{timeZone:SYDNEY,hour:"numeric",minute:"2-digit"}).format(new Date()):officialOk+" of 3 official NBL feeds available",officialOk?"":"error");
