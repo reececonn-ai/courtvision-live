@@ -261,6 +261,40 @@
     const ordered=[...data].sort((a,b)=>{const av=a[sort.key],bv=b[sort.key];if(av===null||av===undefined)return bv==null?0:1;if(bv==null)return -1;return sort.dir*(typeof av==="number"?av-bv:String(av).localeCompare(String(bv)))});
     return '<article class="ns-deep-group" id="'+id+'"><h4>'+title+'</h4><p class="ns-note">'+note+'</p><div class="ns-table-scroll" tabindex="0" role="region" aria-label="'+title+'"><table class="ns-table"><thead><tr>'+columns.map(([key,label])=>'<th scope="col"'+(key===sort.key?' aria-sort="'+(sort.dir===1?'ascending':'descending')+'"':'')+'><button type="button" data-deep-table="'+id+'" data-deep-key="'+key+'">'+label+(key===sort.key?(sort.dir===1?' ↑':' ↓'):' ↕')+'</button></th>').join("")+'</tr></thead><tbody>'+ordered.map(t=>'<tr>'+columns.map(([key,label],i)=>{let v=t[key];if(v===null||v===undefined)v="—";else if(typeof v==="number")v=Number.isInteger(v)?String(v):v.toFixed(1);return '<'+(i===0?'th scope="row"':'td')+'>'+esc(v)+'</'+(i===0?'th':'td')+'>'}).join("")+'</tr>').join("")+'</tbody></table></div></article>';
   }
+  let labView="power";
+  function numbersLab(rows,games,recent){
+    const form=rows.map(r=>({r,f:formFor(r.name,recent)}));
+    const power=[...form].sort((a,b)=>b.r.projected-a.r.projected).map((x,i)=>
+      '<div class="ns-lab-row"><b class="ns-lab-rank">'+(i+1)+'</b><strong>'+esc(x.r.name)+'</strong><span>'+x.r.w+'–'+x.r.l+' actual</span><span>'+x.f.w+'–'+x.f.l+' recent</span><em>'+x.r.projected.toFixed(1)+' proj · '+x.r.probability.toFixed(1)+'%</em></div>'
+    ).join("");
+    const now=Date.now(),end=now+7*86400000,upcoming=(games||[]).filter(g=>g.status!=="FINAL"&&new Date(g.date).getTime()>=now&&new Date(g.date).getTime()<end);
+    const workload=rows.map(r=>{
+      const owned=new Set(r.teams.map(t=>t.name)),fixtures=upcoming.flatMap(g=>[g.home,g.away].filter(t=>owned.has(t)).map(t=>({team:t,date:g.date,opp:g.home===t?g.away:g.home})));
+      const next=fixtures.sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
+      return {name:r.name,count:fixtures.length,next};
+    }).sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name)).map((x,i)=>
+      '<div class="ns-lab-row"><b class="ns-lab-rank">'+(i+1)+'</b><strong>'+esc(x.name)+'</strong><span>'+x.count+' owned-team game'+(x.count===1?'':'s')+'</span><span>'+(x.next?'Next: '+esc(shortTeam(x.next.team))+' vs '+esc(shortTeam(x.next.opp)):'No game loaded')+'</span><em>'+(x.next?new Date(x.next.date).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",timeZone:"Australia/Sydney"}):'NEXT 7 DAYS')+'</em></div>'
+    ).join("");
+    const consistent=deepData(rows,recent).filter(t=>t.scoredN>=2&&Number.isFinite(t.spread)).sort((a,b)=>a.spread-b.spread).slice(0,10).map((t,i)=>
+      '<div class="ns-lab-row team-accent" style="'+teamStyle(t.name)+'"><b class="ns-lab-rank">'+(i+1)+'</b><strong>'+esc(shortTeam(t.name))+'</strong><span>'+esc(t.owner)+'</span><span>'+t.scoredN+' scored games</span><em>'+t.spread.toFixed(1)+' margin swing</em></div>'
+    ).join("")||'<p class="ns-note">Consistency appears after teams have at least two scored games.</p>';
+    const risk=rows.map(r=>{
+      const teams=[...r.teams].filter(t=>Number.isFinite(t.expected)).sort((a,b)=>b.expected-a.expected),total=teams.reduce((n,t)=>n+t.expected,0),top=teams[0],share=total&&top?top.expected/total*100:0,spread=teams.length?teams[0].expected-teams.at(-1).expected:0;
+      return {r,top,share,spread};
+    }).sort((a,b)=>b.share-a.share).map((x,i)=>
+      '<div class="ns-lab-row"><b class="ns-lab-rank">'+(i+1)+'</b><strong>'+esc(x.r.name)+'</strong><span>'+(x.top?esc(shortTeam(x.top.name)):'—')+' carries '+x.share.toFixed(0)+'%</span><span>'+x.spread.toFixed(1)+' wins top-to-bottom</span><em>'+(x.share>=25?'TOP HEAVY':'BALANCED')+'</em></div>'
+    ).join("");
+    const option=(v,label)=>'<option value="'+v+'"'+(labView===v?' selected':'')+'>'+label+'</option>';
+    const panel=(v,html)=>'<div class="ns-lab-panel" data-lab-panel="'+v+'"'+(labView===v?'':' hidden')+'>'+html+'</div>';
+    return '<section class="ns-section ns-lab"><div class="ns-section-title"><span class="ns-kicker">NUMBERS LAB</span><h3>Pick a question. Get the answer.</h3></div><div class="ns-lab-controls"><label><span>VIEW</span><select data-lab-view>'+option("power","Who is strongest right now?")+option("workload","Who has the busiest next 7 days?")+option("consistency","Which teams are most consistent?")+option("risk","Whose portfolio is most dependent?")+'</select></label></div>'+panel("power",power)+panel("workload",workload)+panel("consistency",consistent)+panel("risk",risk)+'</section>';
+  }
+  function bindLab(root){
+    root.querySelector("[data-lab-view]")?.addEventListener("change",event=>{
+      labView=event.target.value;
+      root.querySelectorAll("[data-lab-panel]").forEach(panel=>panel.hidden=panel.dataset.labPanel!==labView);
+    });
+  }
+
   function strengthMatrix(rows){
     const ordered=projectedOrder(rows);
     const cells=ordered.map(a=>'<tr><th>'+esc(a.name)+'</th>'+ordered.map(b=>{
@@ -301,13 +335,14 @@
     void enrichBriefStories(rows,recent,demo);
     const root=document.getElementById("nerdStudio");if(!root)return;
     document.getElementById("nerdClassic")?.remove();
-    root.innerHTML=dailyBrief(rows,recent,demo)+
-      '<section class="ns-section ns-squad"><div class="ns-section-title"><span class="ns-kicker">PICK YOUR NAME</span><h3>Compared with you</h3></div><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></section>'+
+    root.innerHTML='<section class="ns-section ns-squad"><div class="ns-section-title"><span class="ns-kicker">PICK YOUR NAME</span><h3>Compared with you</h3></div><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></section>'+
+      numbersLab(rows,games,recent)+
       '<section class="ns-section ns-momentum"><div class="ns-section-title"><span class="ns-kicker">OWNER MOMENTUM</span><h3>Every twist. Every contender.</h3></div>'+historyChart(rows,demo,root.clientWidth||960)+'</section>'+
       '<section class="ns-section" id="nsTeamLab"><div class="ns-section-title"><span class="ns-kicker">EXPECTATION TRACKER</span><h3>Who’s beating the line?</h3></div><div id="nsValueContent">'+performanceLab(rows,recent)+'</div></section>'+
       strengthMatrix(rows)+
       '<div id="nsDeepSlot">'+deepStats(rows,recent)+'</div>';
     bindSquad(root,rows,recent);
+    bindLab(root);
     bindDeep(root,rows,recent);
   }
 
