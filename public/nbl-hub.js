@@ -129,7 +129,6 @@
     '<nav class="nbl-jump" aria-label="NBL page sections"><a href="#nbl-games-section">GAMES</a><a href="#nbl-players-section">PLAYERS</a><a href="#nbl-leaders-section">LEADERS</a><a href="#nbl-ladder-section">LADDER</a></nav>'+
     '<section class="nbl-section" id="nbl-games-section"><div class="nbl-section-head"><div><small>SYDNEY TIME</small><h3>Games tonight</h3></div><span id="nblDateLabel"></span></div><div class="nbl-games" id="nblGames"></div></section>'+
     '<div class="nbl-game-modal" id="nblGameModal" hidden><div class="nbl-game-dialog"><button type="button" class="nbl-game-close" onclick="closeNblGame()">CLOSE ×</button><div id="nblGameDetail"></div></div></div>'+
-    '<section class="nbl-section nbl-tldr-section"><div class="nbl-section-head"><div><small>THE NIGHT IN 30 SECONDS</small><h3>Daily NBL TL;DR</h3></div><span>AUTO-UPDATES</span></div><div class="nbl-tldr" id="nblTldr"></div></section>'+
     '<section class="nbl-section nbl-leaders-feature" id="nbl-leaders-section"><div class="nbl-section-head"><div><small>OFFICIAL NBL NUMBERS</small><h3>League leaders</h3></div><span>TOP 5 · EXPAND TO 8</span></div><div class="nbl-leaders nbl-leader-categories" id="nblLeaders"></div></section>'+
     '<section class="nbl-section" id="nbl-players-section"><div class="nbl-section-head"><div><small>FULL GAME-NIGHT ROSTERS</small><h3>Players tonight</h3></div><span>LIVE TEAMS OPEN · OTHERS COLLAPSED</span></div><label class="nbl-player-search"><span>SEARCH</span><input type="search" placeholder="Player or team…" oninput="filterNblPlayers(this.value)"></label><div class="nbl-players nbl-players-full" id="nblPlayers"></div></section>'+
     '<section class="nbl-section" id="nbl-upcoming-section"><div class="nbl-section-head"><div><small>NEXT THREE PLAYING DAYS</small><h3>Coming up</h3></div><span>SWIPE ON PHONE</span></div><div class="nbl-upcoming" id="nblUpcoming"></div></section>'+
@@ -170,7 +169,6 @@
     bindLeaderDropdowns();
     document.getElementById("nblInjuries").innerHTML=injuriesHtml(injuryList);
     document.getElementById("nblUpcoming").innerHTML=upcomingHtml(allGames);
-    document.getElementById("nblTldr").innerHTML=tldrHtml(games,injuryList);
     document.querySelectorAll("[data-nbl-open-game]").forEach(b=>b.addEventListener("click",()=>openNblGame(b.dataset.nblOpenGame)));
     rememberOpenPanels();
     const officialOk=results.slice(0,3).filter(x=>x.status==="fulfilled").length;
@@ -233,20 +231,6 @@
         return '<button type="button" data-nbl-open-game="'+esc(g.id)+'"><span><img src="'+esc(logo(g.away_team))+'" alt="">'+esc(g.away_team?.team_code||teamName(g.away_team))+'</span><b>'+esc(time)+'</b><span>'+esc(g.home_team?.team_code||teamName(g.home_team))+'<img src="'+esc(logo(g.home_team))+'" alt=""></span></button>';
       }).join("")+'</section>';
     }).join("");
-  }
-  function tldrHtml(games,injuries){
-    const live=games.filter(g=>matchState(g)==="in"),finals=games.filter(g=>matchState(g)==="post"),next=games.find(g=>matchState(g)==="pre");
-    const cards=[];
-    if(live.length)cards.push(["LIVE NOW",live.length+" game"+(live.length===1?"":"s")+" in progress. Tap a game for the live box score."]);
-    if(finals.length){
-      const closest=finals.slice().sort((a,b)=>Math.abs(Number(a.home_score)-Number(a.away_score))-Math.abs(Number(b.home_score)-Number(b.away_score)))[0];
-      const winner=Number(closest.home_score)>Number(closest.away_score)?closest.home_team:closest.away_team;
-      cards.push(["RESULT",teamName(winner)+" won "+closest.away_score+"–"+closest.home_score+"."]);
-    }
-    if(next)cards.push(["NEXT TIP",teamName(next.away_team)+" at "+teamName(next.home_team)+" · "+new Intl.DateTimeFormat("en-AU",{timeZone:SYDNEY,hour:"numeric",minute:"2-digit"}).format(new Date(next.start_time))+"."]);
-    if(injuries.length)cards.push(["AVAILABILITY",injuries.length+" listed injury item"+(injuries.length===1?"":"s")+" across the live report."]);
-    if(!cards.length)cards.push(["QUIET NIGHT","No NBL games tonight. Use Coming Up for the next three playing days."]);
-    return cards.slice(0,4).map(x=>'<article><small>'+x[0]+'</small><strong>'+esc(x[1])+'</strong></article>').join("");
   }
   window.openNblTeam=function(id){
     const games=allSchedule.filter(g=>teamId(g.home_team)===String(id)||teamId(g.away_team)===String(id)).sort((a,b)=>Date.parse(a.start_time)-Date.parse(b.start_time));
