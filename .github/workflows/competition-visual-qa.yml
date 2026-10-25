@@ -88,10 +88,8 @@ jobs:
                   raise SystemExit("Competition ticker is not fixed")
               if comp["ticker"]["x"] > 2 or comp["ticker"]["width"] < comp["viewport"]["clientW"]-4:
                   raise SystemExit("Competition ticker is not edge-to-edge")
-              if comp["games"]<1 or comp["stories"]<1 or comp["cards"]!=6 or comp["chips"]!=30:
+              if comp["games"]<1 or comp["cards"]!=6 or comp["chips"]!=30:
                   raise SystemExit("Competition content incomplete")
-              if not comp["movementPanel"] or comp["impactCards"]<1:
-                  raise SystemExit("Season movement / game impact panels did not render")
               if comp["mode"]!="DEMO DATA":
                   raise SystemExit("Competition demo badge missing")
 

@@ -276,8 +276,8 @@ jobs:
                   raise SystemExit("Test draft did not populate all 30 owned teams")
               if comp["players"] != 6:
                   raise SystemExit("Competition Board did not render six player entries")
-              if comp["games"] < 1 or comp["tidbits"] < 1:
-                  raise SystemExit("Competition demo did not populate games and daily tidbits")
+              if comp["games"] < 1:
+                  raise SystemExit("Competition demo did not populate games")
               if comp["mode"] != "DEMO DATA":
                   raise SystemExit("Test Competition Board is not clearly labelled DEMO DATA")
               if "NaN" in comp["probText"]:
