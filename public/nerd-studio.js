@@ -261,38 +261,55 @@
     const ordered=[...data].sort((a,b)=>{const av=a[sort.key],bv=b[sort.key];if(av===null||av===undefined)return bv==null?0:1;if(bv==null)return -1;return sort.dir*(typeof av==="number"?av-bv:String(av).localeCompare(String(bv)))});
     return '<article class="ns-deep-group" id="'+id+'"><h4>'+title+'</h4><p class="ns-note">'+note+'</p><div class="ns-table-scroll" tabindex="0" role="region" aria-label="'+title+'"><table class="ns-table"><thead><tr>'+columns.map(([key,label])=>'<th scope="col"'+(key===sort.key?' aria-sort="'+(sort.dir===1?'ascending':'descending')+'"':'')+'><button type="button" data-deep-table="'+id+'" data-deep-key="'+key+'">'+label+(key===sort.key?(sort.dir===1?' ↑':' ↓'):' ↕')+'</button></th>').join("")+'</tr></thead><tbody>'+ordered.map(t=>'<tr>'+columns.map(([key,label],i)=>{let v=t[key];if(v===null||v===undefined)v="—";else if(typeof v==="number")v=Number.isInteger(v)?String(v):v.toFixed(1);return '<'+(i===0?'th scope="row"':'td')+'>'+esc(v)+'</'+(i===0?'th':'td')+'>'}).join("")+'</tr>').join("")+'</tbody></table></div></article>';
   }
-  let labView="power";
-  function numbersLab(rows,games,recent){
-    const form=rows.map(r=>({r,f:formFor(r.name,recent)}));
-    const power=[...form].sort((a,b)=>b.r.projected-a.r.projected).map((x,i)=>
-      '<div class="ns-lab-row"><b class="ns-lab-rank">'+(i+1)+'</b><strong>'+esc(x.r.name)+'</strong><span>'+x.r.w+'–'+x.r.l+' actual</span><span>'+x.f.w+'–'+x.f.l+' recent</span><em>'+x.r.projected.toFixed(1)+' proj · '+x.r.probability.toFixed(1)+'%</em></div>'
-    ).join("");
-    const now=Date.now(),end=now+7*86400000,upcoming=(games||[]).filter(g=>g.status!=="FINAL"&&new Date(g.date).getTime()>=now&&new Date(g.date).getTime()<end);
-    const workload=rows.map(r=>{
-      const owned=new Set(r.teams.map(t=>t.name)),fixtures=upcoming.flatMap(g=>[g.home,g.away].filter(t=>owned.has(t)).map(t=>({team:t,date:g.date,opp:g.home===t?g.away:g.home})));
-      const next=fixtures.sort((a,b)=>new Date(a.date)-new Date(b.date))[0];
-      return {name:r.name,count:fixtures.length,next};
-    }).sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name)).map((x,i)=>
-      '<div class="ns-lab-row"><b class="ns-lab-rank">'+(i+1)+'</b><strong>'+esc(x.name)+'</strong><span>'+x.count+' owned-team game'+(x.count===1?'':'s')+'</span><span>'+(x.next?'Next: '+esc(shortTeam(x.next.team))+' vs '+esc(shortTeam(x.next.opp)):'No game loaded')+'</span><em>'+(x.next?new Date(x.next.date).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",timeZone:"Australia/Sydney"}):'NEXT 7 DAYS')+'</em></div>'
-    ).join("");
-    const consistent=deepData(rows,recent).filter(t=>t.scoredN>=2&&Number.isFinite(t.spread)).sort((a,b)=>a.spread-b.spread).slice(0,10).map((t,i)=>
-      '<div class="ns-lab-row team-accent" style="'+teamStyle(t.name)+'"><b class="ns-lab-rank">'+(i+1)+'</b><strong>'+esc(shortTeam(t.name))+'</strong><span>'+esc(t.owner)+'</span><span>'+t.scoredN+' scored games</span><em>'+t.spread.toFixed(1)+' margin swing</em></div>'
-    ).join("")||'<p class="ns-note">Consistency appears after teams have at least two scored games.</p>';
-    const risk=rows.map(r=>{
-      const teams=[...r.teams].filter(t=>Number.isFinite(t.expected)).sort((a,b)=>b.expected-a.expected),total=teams.reduce((n,t)=>n+t.expected,0),top=teams[0],share=total&&top?top.expected/total*100:0,spread=teams.length?teams[0].expected-teams.at(-1).expected:0;
-      return {r,top,share,spread};
-    }).sort((a,b)=>b.share-a.share).map((x,i)=>
-      '<div class="ns-lab-row"><b class="ns-lab-rank">'+(i+1)+'</b><strong>'+esc(x.r.name)+'</strong><span>'+(x.top?esc(shortTeam(x.top.name)):'—')+' carries '+x.share.toFixed(0)+'%</span><span>'+x.spread.toFixed(1)+' wins top-to-bottom</span><em>'+(x.share>=25?'TOP HEAVY':'BALANCED')+'</em></div>'
-    ).join("");
-    const option=(v,label)=>'<option value="'+v+'"'+(labView===v?' selected':'')+'>'+label+'</option>';
-    const panel=(v,html)=>'<div class="ns-lab-panel" data-lab-panel="'+v+'"'+(labView===v?'':' hidden')+'>'+html+'</div>';
-    return '<section class="ns-section ns-lab"><div class="ns-section-title"><span class="ns-kicker">NUMBERS LAB</span><h3>Pick a question. Get the answer.</h3></div><div class="ns-lab-controls"><label><span>VIEW</span><select data-lab-view>'+option("power","Who is strongest right now?")+option("workload","Who has the busiest next 7 days?")+option("consistency","Which teams are most consistent?")+option("risk","Whose portfolio is most dependent?")+'</select></label></div>'+panel("power",power)+panel("workload",workload)+panel("consistency",consistent)+panel("risk",risk)+'</section>';
+  function teamMark(name){
+    const meta=typeof teamByName==="function"?teamByName(name):null;
+    return '<img src="'+logoUrl(meta?.[1]||"")+'" alt="" loading="lazy">';
   }
-  function bindLab(root){
-    root.querySelector("[data-lab-view]")?.addEventListener("change",event=>{
-      labView=event.target.value;
-      root.querySelectorAll("[data-lab-panel]").forEach(panel=>panel.hidden=panel.dataset.labPanel!==labView);
+  function numbersLab(rows,games,recent){
+    const ownerForm=rows.map(r=>({r,f:formFor(r.name,recent)}));
+    const ordered=[...ownerForm].sort((a,b)=>b.r.projected-a.r.projected);
+    const maxProjected=Math.max(1,...ordered.map(x=>x.r.projected));
+    const power=ordered.map((x,i)=>{
+      const teams=[...x.r.teams].sort((a,b)=>b.expected-a.expected);
+      return '<article class="ns-power-card" style="--owner:'+colour(x.r.name,rows)+'"><header><b>#'+(i+1)+'</b><strong>'+esc(x.r.name)+'</strong><em>'+x.r.probability.toFixed(1)+'%</em></header><div class="ns-power-logos">'+teams.map(t=>teamMark(t.name)).join("")+'</div><div class="ns-visual-track"><i style="width:'+(x.r.projected/maxProjected*100)+'%"></i></div><footer><span>'+x.r.w+'–'+x.r.l+' actual</span><span>'+x.f.w+'–'+x.f.l+' recent</span><b>'+x.r.projected.toFixed(1)+' projected wins</b></footer></article>';
+    }).join("");
+
+    const now=Date.now(),end=now+7*86400000,upcoming=(games||[]).filter(g=>g.status!=="FINAL"&&new Date(g.date).getTime()>=now&&new Date(g.date).getTime()<end);
+    const workloadData=rows.map(r=>{
+      const owned=new Set(r.teams.map(t=>t.name)),fixtures=upcoming.flatMap(g=>[g.home,g.away].filter(t=>owned.has(t)).map(t=>({team:t,date:g.date,opp:g.home===t?g.away:g.home}))).sort((a,b)=>new Date(a.date)-new Date(b.date));
+      return {r,fixtures};
+    }).sort((a,b)=>b.fixtures.length-a.fixtures.length||a.r.name.localeCompare(b.r.name));
+    const maxLoad=Math.max(1,...workloadData.map(x=>x.fixtures.length));
+    const workload=workloadData.map(x=>{
+      const next=x.fixtures[0];
+      return '<article class="ns-workload-row"><div class="ns-workload-owner"><strong>'+esc(x.r.name)+'</strong><span>'+x.fixtures.length+' owned-team game'+(x.fixtures.length===1?'':'s')+'</span></div><div class="ns-workload-bar"><i style="width:'+(x.fixtures.length/maxLoad*100)+'%"></i></div><div class="ns-next-game">'+(next?teamMark(next.team)+teamMark(next.opp)+'<span>'+esc(shortTeam(next.team))+' vs '+esc(shortTeam(next.opp))+'<small>'+new Date(next.date).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",timeZone:"Australia/Sydney"})+'</small></span>':'<span>No game loaded<small>Next seven days</small></span>')+'</div></article>';
+    }).join("");
+
+    const steady=deepData(rows,recent).filter(t=>t.scoredN>=2&&Number.isFinite(t.spread)).sort((a,b)=>a.spread-b.spread).slice(0,10);
+    const maxSpread=Math.max(1,...steady.map(t=>t.spread));
+    const consistency=steady.map((t,i)=>{
+      const stability=Math.max(8,100-t.spread/maxSpread*72);
+      return '<article class="ns-steady-card" style="'+teamStyle(t.name)+'"><header>'+teamMark(t.name)+'<span><small>#'+(i+1)+' STEADIEST</small><strong>'+esc(t.name)+'</strong><em>'+esc(t.owner)+'</em></span><b>'+t.spread.toFixed(1)+'</b></header><div class="ns-visual-track"><i style="width:'+stability+'%"></i></div><footer>Game-to-game margin variation · '+t.scoredN+' scored games</footer></article>';
+    }).join("")||'<p class="ns-note">Consistency appears after teams have at least two scored games.</p>';
+
+    const teamPace=teamNumbers(rows,recent);
+    const portfolio=rows.map(r=>{
+      const teams=[...r.teams].filter(t=>Number.isFinite(t.expected)).sort((a,b)=>b.expected-a.expected),total=teams.reduce((n,t)=>n+t.expected,0);
+      const carrier=teams[0],drag=[...teams].sort((a,b)=>a.expected-b.expected)[0];
+      const pace=teamPace.filter(t=>t.owner===r.name&&Number.isFinite(t.delta)),best=[...pace].sort((a,b)=>b.delta-a.delta)[0],worst=[...pace].sort((a,b)=>a.delta-b.delta)[0];
+      const share=total&&carrier?carrier.expected/total*100:0;
+      return {r,carrier,drag,best,worst,share};
     });
+    const portfolios=portfolio.map(x=>
+      '<article class="ns-portfolio-story"><header><strong>'+esc(x.r.name)+'</strong><b>'+x.r.projected.toFixed(1)+' projected</b></header><div class="ns-carry-pair"><div class="positive">'+(x.carrier?teamMark(x.carrier.name):'')+'<span><small>CARRYING</small><strong>'+esc(x.carrier?shortTeam(x.carrier.name):"—")+'</strong><em>'+x.share.toFixed(0)+'% of projected total</em></span></div><div class="negative">'+(x.drag?teamMark(x.drag.name):'')+'<span><small>HOLDING YOU BACK</small><strong>'+esc(x.drag?shortTeam(x.drag.name):"—")+'</strong><em>'+(x.worst&&x.worst.delta<0?Math.abs(x.worst.delta).toFixed(1)+' wins below pace':(x.drag?x.drag.expected.toFixed(1)+' projected wins':'No data'))+'</em></span></div></div><footer>'+(x.best&&x.best.delta>0?esc(shortTeam(x.best.name))+' is your best value at +'+x.best.delta.toFixed(1)+' wins versus pace.':'Waiting for a clear outperformer.')+'</footer></article>'
+    ).join("");
+
+    return '<div class="ns-scroll-feed">'+
+      '<section class="ns-section ns-feed-block ns-power"><div class="ns-section-title"><span class="ns-kicker">POWER BOARD</span><h3>Who is strongest right now?</h3><p>Actual form, projected finish and the teams driving it.</p></div><div class="ns-power-grid">'+power+'</div></section>'+
+      '<section class="ns-section ns-feed-block ns-workload"><div class="ns-section-title"><span class="ns-kicker">NEXT SEVEN DAYS</span><h3>Who has the busiest road ahead?</h3><p>More games mean more chances to move the competition.</p></div><div class="ns-workload-list">'+workload+'</div></section>'+
+      '<section class="ns-section ns-feed-block ns-consistency"><div class="ns-section-title"><span class="ns-kicker">STEADY HANDS</span><h3>Which teams are most consistent?</h3><p>Lower game-to-game margin variation ranks higher.</p></div><div class="ns-steady-grid">'+consistency+'</div></section>'+
+      '<section class="ns-section ns-feed-block ns-portfolios"><div class="ns-section-title"><span class="ns-kicker">CARRYING / HOLDING BACK</span><h3>What is shaping every portfolio?</h3><p>The strongest pillar, the weakest link and the team beating its line.</p></div><div class="ns-portfolio-story-grid">'+portfolios+'</div></section>'+
+    '</div>';
   }
 
   function strengthMatrix(rows){
@@ -342,7 +359,6 @@
       strengthMatrix(rows)+
       '<div id="nsDeepSlot">'+deepStats(rows,recent)+'</div>';
     bindSquad(root,rows,recent);
-    bindLab(root);
     bindDeep(root,rows,recent);
   }
 
