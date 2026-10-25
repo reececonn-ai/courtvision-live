@@ -3785,6 +3785,51 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 @media(max-width:420px){.ns-carry-pair{grid-template-columns:1fr}}
 
 /* Readable analytics: clear units, useful comparisons and room for the data. */
+.ns-personal-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px;padding:8px 16px 18px}
+.ns-contribution,.ns-chase{min-width:0;padding:20px;background:#0d2133;border-radius:6px}
+.ns-contribution header>small,.ns-chase>small{font-size:11px;letter-spacing:.1em;color:#72ceff}
+.ns-contribution h4,.ns-chase h4{font-size:24px;line-height:1.2;margin:10px 0 20px;color:#fff}
+.ns-chase h4>span{font-size:14px;color:#93acc3}
+.ns-contribution-row{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #284055}
+.ns-contribution-row>img{width:36px;height:36px;object-fit:contain}
+.ns-contribution-row strong{font-size:15px;color:#fff}.ns-contribution-row small{display:block;font-size:11px;line-height:1.5;color:#adc4da}
+.ns-contribution-row>b{font-size:24px;text-align:right;color:#fff}.ns-contribution-row>b small{font-size:10px;font-weight:400}
+.ns-contribution-track{height:7px;background:#1e354b;margin-top:7px;border-radius:3px;overflow:hidden}
+.ns-contribution-track i{display:block;height:100%;background:linear-gradient(90deg,var(--team1),var(--team2))}
+.ns-chase-numbers{display:flex;justify-content:space-between;gap:12px;border-block:1px solid #385068;padding:20px 0}
+.ns-chase-numbers strong,.ns-chase-numbers b{font-size:32px;color:#fff}.ns-chase-numbers strong{color:#72ceff}
+.ns-chase-numbers small{display:block;font-size:12px;color:#adc4da;margin-top:6px;font-weight:400}
+.ns-chase p{font-size:14px;color:#c6d8e8;line-height:1.6}
+#nerdStudio .ns-personal .ns-note{margin:15px 0 0;font-size:12px}
+.ns-pressure-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:8px 16px 18px}
+.ns-pressure-card{padding:16px;border-left:4px solid var(--team1);border-radius:5px;background:linear-gradient(110deg,color-mix(in srgb,var(--team1) 18%,#0c2031),#0c2031)}
+.ns-pressure-card header{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:10px;align-items:center}
+.ns-pressure-card header img{width:36px;height:36px;object-fit:contain}.ns-pressure-card header strong{display:block;font-size:15px;color:#fff;margin-top:5px}
+.ns-pressure-card header small{font-size:10px;color:#b5cce0;line-height:1.5}.ns-pressure-card header>b{font-size:23px;text-align:right}
+.ns-pressure-card header>b small{display:block;font-weight:400;font-size:10px}
+.ns-pressure-card p{font-size:13px;line-height:1.6;color:#c6d9e9;margin-bottom:8px}.ns-pressure-card>small{font-size:11px;color:#91adc6;line-height:1.5}
+.ns-trade-controls{display:grid;grid-template-columns:minmax(0,1fr) 32px minmax(0,1fr);gap:12px;align-items:end;padding:8px 20px 20px}
+.ns-trade-controls label{font-size:13px;color:#b4ccdf;min-width:0}.ns-trade-controls select{display:block;width:100%;margin-top:8px;border:1px solid #43617c;border-radius:5px;padding:13px 10px;font-size:14px;color:#fff;background:#10283d;min-height:46px}
+.ns-trade-controls>span{font-size:26px;text-align:center;color:#6bcaff;padding-bottom:8px}
+.ns-trade-result{margin:0 20px 18px;padding:20px;border-radius:6px;background:#0e2538}
+.ns-trade-badges{display:flex;align-items:center;gap:14px;margin-bottom:14px}.ns-trade-badges img{width:46px;height:46px;object-fit:contain}.ns-trade-badges span{font-size:24px;color:#a5bdd2}
+.ns-trade-result>strong{font-size:24px}.ns-trade-result p{font-size:13px;line-height:1.65;color:#bfd4e5}
+#nsTradeLens>.ns-table-scroll{margin:0 20px;width:calc(100% - 40px)}
+.ns-trade-table{width:100%;font-size:14px;border-collapse:collapse}.ns-trade-table th,.ns-trade-table td{padding:13px 12px;border-bottom:1px solid #29435b;text-align:left}.ns-trade-table td{font-variant-numeric:tabular-nums;color:#fff}
+.ns-record-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:8px 16px 18px}
+.ns-record-card{min-width:0;padding:18px;background:#0c2031;border-top:2px solid #d4b16b;border-radius:5px}
+.ns-record-card>small{display:block;font-size:11px;letter-spacing:.07em;color:#d4b16b;line-height:1.5}
+.ns-record-card>strong{display:block;font-size:25px;color:#fff;margin:10px 0}.ns-record-card p{font-size:12px;line-height:1.6;color:#abc3d9;margin:0}
+@media(max-width:820px){
+ .ns-personal-grid,.ns-pressure-grid{grid-template-columns:1fr;padding:6px 10px 12px}
+ .ns-record-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:6px 10px 12px}
+ .ns-trade-controls{grid-template-columns:minmax(0,1fr);gap:8px;padding:6px 14px 16px}.ns-trade-controls>span{display:none}
+ .ns-contribution,.ns-chase{padding:15px}.ns-trade-result{margin:0 14px 14px;padding:15px}.ns-trade-result>strong{font-size:21px}
+ .ns-pressure-card header{grid-template-columns:30px minmax(0,1fr) auto;gap:7px}.ns-pressure-card header img{width:29px;height:29px}
+ .ns-pressure-card header strong{font-size:13px}.ns-pressure-card header>b{font-size:21px}
+ .ns-trade-table{font-size:12px}.ns-trade-table th,.ns-trade-table td{padding:10px 6px}
+}
+@media(max-width:420px){.ns-record-grid{grid-template-columns:1fr}}
 #nerdStudio .ns-section{border-radius:8px;overflow:hidden}
 #nerdStudio .ns-section-title{padding:20px;margin:0 0 12px}
 #nerdStudio .ns-kicker{font-size:11px;letter-spacing:.14em}

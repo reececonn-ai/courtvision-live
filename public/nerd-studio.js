@@ -36,7 +36,7 @@
     return '<div class="ns-legend">'+rows.map(r=>'<span><i style="background:'+colour(r.name,rows)+'"></i>'+esc(r.name)+'</span>').join("")+'</div>'+svg+'</svg><p class="ns-note">Sydney day (MM-DD) · simulated title chances, not betting odds. Missing owner observations are left as gaps.</p>';
   }
 
-  const plus=n=>(n>0?"+":"")+n.toFixed(1);
+  const plus=n=>{const value=Math.abs(n)<.05?0:n;return (value>0?"+":"")+value.toFixed(1)};
   function teamNumbers(rows,recent){
     const finals=[...recent].filter(g=>g.status==="FINAL"&&(g.homeWinner||g.awayWinner)).sort((a,b)=>new Date(b.date)-new Date(a.date));
     return rows.flatMap(r=>r.teams.map(t=>{
@@ -187,6 +187,9 @@
     return '<div class="ns-performance-graph"><div class="ns-performance-axis"><span>← Below expectation</span><span>Above expectation →</span></div><ul>'+picked.map(t=>'<li><div class="ns-performance-name"><img src="'+logoUrl(teamByName(t.name)?.[1]||"")+'" alt=""><span>'+esc(t.name)+'<small>'+t.played+' games · '+esc(t.owner)+'</small></span></div><div class="ns-performance-track" aria-hidden="true"><i style="left:'+(t.delta<0?50-Math.abs(t.delta)/max*50:50)+'%;width:'+Math.abs(t.delta)/max*50+'%;background:'+(t.delta>0?'#77d8b6':'#f18ba3')+'"></i></div><b>'+plus(t.delta)+'<small>wins</small></b></li>').join("")+'</ul></div><p class="ns-note">Top three above and below preseason win pace. Gap = actual wins − (preseason win line × games played ÷ 82). Full team numbers are below.</p>';
   }
   let squadOwner="",rivalOwner="";
+  const preferenceKey="cv-nerd-owner:"+(new URLSearchParams(location.search).get('room')||'default');
+  try{squadOwner=localStorage.getItem(preferenceKey)||''}catch(e){}
+  function rememberOwner(name){squadOwner=name;try{localStorage.setItem(preferenceKey,name)}catch(e){}}
   const projectedOrder=rows=>[...rows].sort((a,b)=>b.projected-a.projected||a.name.localeCompare(b.name));
 
   function faceToFace(mine,other,recent){
@@ -227,10 +230,11 @@
     root.querySelectorAll("[data-owner-index]").forEach(button=>button.addEventListener("click",()=>{
       const index=Number(button.dataset.ownerIndex);
       if(!rows[index])return;
-      squadOwner=rows[index].name;rivalOwner="";
+      rememberOwner(rows[index].name);rivalOwner="";
       root.querySelector("#nsSquadContent").innerHTML=squadComparison(rows);
       bindSquad(root,rows);
       const value=root.querySelector("#nsValueContent");if(value)value.innerHTML=performanceLab(rows,latest?.recent||[]);
+      const personal=root.querySelector('#nsPersonal');if(personal)personal.innerHTML=personalLab(rows,latest?.games||[],latest?.recent||[]);
       root.querySelector('[data-owner-index="'+index+'"]')?.focus({preventScroll:true});
     }));
 
@@ -387,23 +391,77 @@
     }));
   }
 
+  function personalLab(rows,games,recent){
+    const mine=rows.find(r=>r.name===squadOwner);
+    if(!mine)return '<p class="ns-note">Choose your name above to unlock your five-team breakdown and the chase. This browser remembers your choice for this room.</p>';
+    const actual=[...rows].sort((a,b)=>(b.w/(b.w+b.l||1))-(a.w/(a.w+a.l||1))||b.w-a.w||b.projected-a.projected),position=actual.indexOf(mine),target=position>0?actual[position-1]:actual[1];
+    const upcoming=(games||[]).filter(g=>!['FINAL','POSTPONED','CANCELED'].includes(g.status)&&new Date(g.date)>=new Date()&&new Date(g.date)<Date.now()+3*86400000);
+    const count=r=>upcoming.reduce((n,g)=>n+Number(r.teams.some(t=>t.name===g.home))+Number(r.teams.some(t=>t.name===g.away)),0);
+    const myPct=mine.w+mine.l?mine.w/(mine.w+mine.l)*100:null,targetPct=target&&target.w+target.l?target.w/(target.w+target.l)*100:null;
+    const chase=target?'<article class="ns-chase"><small>'+ (position?'YOUR NEXT TARGET':'THE NEAREST CHASER')+'</small><h4>'+esc(mine.name)+' <span>vs</span> '+esc(target.name)+'</h4><div class="ns-chase-numbers"><strong>'+(myPct===null?'—':myPct.toFixed(1)+'%')+'<small>Your winning %</small></strong><b>'+(targetPct===null?'—':targetPct.toFixed(1)+'%')+'<small>'+esc(target.name)+'</small></b></div><p>'+(myPct!==null&&targetPct!==null?Math.abs(myPct-targetPct).toFixed(1)+' percentage points '+(position?'behind your next rival.':'ahead of your nearest rival.'):'The race starts once results arrive.')+'</p><p>'+count(mine)+' upcoming team games for you · '+count(target)+' for '+esc(target.name)+' in the loaded three-day window.</p><p class="ns-note">Different games played means a win gap alone does not determine rank. Current portfolios are used for upcoming games.</p></article>':'';
+    const teams=teamNumbers([mine],recent).sort((a,b)=>(b.ownerW??b.w)-(a.ownerW??a.w)),max=Math.max(1,...teams.map(t=>t.ownerW??t.w));
+    return '<div class="ns-personal-grid"><article class="ns-contribution"><header><small>YOUR FIVE TEAMS</small><h4>'+esc(mine.name)+' · who’s carrying you?</h4></header>'+teams.map(t=>{const wins=t.ownerW??t.w;return '<div class="ns-contribution-row" style="'+teamStyle(t.name)+'">'+teamMark(t.name)+'<div><strong>'+esc(shortTeam(t.name))+'</strong><small>'+t.w+'–'+t.l+' NBA · '+(t.delta===null?'pace unavailable':plus(t.delta)+' wins vs preseason pace')+'</small><div class="ns-contribution-track"><i style="width:'+wins/max*100+'%"></i></div></div><b>'+wins+'<small>wins earned</small></b></div>'}).join('')+'<p class="ns-note">Wins earned while you owned each team. '+(mine.bankedW||0)+' earlier wins are banked from previous ownership. Pace compares the NBA team’s full record with its preseason line.</p></article>'+chase+'</div>';
+  }
+
+  let tradeFrom='',tradeTo='';
+  function tradeLens(rows,recent){
+    const teams=teamNumbers(rows,recent).sort((a,b)=>a.name.localeCompare(b.name));
+    if(teams.length<2)return '<p class="ns-note">Team comparisons appear once at least two teams are owned.</p>';
+    if(!teams.some(t=>t.name===tradeFrom))tradeFrom=teams.find(t=>t.owner===squadOwner)?.name||teams[0].name;
+    if(!teams.some(t=>t.name===tradeTo)||tradeTo===tradeFrom)tradeTo=teams.find(t=>t.name!==tradeFrom&&t.owner!==teams.find(x=>x.name===tradeFrom)?.owner)?.name||teams.find(t=>t.name!==tradeFrom).name;
+    const a=teams.find(t=>t.name===tradeFrom),b=teams.find(t=>t.name===tradeTo);
+    const options=selected=>teams.map(t=>'<option value="'+esc(t.name)+'"'+(t.name===selected?' selected':'')+'>'+esc(t.name)+' · '+esc(t.owner)+'</option>').join('');
+    const remaining=t=>Math.max(0,82-t.w-t.l),future=t=>Number.isFinite(t.expected)?Math.max(0,t.expected-t.w):null,af=future(a),bf=future(b),delta=af!==null&&bf!==null?bf-af:null;
+    const metric=(label,one,two)=>'<tr><th scope="row">'+label+'</th><td>'+one+'</td><td>'+two+'</td></tr>';
+    const form=t=>t.formN?t.form+'–'+(t.formN-t.form)+' ('+t.formN+' games)':'—';
+    return '<div class="ns-trade-controls"><label>Your outgoing team<select data-trade-from>'+options(tradeFrom)+'</select></label><span aria-hidden="true">⇄</span><label>Team you’re considering<select data-trade-to>'+options(tradeTo)+'</select></label></div><div class="ns-trade-result"><div class="ns-trade-badges">'+teamMark(a.name)+'<span>→</span>'+teamMark(b.name)+'</div><strong class="'+(delta!==null&&delta<0?'negative':'positive')+'">'+(delta===null?'Forecast unavailable':plus(delta)+' estimated future wins')+'</strong><p>'+(a.owner===b.owner?'Both teams currently belong to '+esc(a.owner)+'. This is a comparison only.':'For '+esc(a.owner)+' if '+esc(shortTeam(a.name))+' is exchanged for '+esc(shortTeam(b.name))+'.')+' Wins already earned stay with their current owner.</p></div><div class="ns-table-scroll"><table class="ns-table ns-trade-table"><thead><tr><th>Measure</th><th>'+esc(shortTeam(a.name))+'</th><th>'+esc(shortTeam(b.name))+'</th></tr></thead><tbody>'+metric('NBA record',a.w+'–'+a.l,b.w+'–'+b.l)+metric('Remaining games',remaining(a),remaining(b))+metric('Estimated remaining wins',af===null?'—':af.toFixed(1),bf===null?'—':bf.toFixed(1))+metric('Projected season wins',Number.isFinite(a.expected)?a.expected.toFixed(1):'—',Number.isFinite(b.expected)?b.expected.toFixed(1):'—')+metric('Recent form',form(a),form(b))+metric('Recent scoring margin',a.margin===null?'—':plus(a.margin),b.margin===null?'—':plus(b.margin))+'</tbody></table></div><p class="ns-note">A read-only comparison, not a trade proposal. Estimated future wins = current season forecast minus wins already earned. No title-chance change is implied. Remaining fixtures and injuries can change the outlook.</p>';
+  }
+
+  function extraLabs(rows,recent,demo){
+    const teams=deepData(rows,recent),pressure=teams.filter(t=>t.scoredN>=2).sort((a,b)=>b.margin-a.margin).slice(0,12);
+    const cards=pressure.map(t=>{const closeWins=t.close.filter(g=>g.won).length,closeLoss=t.close.length-closeWins,pct=t.n?t.recentRecord:'—';const label=t.margin>5?'WINNING WITH ROOM':t.margin<0&&t.close.length&&closeWins>closeLoss?'CLOSE WINS, THIN MARGINS':t.margin<0?'CHASING BETTER FORM':'FINE MARGINS';return '<article class="ns-pressure-card" style="'+teamStyle(t.name)+'"><header>'+teamMark(t.name)+'<div><small>'+label+'</small><strong>'+esc(shortTeam(t.name))+' · '+esc(t.owner)+'</strong></div><b class="'+(t.margin>=0?'positive':'negative')+'">'+plus(t.margin)+'<small>avg margin</small></b></header><p>'+pct+' recent · '+closeWins+'–'+closeLoss+' in games decided by 5 or fewer · '+t.blowouts+' wins by 15+.</p><small>'+t.scoredN+' scored results. Margin shows performance, not proof of luck.</small></article>'}).join('')||'<p class="ns-note">This section fills after teams have at least two scored results.</p>';
+    const snaps=(state.competitionSnapshots||[]).filter(s=>!!s.demo===!!demo&&Array.isArray(s.rows)&&s.rows.length>1&&s.key>='2026-10-21').sort((a,b)=>String(a.key).localeCompare(String(b.key)));
+    let biggest=null,closest=null;
+    for(const s of snaps){const ranked=s.rows.filter(r=>Number.isFinite(r.projected)).sort((a,b)=>b.projected-a.projected);if(ranked.length<2)continue;const gap=ranked[0].projected-ranked[1].projected,item={gap,first:ranked[0].name,second:ranked[1].name,key:s.key};if(!biggest||gap>biggest.gap)biggest=item;if(!closest||gap<closest.gap)closest=item;}
+    const record=(label,value,note)=>'<article class="ns-record-card"><small>'+label+'</small><strong>'+esc(value)+'</strong><p>'+esc(note)+'</p></article>';
+    const bestRanks=rows.map(r=>{const ranks=snaps.flatMap(s=>{const ordered=s.rows.filter(x=>Number.isFinite(x.projected)).sort((a,b)=>b.projected-a.projected),entry=ordered.find(x=>x.name===r.name);return entry?[1+ordered.filter(x=>x.projected>entry.projected+.00001).length]:[]});return record(r.name,ranks.length?'#'+Math.min(...ranks):'—','Best saved forecast rank · '+ranks.length+' daily observations')}).join('');
+    let longest=null;const finals=[...recent].filter(g=>g.status==='FINAL'&&(g.homeWinner||g.awayWinner)).sort((a,b)=>new Date(a.date)-new Date(b.date));
+    for(const t of teams){let run=0,best=0;const seen=new Set();for(const g of finals){if(g.home!==t.name&&g.away!==t.name)continue;const key=g.id||[g.date,g.home,g.away].join('|');if(seen.has(key))continue;seen.add(key);run=(g.home===t.name?g.homeWinner:g.awayWinner)?run+1:0;best=Math.max(best,run)}if(best&&(!longest||best>longest.best))longest={...t,best};}
+    const closeFinish=finals.filter(g=>Number.isFinite(Number(g.homeScore))&&Number.isFinite(Number(g.awayScore))).sort((a,b)=>Math.abs(a.homeScore-a.awayScore)-Math.abs(b.homeScore-b.awayScore))[0];
+    return '<section class="ns-section ns-feed-block ns-pressure"><div class="ns-section-title"><span class="ns-kicker">HOT OR JUST SQUEAKING BY?</span><h3>Look beyond the win column.</h3><p>Scoring margin, close games and comfortable wins. These cover the available recent results.</p></div><div class="ns-pressure-grid">'+cards+'</div></section>'+
+      '<section class="ns-section ns-feed-block ns-trade"><div class="ns-section-title"><span class="ns-kicker">TRADE LENS</span><h3>Is the swap worth a look?</h3><p>Compare the wins still ahead. Your banked wins stay yours.</p></div><div id="nsTradeLens">'+tradeLens(rows,recent)+'</div></section>'+
+      '<section class="ns-section ns-feed-block ns-records"><div class="ns-section-title"><span class="ns-kicker">THE RECORD SHELF</span><h3>A little competition history.</h3><p>Recorded daily forecasts and available game results. This is not a complete season archive.</p></div><div class="ns-record-grid">'+record('BIGGEST SAVED FORECAST LEAD',biggest?plus(biggest.gap)+' wins':'—',biggest?biggest.first+' over '+biggest.second+' · '+biggest.key:'Needs saved forecasts')+record('CLOSEST SAVED FORECAST RACE',closest?closest.gap.toFixed(1)+' wins':'—',closest?closest.first+' / '+closest.second+' · '+closest.key:'Needs saved forecasts')+record('BEST TEAM RUN IN LOADED RESULTS',longest?shortTeam(longest.name)+' · '+longest.best+'W':'—',longest?longest.owner+' · consecutive wins within available results':'No winning run in loaded results')+record('CLOSEST LOADED FINAL',closeFinish?Math.abs(closeFinish.homeScore-closeFinish.awayScore)+' points':'—',closeFinish?shortTeam(closeFinish.away)+' '+closeFinish.awayScore+'–'+closeFinish.homeScore+' '+shortTeam(closeFinish.home):'Needs a scored final')+bestRanks+'</div></section>';
+  }
+
+  function bindTradeLens(root,rows,recent){
+    root.querySelectorAll('[data-trade-from],[data-trade-to]').forEach(select=>select.addEventListener('change',()=>{
+      const kind=select.hasAttribute('data-trade-from')?'from':'to';if(kind==='from')tradeFrom=select.value;else{tradeTo=select.value;if(tradeTo===tradeFrom)tradeFrom='';}
+      root.querySelector('#nsTradeLens').innerHTML=tradeLens(rows,recent);bindTradeLens(root,rows,recent);
+      root.querySelector(kind==='from'?'[data-trade-from]':'[data-trade-to]')?.focus({preventScroll:true});
+    }));
+  }
+
   function render(rows,games,recent,demo){
     latest={rows,games,recent,demo};
     const root=document.getElementById("nerdStudio");if(!root)return;
     document.getElementById("nerdClassic")?.remove();
     root.innerHTML='<section class="ns-section ns-squad"><div class="ns-section-title"><span class="ns-kicker">PICK YOUR NAME</span><h3>Compared with you</h3></div><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></section>'+
+      '<section class="ns-section ns-feed-block ns-personal"><div class="ns-section-title"><span class="ns-kicker">YOUR CORNER</span><h3>Your teams. Your chase.</h3><p>Choose your name in Compared with you. Remembered on this browser, for this room.</p></div><div id="nsPersonal">'+personalLab(rows,games,recent)+'</div></section>'+
       numbersLab(rows,games,recent)+
+      extraLabs(rows,recent,demo)+
       '<section class="ns-section ns-momentum"><div class="ns-section-title"><span class="ns-kicker">OWNER MOMENTUM</span><h3>Every twist. Every contender.</h3></div>'+historyChart(rows,demo,root.clientWidth||960)+'</section>'+
       '<section class="ns-section" id="nsTeamLab"><div class="ns-section-title"><span class="ns-kicker">EXPECTATION TRACKER</span><h3>Who’s beating the line?</h3></div><div id="nsValueContent">'+performanceLab(rows,recent)+'</div></section>'+
       strengthMatrix(rows);
     bindSquad(root,rows,recent);
     root.querySelectorAll('[data-power-owner]').forEach(button=>button.addEventListener('click',()=>{
       const r=rows[Number(button.dataset.powerOwner)];if(!r)return;
-      squadOwner=r.name;rivalOwner='';root.querySelector('#nsSquadContent').innerHTML=squadComparison(rows);bindSquad(root,rows);
+      rememberOwner(r.name);rivalOwner='';root.querySelector('#nsSquadContent').innerHTML=squadComparison(rows);bindSquad(root,rows);
+      root.querySelector('#nsPersonal').innerHTML=personalLab(rows,games,recent);
       root.querySelector('.ns-squad').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
       root.querySelector('[data-owner-index="'+rows.indexOf(r)+'"]')?.focus({preventScroll:true});
     }));
     bindDeep(root,rows,recent);
+    bindTradeLens(root,rows,recent);
   }
 
   function renderCompetitionBrief(rows,recent,demo){

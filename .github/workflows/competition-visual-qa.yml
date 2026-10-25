@@ -132,12 +132,30 @@ jobs:
                   raise SystemExit("Stats ticker is not fixed edge-to-edge")
               if nerd["owners"]!=6 or nerd["powerCards"]!=6:
                   raise SystemExit("Owner comparison or power cards missing")
-              if nerd["sections"]<10 or nerd["deepArchive"]:
+              if nerd["sections"]<14 or nerd["deepArchive"]:
                   raise SystemExit("Stats feed incomplete or removed Deep Archive still present")
               if nerd["matrixRows"]!=6:
                   raise SystemExit("Strength matrix incomplete")
               if not (nerd["powerY"] < nerd["workloadY"] < nerd["matrixY"]):
                   raise SystemExit("Stats for Nerds feed order is incorrect")
+
+              personal=d.execute_script("""
+                document.querySelector('[data-owner-index]').click();
+                const before=JSON.stringify({assignments:state.assignments,ledger:state.tradeLedger});
+                const from=document.querySelector('[data-trade-from]');
+                const to=document.querySelector('[data-trade-to]');
+                if(to&&to.options.length>3){to.value=to.options[3].value;to.dispatchEvent(new Event('change',{bubbles:true}));}
+                return {
+                  contributions:document.querySelectorAll('.ns-contribution-row').length,
+                  chase:!!document.querySelector('.ns-chase'),
+                  tradeChoices:from?.options.length,
+                  records:document.querySelectorAll('.ns-record-card').length,
+                  unchanged:before===JSON.stringify({assignments:state.assignments,ledger:state.tradeLedger}),
+                  invalid:/NaN|undefined|Infinity/.test(document.querySelector('#nerdStudio').innerText)
+                };
+              """)
+              if personal["contributions"]!=5 or not personal["chase"] or personal["tradeChoices"]!=30 or personal["records"]<9 or not personal["unchanged"] or personal["invalid"]:
+                  raise SystemExit("Personal analytics or read-only Trade Lens failed: "+json.dumps(personal))
 
               # Remote ordinary data updates must not move this browser off Stats for Nerds.
               isolated=d.execute_script("""
