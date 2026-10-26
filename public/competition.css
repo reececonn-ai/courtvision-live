@@ -4016,3 +4016,5 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
  #nerdStudio .ns-carry-pair{grid-template-columns:1fr}
  #nerdStudio .ns-portfolio-story>header{flex-wrap:wrap}
 }
+
+#nerdStudio .ns-squad>summary{cursor:pointer;list-style:disclosure-closed}#nerdStudio .ns-squad[open]>summary{list-style:disclosure-open}#nerdStudio .ns-squad-hint{color:#9fb5ca;font-size:12px;font-weight:400}#nerdStudio .ns-squad>summary:focus-visible{outline:2px solid #63c8ff;outline-offset:-2px}

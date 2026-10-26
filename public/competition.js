@@ -527,7 +527,7 @@
     const ledger=ensureTradeLedger(records);
     return state.players.map(p=>{
       const teams=p.teams||[],bank=ledger.banked[p.name]||{w:0,l:0};
-      let w=Number(bank.w)||0,l=Number(bank.l)||0,preseasonProjected=w,liveProjected=w,variance=0;
+      let w=Number(bank.w)||0,l=Number(bank.l)||0,preseasonProjected=0,liveProjected=w,variance=0;
       const teamRows=teams.map(name=>{
         const r=records[name]||{w:0,l:0},played=r.w+r.l,remaining=Math.max(0,82-played);
         const epoch=ledger.teams[name]?.owner===p.name?ledger.teams[name]:{owner:p.name,w:0,l:0};
@@ -538,9 +538,9 @@
         const priorGames=20;
         let liveRate=played?(preseasonRate*priorGames+r.w)/(priorGames+played):preseasonRate;
         liveRate=Math.max(.08,Math.min(.92,liveRate));
-        const preseasonExpected=r.w+preseasonRate*remaining;
+        const preseasonExpected=Number.isFinite(line)?line:41;
         const liveExpected=r.w+liveRate*remaining;
-        const ownerPreseasonExpected=ownedW+preseasonRate*remaining;
+        const ownerPreseasonExpected=preseasonExpected;
         const ownerLiveExpected=ownedW+liveRate*remaining;
         w+=ownedW;l+=ownedL;preseasonProjected+=ownerPreseasonExpected;liveProjected+=ownerLiveExpected;variance+=remaining*liveRate*(1-liveRate);
         return {name,w:r.w,l:r.l,rank:r.rank||null,line,expected:liveExpected,preseasonExpected,liveExpected,ownerW:ownedW,ownerL:ownedL,ownerExpected:ownerLiveExpected,ownerPreseasonExpected,acquiredAtW:Number(epoch.w)||0,acquiredAtL:Number(epoch.l)||0};
@@ -1538,6 +1538,7 @@
   window.refreshStatsForNerds=refreshStatsForNerds;
 
   function openStatsForNerds(){
+    document.querySelector('#nerdStudio .ns-squad')?.removeAttribute('open');
     showScreenLocal("statsForNerdsScreen");
     ensureAutoUpdate();
     // Paint immediately from memory while fresh live data loads in the background.

@@ -473,7 +473,8 @@
     latest={rows,games,recent,demo};
     const root=document.getElementById("nerdStudio");if(!root)return;
     document.getElementById("nerdClassic")?.remove();
-    root.innerHTML='<section class="ns-section ns-squad"><div class="ns-section-title"><span class="ns-kicker">PICK YOUR NAME</span><h3>Compared with you</h3></div><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></section>'+
+    const comparisonOpen=root.querySelector('.ns-squad')?.open||false;
+    root.innerHTML='<details class="ns-section ns-squad"'+(comparisonOpen?' open':'')+'><summary class="ns-section-title"><span class="ns-kicker">PICK YOUR NAME</span><h3>Compared with you</h3><span class="ns-squad-hint">Tap to expand or collapse</span></summary><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></details>'+
       numbersLab(rows,games,recent)+
       extraLabs(rows,recent,demo)+
       '<section class="ns-section ns-momentum"><div class="ns-section-title"><span class="ns-kicker">OWNER MOMENTUM</span><h3>Every twist. Every contender.</h3></div>'+historyChart(rows,demo,root.clientWidth||960)+'</section>'+
@@ -483,6 +484,7 @@
     root.querySelectorAll('[data-power-owner]').forEach(button=>button.addEventListener('click',()=>{
       const r=rows[Number(button.dataset.powerOwner)];if(!r)return;
       rememberOwner(r.name);rivalOwner='';root.querySelector('#nsSquadContent').innerHTML=squadComparison(rows);bindSquad(root,rows);
+      root.querySelector('.ns-squad').open=true;
       root.querySelector('.ns-squad').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
       root.querySelector('[data-owner-index="'+rows.indexOf(r)+'"]')?.focus({preventScroll:true});
     }));
