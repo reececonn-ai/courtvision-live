@@ -438,10 +438,10 @@ export default {
       });
     }
 
-    // Optional editorial feed: one upstream source, cached 30 minutes at the edge.
+    // One shared news cache; short enough to surface notable live injury reports.
     // Never touches the draft Durable Object or triggers scheduled background work.
     if (url.pathname === "/api/nba/news") {
-      const key = new Request(url.origin + "/api/nba/news?layout=3", { method: "GET" });
+      const key = new Request(url.origin + "/api/nba/news?layout=4", { method: "GET" });
       const cache = caches.default;
       const hit = await cache.match(key);
       if (hit) return hit;
@@ -463,7 +463,7 @@ export default {
             /trad|sign|waiv|acquir|deal|contract/i.test(a.headline || "") ? "ROSTER" : "NBA NEWS",
         })).filter(a => a.headline && /^https:\/\/(www\.)?espn\.com\//.test(a.url));
         const response = json({ ok: true, source: "ESPN", fetchedAt: new Date().toISOString(), articles });
-        response.headers.set("cache-control", "public, max-age=1800, s-maxage=1800");
+        response.headers.set("cache-control", "public, max-age=300, s-maxage=300");
         ctx.waitUntil(cache.put(key, response.clone()));
         return response;
       } catch (_) {

@@ -51,6 +51,31 @@
 
   const storyCache=new Map();
   let storyBusy=false,briefContext=null;
+  let briefNews=[],briefNewsAt=0,briefNewsBusy=false;
+  async function enrichBriefNews(demo){
+    if(demo||briefNewsBusy||!window.cvNews?.getNews||Date.now()-briefNewsAt<300000)return;
+    briefNewsBusy=true;briefNewsAt=Date.now();
+    try{briefNews=await window.cvNews.getNews()}catch(e){}finally{briefNewsBusy=false}
+    const ctx=briefContext;if(ctx)renderCompetitionBrief(ctx.rows,ctx.recent,ctx.demo);
+  }
+  function newsInsights(rows){
+    const now=Date.now(),seen=new Set(),owned=new Set(rows.flatMap(r=>r.teams.map(t=>t.name)));
+    const articles=(Array.isArray(briefNews)?briefNews:[]).flatMap(a=>{
+      const stamp=Date.parse(a.published||''),headline=String(a.headline||''),text=headline+' '+String(a.summary||'');
+      if(!Number.isFinite(stamp)||now-stamp>48*3600000||stamp>now+300000||!/^https:\/\/(www\.)?espn\.com\/nba\/story\//i.test(a.url||''))return [];
+      if(/fantasy|betting|rumou?r|mock draft|power rankings|trade ideas|trade targets/i.test(headline))return [];
+      const injury=/injur|fractur|torn|tear\b|sprain|strain|surgery|ruled out|out (?:for|at least|indefinitely)|sidelined|stretcher|taken off|helped off|knee swelling|plantar fasciitis/i.test(text),roster=/\b(?:trad(?:e|es|ed)|waiv(?:e|es|ed)|acquir(?:e|es|ed)|suspended|suspension|signs?|signed|re-signs?)\b/i.test(headline);
+      if(!injury&&!roster)return [];
+      const related=window.cvNews?.relatedTeams(a)||[],mentioned=related.filter(t=>{const h=headline.toLowerCase();return h.includes(t[0].toLowerCase())||h.includes(t[0].split(' ').at(-1).toLowerCase())});
+      const clubs=injury?(mentioned.length?mentioned:related.slice(0,1)):related;
+      if(!clubs.length||owned.size&&!clubs.some(t=>owned.has(t[0])))return [];
+      const key=(a.url.match(/\/id\/(\d+)/)?.[1]||headline.toLowerCase());if(seen.has(key))return [];seen.add(key);
+      const priority=/stretcher|significant injury|season.ending|out indefinitely|surgery/i.test(text)?100:/out at least|out for.*(?:week|month)|fractur|torn/i.test(text)?90:injury?80:70;
+      const owners=[...new Set(clubs.map(t=>rows.find(r=>r.teams.some(x=>x.name===t[0]))?.name).filter(Boolean))];
+      return [{priority,stamp,item:[injury?'INJURY NEWS':'ROSTER NEWS',headline,(a.summary||'Read the latest report for details.')+(owners.length?' Affects '+owners.join(' / ')+'.':''),clubs.map(t=>t[0]),{url:a.url,published:a.published,source:'ESPN'}]}];
+    }).sort((a,b)=>b.priority-a.priority||b.stamp-a.stamp).slice(0,5);
+    return articles.map(a=>a.item);
+  }
   function gameStories(g,data){
     if(g.status!=="FINAL"||g.sample||(!g.homeWinner&&!g.awayWinner))return [];
     const winner=g.homeWinner?g.home:g.away,loser=g.homeWinner?g.away:g.home,sign=g.homeWinner?1:-1;
@@ -157,17 +182,20 @@
       return {r,results};
     }).filter(x=>x.results.length>=2&&x.results.every(g=>g.won)).sort((a,b)=>b.results.length-a.results.length||a.r.name.localeCompare(b.r.name));
     if(sweeps[0]){const x=sweeps[0];items.unshift(['SQUAD SWEEP',x.r.name,x.results.length+'–0 in completed owned-team games on '+lastDay+' (Sydney). Every available completed result went their way; other fixtures may still remain.',x.results.map(g=>g.team)]);}
-    return [...storyItems(recent),...items];
+    const news=demo?[]:newsInsights(rows);
+    return [...news.slice(0,2),...storyItems(recent),...news.slice(2),...items];
   }
 
-  function dailyCard([tag,name,copy,related],rows){
-    const semantic=tag==="GIANT KILLER"?"#c7a0ff":tag==="SQUAD SWEEP"?"#77d8b6":tag==="WINNING UGLY"?"#f2bb63":/BELOW|RESPONSE/.test(tag)?"#f18ba3":"#63c8ff";
+  function dailyCard([tag,name,copy,related,report],rows){
+    const semantic=tag==='INJURY NEWS'?'#f2bb63':tag==='ROSTER NEWS'?'#b49bff':tag==="GIANT KILLER"?"#c7a0ff":tag==="SQUAD SWEEP"?"#77d8b6":tag==="WINNING UGLY"?"#f2bb63":/BELOW|RESPONSE/.test(tag)?"#f18ba3":"#63c8ff";
     const owner=rows.find(r=>r.name===name);
     const names=related||((typeof teamByName==="function"&&teamByName(name))?[name]:owner?.teams.map(t=>t.name)||[]);
     const clubs=[...new Set(names)].map(n=>typeof teamByName==="function"?teamByName(n):null).filter(Boolean).slice(0,3);
     const accent=clubs.length===1?clubs[0][2]:semantic;
     const logos=clubs.length?clubs.map(t=>'<img src="'+esc(logoUrl(t[1]))+'" alt="'+esc(t[0])+'" loading="lazy" onerror="this.hidden=true">').join(""):'<span class="cv-digest-symbol" aria-hidden="true">✦</span>';
-    return '<article class="cv-digest-card" style="--digest-accent:'+accent+';--digest-label:'+semantic+'"><div class="cv-digest-top"><small>'+esc(tag)+'</small><div class="cv-digest-logos">'+logos+'</div></div><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p></article>';
+    const stamp=report?new Date(report.published).toLocaleString('en-AU',{timeZone:'Australia/Sydney',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):'';
+    const source=report&&/^https:\/\/(www\.)?espn\.com\/nba\/story\//i.test(report.url)?'<a class="cv-digest-source" href="'+esc(report.url)+'" target="_blank" rel="noopener noreferrer">ESPN · '+esc(stamp)+' Sydney · Read report ↗</a>':'';
+    return '<article class="cv-digest-card" style="--digest-accent:'+accent+';--digest-label:'+semantic+'"><div class="cv-digest-top"><small>'+esc(tag)+'</small><div class="cv-digest-logos">'+logos+'</div></div><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p>'+source+'</article>';
   }
 
   function dailyBrief(rows,recent,demo){
@@ -465,6 +493,7 @@
   function renderCompetitionBrief(rows,recent,demo){
     const root=document.getElementById("competitionDailyNumbers");if(!root)return;
     void enrichBriefStories(rows,recent,demo);
+    void enrichBriefNews(demo);
     const expanded=root.querySelector("details")?.open||false,position=root.querySelector(".cv-daily-highlights")?.scrollLeft||0,items=dailyInsights(rows,recent,demo);
     const card=item=>dailyCard(item,rows);
     const date=new Date().toLocaleDateString("en-AU",{day:"numeric",month:"short",timeZone:"Australia/Sydney"});
@@ -495,4 +524,5 @@
     if(!classic&&latest)render(latest.rows,latest.games,latest.recent,latest.demo);
   }
   window.cvNerdStudio={render,toggle,renderCompetitionBrief};
+  window.addEventListener('cv-news-ready',()=>{const ctx=briefContext;if(ctx)renderCompetitionBrief(ctx.rows,ctx.recent,ctx.demo)});
 })();

@@ -3785,6 +3785,8 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 @media(max-width:420px){.ns-carry-pair{grid-template-columns:1fr}}
 
 /* Readable analytics: clear units, useful comparisons and room for the data. */
+.cv-digest-source{display:inline-block;color:#a9dfff;font-size:11px;line-height:1.5;margin-top:12px;text-decoration:none;min-height:24px}
+.cv-digest-source:hover{text-decoration:underline}.cv-digest-source:focus-visible{outline:2px solid #63c8ff;outline-offset:3px}
 #competitionGames .game-box-slot,#competitionGames .game-full-boxes,#competitionGames .game-full-box{min-width:0;max-width:100%}
 #competitionGames .game-snapshot-head{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:16px;background:#10283c;border:1px solid #304b63;border-radius:6px;margin-bottom:16px}
 #competitionGames .game-snapshot-head>div{display:grid;gap:5px;min-width:0}

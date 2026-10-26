@@ -1,8 +1,7 @@
-/* CourtVision editorial preview: lightweight, read-only, optional NBA headlines.
-   No polling, no draft writes, one shared thirty-minute edge cache. */
+/* Lightweight, read-only NBA headlines shared with Daily TL:DR. */
 (function(){
   "use strict";
-  const TTL=30*60*1000;
+  const TTL=5*60*1000;
   let articles=[],last=0,loading=null;
   const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const clean=a=>a&&typeof a.headline==="string"&&/^https:\/\/(www\.)?espn\.com\//.test(a.url||"");
@@ -26,14 +25,16 @@
 
   function relatedTeams(a){
     if(typeof TEAM_DATA==="undefined")return [];
-    return TEAM_DATA.filter(t=>{
+    const matches=TEAM_DATA.filter(t=>{
       const tags=a.teams||[];
       if(tags.some(tag=>tag.name?.toLowerCase()===t[0].toLowerCase()||(tag.id&&typeof espnTeamId==="function"&&String(espnTeamId(t[0]))===tag.id)))return true;
       const headline=String(a.headline||"");
       if(headline.toLowerCase().includes(t[0].toLowerCase()))return true;
       const nickname=t[0].split(" ").at(-1);
-      return new RegExp("\\b"+nickname+"\\b").test(headline);
+      return new RegExp("\\b"+nickname+"\\b","i").test(headline);
     });
+    const order=t=>{const index=(a.teams||[]).findIndex(tag=>tag.name?.toLowerCase()===t[0].toLowerCase()||(tag.id&&typeof espnTeamId==='function'&&String(espnTeamId(t[0]))===tag.id));return index<0?99:index};
+    return matches.sort((a,b)=>order(a)-order(b));
   }
   function ownerLabels(a){
     return relatedTeams(a).map(t=>{const owner=typeof state!=="undefined"?state.assignments?.[t[0]]?.player:null;return owner?'<span style="--news-team:'+esc(t[2]||"#55b7ff")+'">'+esc(t[1])+' · '+esc(owner)+'</span>':""}).filter(Boolean).join("");
@@ -82,4 +83,6 @@
   if(typeof originalCompetition==="function")window.openCompetitionBoard=function(){originalCompetition();void morning()};
   window.addEventListener("load",morning,{once:true});
   document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-last>TTL){morning();team()}});
+  window.cvNews={getNews,relatedTeams};
+  window.dispatchEvent(new Event('cv-news-ready'));
 })();
