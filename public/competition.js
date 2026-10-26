@@ -1068,21 +1068,39 @@
     const teams=data?.boxscore?.teams||[];
     const home=teams.find(t=>teamNameFromEspn(t.team)===g.home);
     const away=teams.find(t=>teamNameFromEspn(t.team)===g.away);
-    const metrics=[["Field goals","fieldGoalsMade-fieldGoalsAttempted"],["3-pointers","threePointFieldGoalsMade-threePointFieldGoalsAttempted"],["Free throws","freeThrowsMade-freeThrowsAttempted"],["Rebounds","totalRebounds"],["Assists","assists"],["Turnovers","turnovers"],["Steals","steals"],["Blocks","blocks"]];
+    const metrics=[["Field goals","fieldGoalsMade-fieldGoalsAttempted"],["Field goal %","fieldGoalPct"],["3-pointers","threePointFieldGoalsMade-threePointFieldGoalsAttempted"],["3-point %","threePointFieldGoalPct"],["Free throws","freeThrowsMade-freeThrowsAttempted"],["Free throw %","freeThrowPct"],["Rebounds","totalRebounds"],["Offensive rebounds","offensiveRebounds"],["Assists","assists"],["Turnovers","turnovers"],["Steals","steals"],["Blocks","blocks"],["Team fouls · game total","fouls"],["Points in paint","pointsInPaint"],["Fast-break points","fastBreakPoints"],["Points conceded off turnovers","turnoverPoints"],["Largest lead","largestLead"]];
     const value=(team,key)=>team?.statistics?.find(x=>x.name===key)?.displayValue??"—";
     const rows=metrics.filter(([,key])=>value(away,key)!=="—"||value(home,key)!=="—").map(([label,key])=>[label,value(away,key),value(home,key)]);
-    let html=rows.length?statsTable(["Team stats",shortTeam(g.away),shortTeam(g.home)],rows):'<p>Team stats are not available yet.</p>';
+    const groups=[g.away,g.home].map(name=>({name,group:(data?.boxscore?.players||[]).find(t=>teamNameFromEspn(t.team)===name)?.statistics?.find(s=>s.labels?.includes('PTS'))}));
+    const cell=(group,a,label)=>{const index=group.labels.indexOf(label);return index>=0?a.stats?.[index]??'—':'—'};
+    const foulWatch=groups.flatMap(({name,group})=>group?(group.athletes||[]).filter(a=>!a.didNotPlay&&parseFloat(cell(group,a,'PF'))>=4).map(a=>({name: a.athlete?.displayName||'Player',team:name,fouls:cell(group,a,'PF')})):[]);
+    let html='<section class="game-foul-watch"><h4>Foul watch</h4>'+(foulWatch.length?'<div>'+foulWatch.map(p=>'<span><strong>'+esc(p.name)+'</strong> · '+esc(shortTeam(p.team))+' <b>'+esc(p.fouls)+' fouls</b></span>').join('')+'</div>':'<p>'+(groups.some(t=>t.group?.labels?.includes('PF'))?'No players with 4+ personal fouls in this snapshot.':'Player foul data is unavailable.')+'</p>')+'<small>Personal fouls, not quarter bonus status.</small></section>';
+    html+='<h4>Team comparison</h4>'+(rows.length?statsTable(["Team stats",shortTeam(g.away),shortTeam(g.home)],rows):'<p>Team stats are not available yet.</p>');
     for(const name of [g.away,g.home]){
       const team=(data?.boxscore?.players||[]).find(t=>teamNameFromEspn(t.team)===name);
       const group=team?.statistics?.find(x=>x.labels?.includes("PTS"));
       if(!group)continue;
-      const cell=(a,label)=>a.stats?.[group.labels.indexOf(label)]??"—";
+      const value=(a,label)=>cell(group,a,label);
       const players=(group.athletes||[]).filter(a=>!a.didNotPlay&&Array.isArray(a.stats))
-        .sort((a,b)=>(parseFloat(cell(b,"PTS"))||0)-(parseFloat(cell(a,"PTS"))||0)).slice(0,3);
-      if(players.length)html+='<h4>'+esc(shortTeam(name))+' · scoring leaders</h4>'+statsTable(["Player","PTS","REB","AST"],players.map(a=>[a.athlete?.displayName||"Player",cell(a,"PTS"),cell(a,"REB"),cell(a,"AST")]));
+        .sort((a,b)=>(parseFloat(value(b,"PTS"))||0)-(parseFloat(value(a,"PTS"))||0)).slice(0,3);
+      if(players.length)html+='<h4>'+esc(shortTeam(name))+' · scoring leaders</h4>'+statsTable(["Player","PTS","REB","AST"],players.map(a=>[a.athlete?.displayName||"Player",value(a,"PTS"),value(a,"REB"),value(a,"AST")]));
     }
+    html+='<div class="game-full-boxes">'+groups.map(({name,group})=>{
+      if(!group)return '';
+      const columns=['MIN','PTS','REB','AST','FG','3PT','FT','TO','PF','+/-'].filter(key=>group.labels.includes(key)),players=(group.athletes||[]).filter(a=>!a.didNotPlay&&Array.isArray(a.stats));
+      return '<details class="game-full-box"><summary>'+esc(shortTeam(name))+' · full player box score</summary><p class="comp-game-stats-note">Starter = starting five. Minutes and stats reflect this snapshot; they do not identify who is currently on court. Swipe the table for shooting splits.</p><div class="game-box-scroll" tabindex="0" role="region" aria-label="'+esc(shortTeam(name))+' player box score">'+statsTable(['Player',...columns],players.map(a=>[(a.athlete?.displayName||'Player')+(a.starter?' · Starter':''),...columns.map(key=>cell(group,a,key))]))+'</div></details>';
+    }).join('')+'</div>';
+    const plays=[...(data.plays||[])].filter(p=>p.text);
+    if(plays.length){if(plays.every(p=>Number.isFinite(Number(p.sequenceNumber))))plays.sort((a,b)=>Number(a.sequenceNumber)-Number(b.sequenceNumber));html+='<section class="game-recent-plays"><h4>Latest listed action</h4><ol>'+plays.slice(-5).reverse().map(p=>'<li><small>'+esc(p.period?.displayValue||('Q'+(p.period?.number||'—')))+' · '+esc(p.clock?.displayValue||'')+'</small><span>'+esc(p.text)+'</span></li>').join('')+'</ol></section>'}
     if(window.cvInsights)html+=window.cvInsights.espnGameExtras(data,g);
     return html;
+  }
+
+  function gameContextMarkup(data,g){
+    const comp=data?.header?.competitions?.[0],status=comp?.status?.type?.shortDetail||g.detail||g.status,venue=data?.gameInfo?.venue?.fullName;
+    const competitors=comp?.competitors||[],score=name=>competitors.find(t=>teamNameFromEspn(t.team)===name)?.score;
+    const away=score(g.away),home=score(g.home);
+    return '<div class="game-snapshot-head"><div><small>'+esc(g.status==='FINAL'?'FINAL SNAPSHOT':'GAME SNAPSHOT')+'</small><strong>'+esc(shortTeam(g.away))+' '+esc(away??g.awayScore)+'–'+esc(home??g.homeScore)+' '+esc(shortTeam(g.home))+'</strong><span>'+esc(status)+'</span></div><div><strong>'+esc(venue||'Venue not supplied')+'</strong><small>Checked '+esc(timeSydney(new Date()))+' Sydney · use ↻ to update</small></div></div>';
   }
 
   function sampleGameStats(g){
@@ -1136,7 +1154,8 @@
     try{
       const data=await loadGameSummary(g);
       if(panel.isConnected){
-        panel.innerHTML='<p class="comp-game-stats-note">ESPN · '+(g.status==="FINAL"?"FINAL BOX SCORE":"LIVE SNAPSHOT · "+esc(g.detail||"IN PROGRESS"))+'</p>'+gameStatsMarkup(data,g);
+        panel.innerHTML=gameContextMarkup(data,g)+'<section class="game-live-availability" aria-live="polite"></section>'+gameStatsMarkup(data,g);
+        if(window.cvAvailability?.renderAbsences)void window.cvAvailability.renderAbsences(panel.querySelector('.game-live-availability'),g,data);
         window.cvInsights?.bindGames(panel,g);
       }
     }catch(e){
@@ -1148,6 +1167,7 @@
 
   async function refreshOpenGame(g){
     const data=await loadGameSummary(g,true);
+    window.cvAvailability?.invalidate();
     const updated=parseScoreboard({events:[data.header]},true).find(x=>x.id===String(g.id));
     if(!updated)throw new Error("Updated score unavailable");
     Object.assign(g,updated);

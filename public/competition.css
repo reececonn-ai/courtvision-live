@@ -3785,6 +3785,41 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 @media(max-width:420px){.ns-carry-pair{grid-template-columns:1fr}}
 
 /* Readable analytics: clear units, useful comparisons and room for the data. */
+#competitionGames .game-box-slot,#competitionGames .game-full-boxes,#competitionGames .game-full-box{min-width:0;max-width:100%}
+#competitionGames .game-snapshot-head{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:16px;background:#10283c;border:1px solid #304b63;border-radius:6px;margin-bottom:16px}
+#competitionGames .game-snapshot-head>div{display:grid;gap:5px;min-width:0}
+#competitionGames .game-snapshot-head strong{font-size:18px;color:#fff}
+#competitionGames .game-snapshot-head small{font-size:11px;color:#9dc9e7}
+#competitionGames .game-snapshot-head span{font-size:14px;color:#d8eaf7}
+#competitionGames .game-live-availability{padding:4px 16px 14px;background:#0d2132;border:1px solid #2e455a;border-radius:6px;margin-bottom:16px}
+#competitionGames .game-live-availability>h4,#competitionGames .game-foul-watch h4,#competitionGames .game-box-slot>h4,#competitionGames .game-recent-plays h4{font-size:17px;margin:14px 0 10px}
+#competitionGames .game-live-availability .game-availability-player{font-size:14px;padding:10px 0}
+#competitionGames .game-live-availability .game-availability-player p{font-size:12px;color:#abc3d8;line-height:1.6}
+#competitionGames .game-live-availability .game-availability-player small{font-size:10px}
+#competitionGames .availability-status{display:inline-block;margin-left:5px;padding:3px 7px;background:#49303d;color:#ffc2d0;border-radius:4px;font-size:11px}
+#competitionGames .game-live-availability .availability-note{font-size:12px;line-height:1.6;color:#abc3d8}
+#competitionGames .game-foul-watch{padding:2px 16px 14px;margin-bottom:16px;background:#292538;border-left:3px solid #e0b66e;border-radius:5px}
+#competitionGames .game-foul-watch>div{display:flex;flex-wrap:wrap;gap:8px}
+#competitionGames .game-foul-watch>div span{padding:8px 10px;background:#192738;font-size:13px;border-radius:4px}
+#competitionGames .game-foul-watch b{color:#f2cb85}#competitionGames .game-foul-watch>small{display:block;font-size:11px;color:#b4c6d7;margin-top:10px}
+#competitionGames .game-full-box{margin:16px 0;background:#0c2032;border:1px solid #304a61;border-radius:6px;padding:0 12px 12px}
+#competitionGames .game-full-box>summary,#competitionGames .game-dnp>summary{padding:14px 0;min-height:44px;box-sizing:border-box;font-size:14px;font-weight:700;color:#81d2ff;cursor:pointer}
+#competitionGames .game-box-scroll{min-width:0;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+#competitionGames .game-box-scroll .comp-game-stats-table{table-layout:auto;min-width:720px;font-size:13px}
+#competitionGames .game-box-scroll .comp-game-stats-table th,#competitionGames .game-box-scroll .comp-game-stats-table td{white-space:nowrap;padding:10px 8px;overflow-wrap:normal}
+#competitionGames .game-box-scroll .comp-game-stats-table th:first-child{width:180px;position:sticky;left:0;background:#10273b;z-index:1;white-space:normal;min-width:150px}
+#competitionGames .game-dnp{border-top:1px solid #304a61;margin-top:12px}
+#competitionGames .game-dnp p>small{display:block;font-size:11px;color:#aac4d8;margin-top:4px}
+#competitionGames .game-recent-plays{margin:16px 0}
+#competitionGames .game-recent-plays ol{list-style:none;margin:0;padding:0}
+#competitionGames .game-recent-plays li{display:grid;grid-template-columns:85px minmax(0,1fr);gap:12px;padding:12px 0;border-bottom:1px solid #2e455a;font-size:13px;line-height:1.6}
+#competitionGames .game-recent-plays small{color:#77c9f5;font-size:12px}
+@media(max-width:600px){
+ #competitionGames .game-snapshot-head{padding:12px;gap:12px}#competitionGames .game-snapshot-head strong{font-size:16px}
+ #competitionGames .game-live-availability{padding:2px 12px 12px}
+ #competitionGames .game-foul-watch{padding:2px 12px 12px}
+ #competitionGames .game-recent-plays li{grid-template-columns:65px minmax(0,1fr);gap:8px}
+}
 .ns-me-strip{display:grid;grid-template-columns:1.1fr repeat(3,minmax(0,1fr));gap:14px;align-items:center;margin:18px 0 24px;padding:20px;background:linear-gradient(110deg,color-mix(in srgb,var(--owner) 15%,#0c2031),#0c2031);border-left:4px solid var(--owner);border-radius:6px}
 .ns-me-strip>div{min-width:0}.ns-me-strip strong,.ns-me-strip b{display:block;color:#fff;font-size:25px;line-height:1.2}
 .ns-me-strip small{display:block;font-size:12px;color:#adc5da;line-height:1.5;margin-top:5px}.ns-me-strip>div:first-child small{color:var(--owner);letter-spacing:.1em;font-size:10px;margin:0 0 5px}

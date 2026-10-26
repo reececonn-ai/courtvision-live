@@ -39,11 +39,32 @@
   }
 
   function injuryTeam(data,name){
-    const entry=(data?.injuries||[]).find(x=>teamName(x.team||x)===name);
+    const entry=(Array.isArray(data?.injuries)?data.injuries:[]).find(x=>teamName(x.team||x)===name);
     return entry?entry.injuries||[]:null;
   }
   function injuryList(name,list){
-    return '<section><h4>'+esc(name)+'</h4>'+(list?.length?list.map(x=>'<article class="game-availability-player"><strong>'+esc(x.athlete?.displayName||x.player||"Player")+'</strong> <span class="availability-status">'+esc(x.status||"Status not supplied")+'</span><p>'+esc(x.shortComment||x.longComment||x.details?.detail||"")+'</p>'+(x.date?'<small>Reported '+esc(dateText(x.date))+'</small>':'')+'</article>').join(""):'<p class="availability-note">No injuries listed. This does not confirm everyone is available.</p>')+'</section>';
+    const reason=x=>x.shortComment||x.longComment||[x.details?.side,x.details?.type,x.details?.detail].filter(v=>v&&v!=='Not Specified').join(' · ');
+    return '<section><h4>'+esc(name)+'</h4>'+(list?.length?list.map(x=>'<article class="game-availability-player"><strong>'+esc(x.athlete?.displayName||x.player||"Player")+'</strong> <span class="availability-status">'+esc(x.status||"Status not supplied")+'</span><p>'+esc(reason(x))+'</p>'+(x.date?'<small>Reported '+esc(dateText(x.date))+'</small>':'')+'</article>').join(""):'<p class="availability-note">'+(list===null?'No report returned for this team.':'No injuries listed. This does not confirm everyone is available.')+'</p>')+'</section>';
+  }
+  async function renderAbsences(panel,g,data){
+    if(!panel)return;
+    panel.innerHTML='<h4>Who’s out / availability</h4><p class="availability-note">Checking this matchup’s report…</p>';
+    const gameSpecific=[g.away,g.home].some(name=>injuryTeam(data,name)!==null);
+    const historical=new Date(g.date).toLocaleDateString('en-CA',{timeZone:'Australia/Sydney'})!==new Date().toLocaleDateString('en-CA',{timeZone:'Australia/Sydney'});
+    let current=null;
+    if(!gameSpecific&&!historical&&g.status!=='FINAL')try{current=await injuries()}catch(e){}
+    if(!panel.isConnected)return;
+    const source=gameSpecific?data:current;
+    let html='<h4>Who’s out / availability</h4><p class="availability-note">'+(gameSpecific?'ESPN report attached to this game':current?'Latest ESPN report · not a confirmed in-game update':'No game-specific injury report available')+' · checked '+esc(dateText(Date.now()))+'</p>';
+    html+='<div class="game-availability-columns">'+[g.away,g.home].map(name=>injuryList(name,injuryTeam(source,name))).join('')+'</div>';
+    const benches=[g.away,g.home].map(name=>{
+      const group=(data?.boxscore?.players||[]).find(t=>teamName(t.team)===name);
+      const players=[...new Map((group?.statistics||[]).flatMap(s=>s.athletes||[]).filter(p=>p.didNotPlay).map(p=>[p.athlete?.id||p.athlete?.displayName,p])).values()];
+      return players.length?'<section><h5>'+esc(name)+'</h5>'+players.map(p=>'<p><strong>'+esc(p.athlete?.displayName||'Player')+'</strong><small>'+esc(p.reason||'Reason not supplied')+'</small></p>').join('')+'</section>':'';
+    }).join('');
+    if(benches)html+='<details class="game-dnp"><summary>'+(g.status==='FINAL'?'Did not play':'Yet to play / DNP listings')+'</summary><p class="availability-note">A DNP or coach’s-decision listing does not mean a player is injured or ruled out.</p><div class="game-availability-columns">'+benches+'</div></details>';
+    html+='<p class="availability-note">No assumption is made about a player’s availability when a report is missing. New in-game injuries may take time to appear.</p>';
+    panel.innerHTML=html;
   }
   async function renderGame(panel,g,summaryProvider){
     // Guard here too: older callers must never put pregame content above a live box score.
@@ -65,5 +86,5 @@
     }else html+='<p class="availability-note">'+(historical?'Historical injury reports unavailable.':days>1?'Game-day injury reports are not published this far ahead.':'Injury report temporarily unavailable. No availability assumptions made.')+'</p>';
     panel.innerHTML=html;
   }
-  window.cvAvailability={renderGame};
+  window.cvAvailability={renderGame,renderAbsences,invalidate:()=>{injuryCache=null}};
 })();
