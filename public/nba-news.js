@@ -83,6 +83,15 @@
   if(typeof originalCompetition==="function")window.openCompetitionBoard=function(){originalCompetition();void morning()};
   window.addEventListener("load",morning,{once:true});
   document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-last>TTL){morning();team()}});
-  window.cvNews={getNews,relatedTeams};
+  function newsKind(a){
+    const headline=String(a.headline||''),text=headline+' '+String(a.summary||'');
+    if(/fantasy|betting|mock draft|power rankings|trade ideas|trade targets|retrospective/i.test(headline))return null;
+    if(/\b(?:trad(?:e|es|ed|ing)|deal|interest|talks)\b/i.test(text)&&/rumou?r|trade talks|in talks|explor|interested|interest in|discuss|consider/i.test(text))return 'TRADE WATCH · UNCONFIRMED';
+    if(/\b(?:debut|first (?:NBA |career |season )?start|starting (?:five|lineup)|will start|to start|starts tonight|upgrad\w*.*available|cleared to (?:play|return)|return\w* to (?:play|lineup|action)|available (?:tonight|vs\.?|against|to play))\b/i.test(headline))return 'LINEUP & RETURNS';
+    if(/injur|fractur|torn|tear\b|sprain|strain|surgery|rul(?:e[ds]?|ing) out|out (?:for|at least|indefinitely|tonight|vs\.?|against)|miss(?:es|ing)? (?:time|tonight|\w+ game|\w+ weeks)|will not play|won't play|questionable|doubtful|sidelined|stretcher|taken off|helped off|knee swelling|plantar fasciitis/i.test(headline)||/will (?:miss|not play)|has (?:a |an )?(?:strained|sprained|torn)|ruled out|out (?:for|at least|indefinitely)|undergo.*surgery/i.test(String(a.summary||'')))return 'INJURY & AVAILABILITY';
+    if(/\b(?:trad(?:e|es|ed)|waiv(?:e|es|ed)|acquir(?:e|es|ed)|releas(?:e|es|ed)|suspended|suspension|signs?|signed|re-signs?)\b/i.test(headline))return 'ROSTER NEWS';
+    return null;
+  }
+  window.cvNews={getNews,relatedTeams,newsKind};
   window.dispatchEvent(new Event('cv-news-ready'));
 })();

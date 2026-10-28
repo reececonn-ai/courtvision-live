@@ -63,17 +63,16 @@
     const articles=(Array.isArray(briefNews)?briefNews:[]).flatMap(a=>{
       const stamp=Date.parse(a.published||''),headline=String(a.headline||''),text=headline+' '+String(a.summary||'');
       if(!Number.isFinite(stamp)||now-stamp>48*3600000||stamp>now+300000||!/^https:\/\/(www\.)?espn\.com\/nba\/story\//i.test(a.url||''))return [];
-      if(/fantasy|betting|rumou?r|mock draft|power rankings|trade ideas|trade targets/i.test(headline))return [];
-      const injury=/injur|fractur|torn|tear\b|sprain|strain|surgery|ruled out|out (?:for|at least|indefinitely)|sidelined|stretcher|taken off|helped off|knee swelling|plantar fasciitis/i.test(text),roster=/\b(?:trad(?:e|es|ed)|waiv(?:e|es|ed)|acquir(?:e|es|ed)|suspended|suspension|signs?|signed|re-signs?)\b/i.test(headline);
-      if(!injury&&!roster)return [];
+      const kind=window.cvNews?.newsKind(a);if(!kind)return [];
+      const injury=kind==='INJURY & AVAILABILITY';
       const related=window.cvNews?.relatedTeams(a)||[],mentioned=related.filter(t=>{const h=headline.toLowerCase();return h.includes(t[0].toLowerCase())||h.includes(t[0].split(' ').at(-1).toLowerCase())});
-      const clubs=injury?(mentioned.length?mentioned:related.slice(0,1)):related;
+      const clubs=kind==='LINEUP & RETURNS'?related.slice(0,1):injury?(mentioned.length?mentioned:related.slice(0,1)):related;
       if(!clubs.length||owned.size&&!clubs.some(t=>owned.has(t[0])))return [];
       const key=(a.url.match(/\/id\/(\d+)/)?.[1]||headline.toLowerCase());if(seen.has(key))return [];seen.add(key);
       const priority=/stretcher|significant injury|season.ending|out indefinitely|surgery/i.test(text)?100:/out at least|out for.*(?:week|month)|fractur|torn/i.test(text)?90:injury?80:70;
       const owners=[...new Set(clubs.map(t=>rows.find(r=>r.teams.some(x=>x.name===t[0]))?.name).filter(Boolean))];
-      return [{priority,stamp,item:[injury?'INJURY NEWS':'ROSTER NEWS',headline,(a.summary||'Read the latest report for details.')+(owners.length?' Affects '+owners.join(' / ')+'.':''),clubs.map(t=>t[0]),{url:a.url,published:a.published,source:'ESPN'}]}];
-    }).sort((a,b)=>b.priority-a.priority||b.stamp-a.stamp).slice(0,5);
+      return [{priority,stamp,item:[kind,headline,(kind.startsWith('TRADE WATCH')?'Reported interest or talks; no completed trade confirmed. ':'')+(a.summary||'Read the latest report for details.')+(owners.length?' Affects '+owners.join(' / ')+'.':''),clubs.map(t=>t[0]),{url:a.url,published:a.published,source:'ESPN'}]}];
+    }).sort((a,b)=>Math.floor((now-a.stamp)/21600000)-Math.floor((now-b.stamp)/21600000)||b.priority-a.priority||b.stamp-a.stamp);
     return articles.map(a=>a.item);
   }
   function gameStories(g,data){
@@ -187,7 +186,7 @@
   }
 
   function dailyCard([tag,name,copy,related,report],rows){
-    const semantic=tag==='INJURY NEWS'?'#f2bb63':tag==='ROSTER NEWS'?'#b49bff':tag==="GIANT KILLER"?"#c7a0ff":tag==="SQUAD SWEEP"?"#77d8b6":tag==="WINNING UGLY"?"#f2bb63":/BELOW|RESPONSE/.test(tag)?"#f18ba3":"#63c8ff";
+    const semantic=tag==='INJURY & AVAILABILITY'?'#f2bb63':/ROSTER|TRADE WATCH/.test(tag)?'#b49bff':tag==="GIANT KILLER"?"#c7a0ff":tag==="SQUAD SWEEP"?"#77d8b6":tag==="WINNING UGLY"?"#f2bb63":/BELOW|RESPONSE/.test(tag)?"#f18ba3":"#63c8ff";
     const owner=rows.find(r=>r.name===name);
     const names=related||((typeof teamByName==="function"&&teamByName(name))?[name]:owner?.teams.map(t=>t.name)||[]);
     const clubs=[...new Set(names)].map(n=>typeof teamByName==="function"?teamByName(n):null).filter(Boolean).slice(0,3);
