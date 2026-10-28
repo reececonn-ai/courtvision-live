@@ -62,18 +62,22 @@
     const now=Date.now(),seen=new Set(),owned=new Set(rows.flatMap(r=>r.teams.map(t=>t.name)));
     const articles=(Array.isArray(briefNews)?briefNews:[]).flatMap(a=>{
       const stamp=Date.parse(a.published||''),headline=String(a.headline||''),text=headline+' '+String(a.summary||'');
-      if(!Number.isFinite(stamp)||now-stamp>48*3600000||stamp>now+300000||!/^https:\/\/(www\.)?espn\.com\/nba\/story\//i.test(a.url||''))return [];
+      const source=window.cvNews?.sourceName(a.url);
+      if(!Number.isFinite(stamp)||now-stamp>48*3600000||stamp>now+300000||!source)return [];
       const kind=window.cvNews?.newsKind(a);if(!kind)return [];
       const injury=kind==='INJURY & AVAILABILITY';
       const related=window.cvNews?.relatedTeams(a)||[],mentioned=related.filter(t=>{const h=headline.toLowerCase();return h.includes(t[0].toLowerCase())||h.includes(t[0].split(' ').at(-1).toLowerCase())});
       const clubs=kind==='LINEUP & RETURNS'?related.slice(0,1):injury?(mentioned.length?mentioned:related.slice(0,1)):related;
-      if(!clubs.length||owned.size&&!clubs.some(t=>owned.has(t[0])))return [];
+      if(clubs.length&&owned.size&&!clubs.some(t=>owned.has(t[0])))return [];
       const key=(a.url.match(/\/id\/(\d+)/)?.[1]||headline.toLowerCase());if(seen.has(key))return [];seen.add(key);
       const priority=/stretcher|significant injury|season.ending|out indefinitely|surgery/i.test(text)?100:/out at least|out for.*(?:week|month)|fractur|torn/i.test(text)?90:injury?80:70;
       const owners=[...new Set(clubs.map(t=>rows.find(r=>r.teams.some(x=>x.name===t[0]))?.name).filter(Boolean))];
-      return [{priority,stamp,item:[kind,headline,(kind.startsWith('TRADE WATCH')?'Reported interest or talks; no completed trade confirmed. ':'')+(a.summary||'Read the latest report for details.')+(owners.length?' Affects '+owners.join(' / ')+'.':''),clubs.map(t=>t[0]),{url:a.url,published:a.published,source:'ESPN'}]}];
+      return [{priority,stamp,item:[kind,headline,(kind.startsWith('TRADE WATCH')?'Reported interest or talks; no completed trade confirmed. ':'')+(a.summary||'Read the latest report for details.')+(owners.length?' Affects '+owners.join(' / ')+'.':''),clubs.map(t=>t[0]),{url:a.url,published:a.published,source}]}];
     }).sort((a,b)=>Math.floor((now-a.stamp)/21600000)-Math.floor((now-b.stamp)/21600000)||b.priority-a.priority||b.stamp-a.stamp);
-    return articles.map(a=>a.item);
+    const picked=[];
+    const words=h=>new Set(h.toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>4&&!/^(sources|injury|injured|report|reports|latest|starting|season|return|trade|trades|rumors|rumours|first|after|before|guard|basketball)$/.test(w)));
+    for(const a of articles){const tokens=words(a.item[1]);const duplicate=picked.some(b=>a.item[4].source!==b.item[4].source&&a.item[0]===b.item[0]&&Math.abs(a.stamp-b.stamp)<36*3600000&&[...tokens].filter(w=>words(b.item[1]).has(w)).length>=3);if(!duplicate)picked.push(a)}
+    return picked.map(a=>a.item);
   }
   function gameStories(g,data){
     if(g.status!=="FINAL"||g.sample||(!g.homeWinner&&!g.awayWinner))return [];
@@ -193,7 +197,8 @@
     const accent=clubs.length===1?clubs[0][2]:semantic;
     const logos=clubs.length?clubs.map(t=>'<img src="'+esc(logoUrl(t[1]))+'" alt="'+esc(t[0])+'" loading="lazy" onerror="this.hidden=true">').join(""):'<span class="cv-digest-symbol" aria-hidden="true">✦</span>';
     const stamp=report?new Date(report.published).toLocaleString('en-AU',{timeZone:'Australia/Sydney',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}):'';
-    const source=report&&/^https:\/\/(www\.)?espn\.com\/nba\/story\//i.test(report.url)?'<a class="cv-digest-source" href="'+esc(report.url)+'" target="_blank" rel="noopener noreferrer">ESPN · '+esc(stamp)+' Sydney · Read report ↗</a>':'';
+    const sourceName=report&&window.cvNews?.sourceName(report.url);
+    const source=sourceName?'<a class="cv-digest-source" href="'+esc(report.url)+'" target="_blank" rel="noopener noreferrer">'+esc(sourceName)+' · '+esc(stamp)+' Sydney · Read report ↗</a>':'';
     return '<article class="cv-digest-card" style="--digest-accent:'+accent+';--digest-label:'+semantic+'"><div class="cv-digest-top"><small>'+esc(tag)+'</small><div class="cv-digest-logos">'+logos+'</div></div><strong>'+esc(name)+'</strong><p>'+esc(copy)+'</p>'+source+'</article>';
   }
 

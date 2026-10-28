@@ -1,5 +1,16 @@
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
+// Parse the bounded public CBS RSS feed without fetching individual articles.
+function cbsNews(xml) {
+  const clean = value => String(value || '').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').replace(/<[^>]*>/g, '').replace(/&#(x[0-9a-f]+|\d+);/gi, (_, n) => {const code=n[0].toLowerCase()==='x'?parseInt(n.slice(1),16):Number(n);return code>0&&code<=0x10ffff?String.fromCodePoint(code):''}).replace(/&(?:amp|lt|gt|quot|apos|nbsp);/g, m => ({'&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&apos;':"'",'&nbsp;':' '}[m])).trim();
+  return [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)].slice(0,50).flatMap(match => {
+    const field = name => clean(match[1].match(new RegExp('<'+name+'\\b[^>]*>([\\s\\S]*?)<\\/'+name+'>','i'))?.[1]);
+    const headline=field('title'),url=field('link'),date=Date.parse(field('pubDate'));
+    if(!headline||!Number.isFinite(date)||!/^https:\/\/www\.cbssports\.com\/nba\/news\//i.test(url))return [];
+    return [{headline:headline.slice(0,180),summary:field('description').slice(0,260),url,published:new Date(date).toISOString(),source:'CBS Sports',teams:[]}];
+  });
+}
+
 const ALL_TEAMS = [
   "Atlanta Hawks","Boston Celtics","Brooklyn Nets","Charlotte Hornets","Chicago Bulls","Cleveland Cavaliers",
   "Dallas Mavericks","Denver Nuggets","Detroit Pistons","Golden State Warriors","Houston Rockets","Indiana Pacers",
@@ -441,18 +452,20 @@ export default {
     // One shared news cache; short enough to surface notable live injury reports.
     // Never touches the draft Durable Object or triggers scheduled background work.
     if (url.pathname === "/api/nba/news") {
-      const key = new Request(url.origin + "/api/nba/news?layout=4", { method: "GET" });
+      const key = new Request(url.origin + "/api/nba/news?layout=5", { method: "GET" });
       const cache = caches.default;
       const hit = await cache.match(key);
       if (hit) return hit;
       try {
+        const results = await Promise.allSettled([ (async()=>{
         const upstream = await fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news?limit=50", {
           headers: { accept: "application/json" },
           signal: AbortSignal.timeout(5500),
         });
         if (!upstream.ok) throw new Error("ESPN news unavailable");
         const data = await upstream.json();
-        const articles = (Array.isArray(data?.articles) ? data.articles : []).slice(0, 50).map(a => ({
+        return (Array.isArray(data?.articles) ? data.articles : []).slice(0, 50).map(a => ({
+          source: 'ESPN',
           headline: String(a.headline || "").slice(0, 180),
           summary: String(a.description || a.story || "").replace(/<[^>]*>/g, "").slice(0, 260),
           published: String(a.published || a.lastModified || ""),
@@ -462,7 +475,16 @@ export default {
           category: /injur|out for|questionable|doubtful|ruled out|surgery|availability/i.test(a.headline || "") ? "INJURY" :
             /trad|sign|waiv|acquir|deal|contract/i.test(a.headline || "") ? "ROSTER" : "NBA NEWS",
         })).filter(a => a.headline && /^https:\/\/(www\.)?espn\.com\//.test(a.url));
-        const response = json({ ok: true, source: "ESPN", fetchedAt: new Date().toISOString(), articles });
+        })(),(async()=>{
+          const upstream=await fetch('https://www.cbssports.com/rss/headlines/nba/',{headers:{accept:'application/rss+xml, application/xml, text/xml'},signal:AbortSignal.timeout(5500)});
+          if(!upstream.ok)throw new Error('CBS news unavailable');
+          const xml=await upstream.text();if(xml.length>1500000||!/<rss\b/i.test(xml))throw new Error('Invalid CBS feed');
+          return cbsNews(xml);
+        })()]);
+        const sources=results.map((r,i)=>({name:i?'CBS Sports':'ESPN',ok:r.status==='fulfilled',count:r.status==='fulfilled'?r.value.length:0}));
+        if(!sources.some(s=>s.ok&&s.count))throw new Error('News unavailable');
+        const articles=results.flatMap(r=>r.status==='fulfilled'?r.value:[]).sort((a,b)=>Date.parse(b.published)-Date.parse(a.published));
+        const response = json({ ok: true, sources, fetchedAt: new Date().toISOString(), articles });
         response.headers.set("cache-control", "public, max-age=300, s-maxage=300");
         ctx.waitUntil(cache.put(key, response.clone()));
         return response;

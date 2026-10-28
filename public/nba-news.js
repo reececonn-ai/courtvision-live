@@ -4,13 +4,14 @@
   const TTL=5*60*1000;
   let articles=[],last=0,loading=null;
   const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const clean=a=>a&&typeof a.headline==="string"&&/^https:\/\/(www\.)?espn\.com\//.test(a.url||"");
+  const sourceName=url=>/^https:\/\/(www\.)?espn\.com\/nba\/story\//i.test(url||'')?'ESPN':/^https:\/\/www\.cbssports\.com\/nba\/news\//i.test(url||'')?'CBS Sports':null;
+  const clean=a=>a&&typeof a.headline==="string"&&sourceName(a.url);
   function getNews(){
     if(Date.now()-last<TTL)return Promise.resolve(articles);
     if(loading)return loading;
     loading=fetch("/api/nba/news",{credentials:"same-origin"}).then(r=>r.ok?r.json():null).then(data=>{
       if(data?.ok===false)throw new Error("News unavailable");
-      articles=Array.isArray(data?.articles)?data.articles.filter(clean).slice(0,50):[];
+      articles=Array.isArray(data?.articles)?data.articles.filter(clean).slice(0,100):[];
       last=Date.now();
       return articles;
     }).catch(()=>{last=0;return articles}).finally(()=>{loading=null});
@@ -28,7 +29,7 @@
     const matches=TEAM_DATA.filter(t=>{
       const tags=a.teams||[];
       if(tags.some(tag=>tag.name?.toLowerCase()===t[0].toLowerCase()||(tag.id&&typeof espnTeamId==="function"&&String(espnTeamId(t[0]))===tag.id)))return true;
-      const headline=String(a.headline||"");
+      const headline=String(a.headline||'').split(/\b(?:vs\.?|against|return to)\b/i)[0];
       if(headline.toLowerCase().includes(t[0].toLowerCase()))return true;
       const nickname=t[0].split(" ").at(-1);
       return new RegExp("\\b"+nickname+"\\b","i").test(headline);
@@ -85,13 +86,13 @@
   document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-last>TTL){morning();team()}});
   function newsKind(a){
     const headline=String(a.headline||''),text=headline+' '+String(a.summary||'');
-    if(/fantasy|betting|mock draft|power rankings|trade ideas|trade targets|retrospective/i.test(headline))return null;
-    if(/\b(?:trad(?:e|es|ed|ing)|deal|interest|talks)\b/i.test(text)&&/rumou?r|trade talks|in talks|explor|interested|interest in|discuss|consider/i.test(text))return 'TRADE WATCH · UNCONFIRMED';
+    if(/fantasy|betting|mock draft|power rankings|trade ideas|trade targets|retrospective|winners and losers|NBA buzz:|what .*injuries mean/i.test(headline))return null;
+    if(/\b(?:trad(?:e|es|ed|ing)|deal|interest|talks)\b/i.test(text)&&/rumou?r|trade request|trade talks|in talks|explor|interested|interest in|discuss|consider/i.test(text))return 'TRADE WATCH · UNCONFIRMED';
     if(/\b(?:debut|first (?:NBA |career |season )?start|starting (?:five|lineup)|will start|to start|starts tonight|upgrad\w*.*available|cleared to (?:play|return)|return\w* to (?:play|lineup|action)|available (?:tonight|vs\.?|against|to play))\b/i.test(headline))return 'LINEUP & RETURNS';
     if(/injur|fractur|torn|tear\b|sprain|strain|surgery|rul(?:e[ds]?|ing) out|out (?:for|at least|indefinitely|tonight|vs\.?|against)|miss(?:es|ing)? (?:time|tonight|\w+ game|\w+ weeks)|will not play|won't play|questionable|doubtful|sidelined|stretcher|taken off|helped off|knee swelling|plantar fasciitis/i.test(headline)||/will (?:miss|not play)|has (?:a |an )?(?:strained|sprained|torn)|ruled out|out (?:for|at least|indefinitely)|undergo.*surgery/i.test(String(a.summary||'')))return 'INJURY & AVAILABILITY';
     if(/\b(?:trad(?:e|es|ed)|waiv(?:e|es|ed)|acquir(?:e|es|ed)|releas(?:e|es|ed)|suspended|suspension|signs?|signed|re-signs?)\b/i.test(headline))return 'ROSTER NEWS';
     return null;
   }
-  window.cvNews={getNews,relatedTeams,newsKind};
+  window.cvNews={getNews,relatedTeams,newsKind,sourceName};
   window.dispatchEvent(new Event('cv-news-ready'));
 })();
