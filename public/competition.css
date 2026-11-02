@@ -4018,3 +4018,5 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 }
 
 #nerdStudio .ns-squad>summary{cursor:pointer;list-style:disclosure-closed}#nerdStudio .ns-squad[open]>summary{list-style:disclosure-open}#nerdStudio .ns-squad-hint{color:#9fb5ca;font-size:12px;font-weight:400}#nerdStudio .ns-squad>summary:focus-visible{outline:2px solid #63c8ff;outline-offset:-2px}
+
+.owner-game{grid-template-columns:68px minmax(0,1fr) 68px}.owner-game-team{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center}.owner-game-team img{width:38px;height:38px;object-fit:contain}.owner-game .owner-game-team small{color:#c7e8ff;font:800 10px/1.25 Arial,sans-serif;max-width:100%;overflow-wrap:anywhere}@media(max-width:720px){.owner-game{grid-template-columns:52px minmax(0,1fr) 52px;gap:8px}.owner-game-team img{width:32px;height:32px}.owner-game .owner-game-team small{font-size:9px}}
