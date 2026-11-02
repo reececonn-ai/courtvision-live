@@ -365,18 +365,7 @@
     const maxProjected=Math.max(1,...ordered.map(x=>x.r.projected));
     const power=ordered.map((x,i)=>{
       const teams=[...x.r.teams].sort((a,b)=>b.expected-a.expected);
-      return '<article class="ns-power-card" style="--owner:'+colour(x.r.name,rows)+'"><header><b>#'+(i+1)+'</b><strong>'+esc(x.r.name)+'</strong><em>'+x.r.probability.toFixed(1)+'%<small>title chance</small></em></header><div class="ns-power-total"><b>'+x.r.projected.toFixed(1)+'</b><span>projected wins</span></div><div class="ns-power-logos">'+teams.map(t=>teamMark(t.name)).join("")+'</div><div class="ns-visual-track"><i style="width:'+(x.r.projected/maxProjected*100)+'%"></i></div><footer><span>'+x.r.w+'–'+x.r.l+' actual</span><span>'+x.f.w+'–'+x.f.l+' recent</span></footer><button type="button" class="ns-owner-link" data-power-owner="'+rows.indexOf(x.r)+'">Compare '+esc(x.r.name)+' <span aria-hidden="true">↗</span></button></article>';
-    }).join("");
-
-    const now=Date.now(),end=now+3*86400000,upcoming=(games||[]).filter(g=>g.status!=="FINAL"&&new Date(g.date).getTime()>=now&&new Date(g.date).getTime()<end);
-    const workloadData=rows.map(r=>{
-      const owned=new Set(r.teams.map(t=>t.name)),fixtures=upcoming.flatMap(g=>[g.home,g.away].filter(t=>owned.has(t)).map(t=>({team:t,date:g.date,opp:g.home===t?g.away:g.home}))).sort((a,b)=>new Date(a.date)-new Date(b.date));
-      return {r,fixtures};
-    }).sort((a,b)=>b.fixtures.length-a.fixtures.length||a.r.name.localeCompare(b.r.name));
-    const maxLoad=Math.max(1,...workloadData.map(x=>x.fixtures.length));
-    const workload=workloadData.map(x=>{
-      const next=x.fixtures[0];
-      return '<article class="ns-workload-row"><div class="ns-workload-owner"><strong>'+esc(x.r.name)+'</strong><span>'+x.fixtures.length+' owned-team game'+(x.fixtures.length===1?'':'s')+'</span></div><div class="ns-workload-bar"><i style="width:'+(x.fixtures.length/maxLoad*100)+'%"></i></div><div class="ns-next-game">'+(next?teamMark(next.team)+teamMark(next.opp)+'<span>'+esc(shortTeam(next.team))+' vs '+esc(shortTeam(next.opp))+'<small>'+new Date(next.date).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",timeZone:"Australia/Sydney"})+'</small></span>':'<span>No game loaded<small>Next three days</small></span>')+'</div></article>';
+      return '<article class="ns-power-card" style="--owner:'+colour(x.r.name,rows)+'"><header><b>#'+(i+1)+'</b><strong>'+esc(x.r.name)+'</strong><em>'+x.r.probability.toFixed(1)+'%<small>title chance</small></em></header><div class="ns-power-total"><b>'+x.r.projected.toFixed(1)+'</b><span>projected wins</span></div><div class="ns-power-logos">'+teams.map(t=>teamMark(t.name)).join("")+'</div><div class="ns-visual-track"><i style="width:'+(x.r.projected/maxProjected*100)+'%"></i></div><footer><span>'+x.r.w+'–'+x.r.l+' actual</span><span>'+x.f.w+'–'+x.f.l+' recent</span></footer></article>';
     }).join("");
 
     const steady=deepData(rows,recent).filter(t=>t.scoredN>=2&&Number.isFinite(t.spread)).sort((a,b)=>a.spread-b.spread).slice(0,10);
@@ -402,7 +391,6 @@
     return '<div class="ns-scroll-feed">'+
       '<section class="ns-section ns-feed-block ns-power"><div class="ns-section-title"><span class="ns-kicker">POWER BOARD</span><h3>Who has the strongest forecast?</h3><p>Ranked by projected finish. Title chance is simulated; actual W–L is earned.</p></div><div class="ns-power-grid">'+power+'</div></section>'+
       forecastLab(rows,recent)+
-      '<section class="ns-section ns-feed-block ns-workload"><div class="ns-section-title"><span class="ns-kicker">COMING UP</span><h3>Who has the busiest immediate schedule?</h3><p>The next three days, loaded quickly. More games mean more chances to move.</p></div><div class="ns-workload-list">'+workload+'</div></section>'+
       '<section class="ns-section ns-feed-block ns-consistency"><div class="ns-section-title"><span class="ns-kicker">STEADY HANDS</span><h3>Which teams are most consistent?</h3><p>Lower game-to-game margin variation ranks higher.</p></div><div class="ns-steady-grid">'+consistency+'</div></section>'+
       '<section class="ns-section ns-feed-block ns-portfolios"><div class="ns-section-title"><span class="ns-kicker">CARRYING / HOLDING BACK</span><h3>What is shaping every portfolio?</h3><p>The strongest pillar, the weakest link and the team beating its line.</p></div><div class="ns-portfolio-story-grid">'+portfolios+'</div></section>'+
     '</div>';
@@ -527,23 +515,13 @@
     latest={rows,games,recent,demo};
     const root=document.getElementById("nerdStudio");if(!root)return;
     document.getElementById("nerdClassic")?.remove();
-    const comparisonOpen=root.querySelector('.ns-squad')?.open||false;
-    root.innerHTML='<details class="ns-section ns-squad"'+(comparisonOpen?' open':'')+'><summary class="ns-section-title"><span class="ns-kicker">PICK YOUR NAME</span><h3>Compared with you</h3><span class="ns-squad-hint">Tap to expand or collapse</span></summary><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></details>'+
-      numbersLab(rows,games,recent)+
+    root.innerHTML=numbersLab(rows,games,recent)+
       '<section class="ns-section ns-bargain" id="nsBestValue"><div class="ns-section-title"><span class="ns-kicker">DRAFT ECONOMICS · PAID PICKS</span><h3>Who got the best value?</h3></div><div id="nsBestValueBody">'+bestValueLab(rows)+'</div></section>'+
       extraLabs(rows,recent,demo)+
       '<section class="ns-section ns-momentum"><div class="ns-section-title"><span class="ns-kicker">OWNER MOMENTUM</span><h3>Every twist. Every contender.</h3></div>'+historyChart(rows,demo,root.clientWidth||960)+'</section>'+
       '<section class="ns-section" id="nsTeamLab"><div class="ns-section-title"><span class="ns-kicker">EXPECTATION TRACKER</span><h3>Who’s beating the line?</h3></div><div id="nsValueContent">'+performanceLab(rows,recent)+'</div></section>'+
       strengthMatrix(rows);
-    bindSquad(root,rows,recent);
     bindValueTabs(root.querySelector('#nsBestValueBody'),rows);
-    root.querySelectorAll('[data-power-owner]').forEach(button=>button.addEventListener('click',()=>{
-      const r=rows[Number(button.dataset.powerOwner)];if(!r)return;
-      rememberOwner(r.name);rivalOwner='';root.querySelector('#nsSquadContent').innerHTML=squadComparison(rows);bindSquad(root,rows);
-      root.querySelector('.ns-squad').open=true;
-      root.querySelector('.ns-squad').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
-      root.querySelector('[data-owner-index="'+rows.indexOf(r)+'"]')?.focus({preventScroll:true});
-    }));
     bindDeep(root,rows,recent);
     bindTradeLens(root,rows,recent);
   }
