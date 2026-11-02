@@ -49,6 +49,51 @@
     }));
   }
 
+
+  // Draft-price efficiency, read-only; no extra API calls.
+  let valueMode="projected";
+  function paidTeamValue(rows,mode){
+    const ranked=[];
+    for(const r of rows)for(const t of r.teams||[]){
+      const a=state.assignments?.[t.name],cost=Number(a?.amount);
+      if(!a||a.barrel||!(cost>0))continue;
+      const actual=Number(t.w),projected=Number(t.liveExpected??t.expected);
+      const wins=mode==="current"?actual:projected;
+      if(!(wins>0)||!Number.isFinite(wins))continue;
+      ranked.push({name:t.name,owner:r.name,cost,actual,projected,score:wins/cost,perWin:cost/wins});
+    }
+    return ranked.sort((a,b)=>b.score-a.score||a.cost-b.cost||a.name.localeCompare(b.name));
+  }
+
+  function bestValueLab(rows){
+    const ranked=paidTeamValue(rows,valueMode);
+    const buttons='<div class="ns-bargain-controls" role="group" aria-label="Value metric">'+
+      '<button type="button" data-value-mode="projected" aria-pressed="'+(valueMode==="projected")+'">Projected wins</button>'+
+      '<button type="button" data-value-mode="current" aria-pressed="'+(valueMode==="current")+'">Wins so far</button></div>';
+    const card=(v,i)=>{
+      const team=typeof teamByName==="function"?teamByName(v.name):null;
+      const img=team?'<img src="'+esc(logoUrl(team[1]))+'" loading="lazy" alt="">':'';
+      const count=valueMode==="current"?v.actual+" current wins":v.projected.toFixed(1)+" projected wins";
+      return '<article class="ns-bargain-row"><span class="ns-bargain-rank">'+(i+1)+'</span>'+img+
+        '<div class="ns-bargain-name"><strong>'+esc(v.name)+'</strong><small>'+esc(v.owner)+' · $'+v.cost.toFixed(2)+' paid · '+count+'</small></div>'+
+        '<div class="ns-bargain-metric"><strong>'+v.score.toFixed(2)+' <span>W/$</span></strong><small>$'+v.perWin.toFixed(2)+' per win</small></div></article>';
+    };
+    const main=ranked.length?'<div class="ns-bargain-list">'+ranked.slice(0,10).map(card).join("")+'</div>':'<p class="ns-note">No paid teams with positive '+(valueMode==="current"?'regular-season wins':'projected wins')+' yet.</p>';
+    const more=ranked.length>10?'<details class="ns-bargain-more"><summary>View all '+ranked.length+' paid teams</summary><div class="ns-bargain-list">'+ranked.slice(10).map((v,i)=>card(v,i+10)).join("")+'</div></details>':'';
+    const note='<p class="ns-note">Higher W/$ means better value; lower cost per win means better value. Barrel and $0 picks are unranked to avoid division by zero. On traded teams, the recorded price follows the current roster slot. '+(valueMode==="current"?'Early-season rankings can swing sharply.':'Projected wins are CourtVision’s current full-season estimate.')+'</p>';
+    return buttons+main+more+note;
+  }
+  function bindValueTabs(root,rows){
+    if(!root)return;
+    root.querySelectorAll('[data-value-mode]').forEach(button=>button.addEventListener('click',()=>{
+      const mode=button.dataset.valueMode;
+      if(mode!=="current"&&mode!=="projected")return;
+      if(mode!==valueMode){
+        valueMode=mode;root.innerHTML=bestValueLab(rows);bindValueTabs(root,rows);
+      }
+    }));
+  }
+
   const storyCache=new Map();
   let storyBusy=false,briefContext=null;
   let briefNews=[],briefNewsAt=0,briefNewsBusy=false;
@@ -185,8 +230,13 @@
       return {r,results};
     }).filter(x=>x.results.length>=2&&x.results.every(g=>g.won)).sort((a,b)=>b.results.length-a.results.length||a.r.name.localeCompare(b.r.name));
     if(sweeps[0]){const x=sweeps[0];items.unshift(['SQUAD SWEEP',x.r.name,x.results.length+'–0 in completed owned-team games on '+lastDay+' (Sydney). Every available completed result went their way; other fixtures may still remain.',x.results.map(g=>g.team)]);}
+    const currentBest=paidTeamValue(rows,"current")[0],forecastBest=paidTeamValue(rows,"projected")[0];
+    const bargain=currentBest||forecastBest,metricType=currentBest?"current":"projected";
+    const valueCard=bargain?[["BEST VALUE",bargain.name,
+      bargain.score.toFixed(2)+" "+metricType+" wins per $1 of draft cost · $"+bargain.perWin.toFixed(2)+
+      " per "+metricType+" win. "+bargain.owner+" paid $"+bargain.cost.toFixed(2)+".",[bargain.name]]]:[];
     const news=demo?[]:newsInsights(rows);
-    return [...news.slice(0,2),...storyItems(recent),...news.slice(2),...items];
+    return [...news.slice(0,2),...valueCard,...storyItems(recent),...news.slice(2),...items];
   }
 
   function dailyCard([tag,name,copy,related,report],rows){
@@ -480,11 +530,13 @@
     const comparisonOpen=root.querySelector('.ns-squad')?.open||false;
     root.innerHTML='<details class="ns-section ns-squad"'+(comparisonOpen?' open':'')+'><summary class="ns-section-title"><span class="ns-kicker">PICK YOUR NAME</span><h3>Compared with you</h3><span class="ns-squad-hint">Tap to expand or collapse</span></summary><div id="nsSquadContent">'+squadComparison(rows,recent)+'</div></details>'+
       numbersLab(rows,games,recent)+
+      '<section class="ns-section ns-bargain" id="nsBestValue"><div class="ns-section-title"><span class="ns-kicker">DRAFT ECONOMICS · PAID PICKS</span><h3>Who got the best value?</h3></div><div id="nsBestValueBody">'+bestValueLab(rows)+'</div></section>'+
       extraLabs(rows,recent,demo)+
       '<section class="ns-section ns-momentum"><div class="ns-section-title"><span class="ns-kicker">OWNER MOMENTUM</span><h3>Every twist. Every contender.</h3></div>'+historyChart(rows,demo,root.clientWidth||960)+'</section>'+
       '<section class="ns-section" id="nsTeamLab"><div class="ns-section-title"><span class="ns-kicker">EXPECTATION TRACKER</span><h3>Who’s beating the line?</h3></div><div id="nsValueContent">'+performanceLab(rows,recent)+'</div></section>'+
       strengthMatrix(rows);
     bindSquad(root,rows,recent);
+    bindValueTabs(root.querySelector('#nsBestValueBody'),rows);
     root.querySelectorAll('[data-power-owner]').forEach(button=>button.addEventListener('click',()=>{
       const r=rows[Number(button.dataset.powerOwner)];if(!r)return;
       rememberOwner(r.name);rivalOwner='';root.querySelector('#nsSquadContent').innerHTML=squadComparison(rows);bindSquad(root,rows);
