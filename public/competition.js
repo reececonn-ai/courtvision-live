@@ -1770,12 +1770,27 @@
     if(document.querySelector(".screen.active")?.id==="competitionScreen")setTicker(window.cvCompetitionTicker,"COMP BOARD");
   }
 
+  function renderSeasonProgress(records,demo=false){
+    const el=$('competitionSeasonProgress');if(!el)return;
+    const entries=TEAM_DATA.map(t=>records[t[0]]),total=TEAM_DATA.length*82/2;
+    if(demo){el.textContent='Season progress · sample data';return}
+    if(!regularSeasonStarted()){el.textContent='0 / '+total.toLocaleString('en-AU')+' games played · 0.0% complete';return}
+    if(entries.some(r=>!r||!Number.isInteger(r.w)||!Number.isInteger(r.l)||r.w<0||r.l<0||r.w+r.l>82)){
+      el.textContent='Season progress · awaiting complete standings';return;
+    }
+    const wins=entries.reduce((n,r)=>n+r.w,0),losses=entries.reduce((n,r)=>n+r.l,0);
+    if(wins!==losses){el.textContent='Season progress · standings updating';return}
+    const pct=wins/total*100;
+    el.innerHTML='<span>REGULAR SEASON</span><strong>'+wins.toLocaleString('en-AU')+' / '+total.toLocaleString('en-AU')+' <small>games played</small></strong><b>'+pct.toFixed(1)+'% complete</b><div class="comp-season-track" role="progressbar" aria-label="Regular season completed" aria-valuemin="0" aria-valuemax="'+total+'" aria-valuenow="'+wins+'"><i style="width:'+pct+'%"></i></div>';
+  }
+
   async function refreshCompetitionBoard(force=false){
     const token=++refreshToken;
     const status=$("competitionDataStatus");
     if(status)status.textContent="Refreshing NBA records and Sydney slate…";
     try{
       const data=await getCompetitionData(force);if(token!==refreshToken)return;
+      renderSeasonProgress(data.records||{},data.demo);
       await loadSeasonMemory(force);if(token!==refreshToken)return;
       // Clear projection-only competition snapshot history at the opening tip.
       state.competitionSnapshots=(state.competitionSnapshots||[]).filter(x=>x && (!regularSeasonStarted()||x.key>=REGULAR_SEASON_KEY));
