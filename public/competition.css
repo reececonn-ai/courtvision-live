@@ -4022,3 +4022,35 @@ body:not(.classic-main-style) #draftBoardScreen .board-team{
 .owner-game{grid-template-columns:68px minmax(0,1fr) 68px}.owner-game-team{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center}.owner-game-team img{width:38px;height:38px;object-fit:contain}.owner-game .owner-game-team small{color:#c7e8ff;font:800 10px/1.25 Arial,sans-serif;max-width:100%;overflow-wrap:anywhere}@media(max-width:720px){.owner-game{grid-template-columns:52px minmax(0,1fr) 52px;gap:8px}.owner-game-team img{width:32px;height:32px}.owner-game .owner-game-team small{font-size:9px}}
 
 .comp-season-progress{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;width:fit-content;max-width:100%;margin:10px 0;color:#a9c4da;font:12px/1.4 Arial,sans-serif}.comp-season-progress>span{font-size:10px;font-weight:800;letter-spacing:.1em;color:#63c8ff}.comp-season-progress>strong{color:#eff7ff;font-size:15px}.comp-season-progress small{font-size:11px;font-weight:400;color:#a9c4da}.comp-season-progress>b{color:#77d8b6;font-size:13px}.comp-season-track{flex-basis:100%;height:3px;background:#20354a;border-radius:3px;overflow:hidden}.comp-season-track i{display:block;height:100%;background:linear-gradient(90deg,#63c8ff,#77d8b6)}@media(max-width:720px){.comp-season-progress{gap:6px 10px;margin:12px 0}.comp-season-progress>span{flex-basis:100%}.comp-season-progress>strong{font-size:14px}}
+
+
+/* Best Value: shared data only, responsive auction-cost efficiency ranking. */
+.ns-bargain-controls{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 16px}
+.ns-bargain-controls button{min-height:42px;padding:10px 16px;border:1px solid #375b79;border-radius:8px;background:#0b2035;color:#c1d9ed;font-weight:800;font-size:12px;cursor:pointer}
+.ns-bargain-controls button[aria-pressed="true"]{background:#e6f3ff;color:#092035;border-color:#e6f3ff}
+.ns-bargain-list{display:grid;gap:6px}
+.ns-bargain-row{display:grid;grid-template-columns:32px 46px minmax(0,1fr) 132px;align-items:center;gap:13px;min-width:0;min-height:73px;padding:10px 14px;border:1px solid #233e59;background:linear-gradient(95deg,#0a1c2c,#081422);border-radius:9px}
+.ns-bargain-row:first-child{border-left:4px solid #5ed5b0}
+.ns-bargain-rank{font:900 18px/1 Arial,sans-serif;text-align:center;color:#74b5d9}
+.ns-bargain-row img{width:44px;height:44px;object-fit:contain}
+.ns-bargain-name{min-width:0}
+.ns-bargain-name strong{display:block;font-size:15px;line-height:1.2;color:#f5faff;overflow-wrap:anywhere}
+.ns-bargain-name small{display:block;margin-top:5px;color:#a9c1d4;font-size:11px;line-height:1.35}
+.ns-bargain-metric{text-align:right;min-width:0}
+.ns-bargain-metric strong{display:block;color:#7ee2bd;font:900 19px/1.15 Arial,sans-serif;white-space:nowrap}
+.ns-bargain-metric strong span{font-size:11px;color:#abd5d1}
+.ns-bargain-metric small{display:block;margin-top:5px;color:#b8d0db;font-size:11px;white-space:nowrap}
+.ns-bargain-more{margin-top:12px}
+.ns-bargain-more summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:800;color:#8fd2ff}
+.ns-bargain-more[open] summary{margin-bottom:8px}
+@media(max-width:600px){
+ .ns-bargain-row{grid-template-columns:22px 32px minmax(0,1fr) 94px;gap:7px;padding:10px 8px}
+ .ns-bargain-row img{width:31px;height:31px}
+ .ns-bargain-rank{font-size:14px}
+ .ns-bargain-name strong{font-size:12px}
+ .ns-bargain-name small{font-size:10px}
+ .ns-bargain-metric strong{font-size:15px}
+ .ns-bargain-metric strong span{font-size:10px}
+ .ns-bargain-metric small{font-size:10px;white-space:normal}
+ .ns-bargain-controls button{flex:1;min-width:120px}
+}
