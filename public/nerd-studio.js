@@ -70,10 +70,10 @@
       const clubs=kind==='LINEUP & RETURNS'?related.slice(0,1):injury?(mentioned.length?mentioned:related.slice(0,1)):related;
       if(clubs.length&&owned.size&&!clubs.some(t=>owned.has(t[0])))return [];
       const key=(a.url.match(/\/id\/(\d+)/)?.[1]||headline.toLowerCase());if(seen.has(key))return [];seen.add(key);
-      const priority=/stretcher|significant injury|season.ending|out indefinitely|surgery/i.test(text)?100:/out at least|out for.*(?:week|month)|fractur|torn/i.test(text)?90:injury?80:70;
+      const priority=/stretcher|significant injury|season.ending|out indefinitely|surgery/i.test(text)?100:kind==='SUSPENSION'?95:/out at least|out for.*(?:week|month)|fractur|torn/i.test(text)?90:injury?80:70;
       const owners=[...new Set(clubs.map(t=>rows.find(r=>r.teams.some(x=>x.name===t[0]))?.name).filter(Boolean))];
       return [{priority,stamp,item:[kind,headline,(kind.startsWith('TRADE WATCH')?'Reported interest or talks; no completed trade confirmed. ':'')+(a.summary||'Read the latest report for details.')+(owners.length?' Affects '+owners.join(' / ')+'.':''),clubs.map(t=>t[0]),{url:a.url,published:a.published,source}]}];
-    }).sort((a,b)=>Math.floor((now-a.stamp)/21600000)-Math.floor((now-b.stamp)/21600000)||b.priority-a.priority||b.stamp-a.stamp);
+    }).sort((a,b)=>b.priority-a.priority||Math.floor((now-a.stamp)/21600000)-Math.floor((now-b.stamp)/21600000)||b.stamp-a.stamp);
     const picked=[];
     const words=h=>new Set(h.toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(w=>w.length>4&&!/^(sources|injury|injured|report|reports|latest|starting|season|return|trade|trades|rumors|rumours|first|after|before|guard|basketball)$/.test(w)));
     for(const a of articles){const tokens=words(a.item[1]);const duplicate=picked.some(b=>a.item[4].source!==b.item[4].source&&a.item[0]===b.item[0]&&Math.abs(a.stamp-b.stamp)<36*3600000&&[...tokens].filter(w=>words(b.item[1]).has(w)).length>=3);if(!duplicate)picked.push(a)}
@@ -190,7 +190,7 @@
   }
 
   function dailyCard([tag,name,copy,related,report],rows){
-    const semantic=tag==='INJURY & AVAILABILITY'?'#f2bb63':/ROSTER|TRADE WATCH/.test(tag)?'#b49bff':tag==="GIANT KILLER"?"#c7a0ff":tag==="SQUAD SWEEP"?"#77d8b6":tag==="WINNING UGLY"?"#f2bb63":/BELOW|RESPONSE/.test(tag)?"#f18ba3":"#63c8ff";
+    const semantic=tag==='INJURY & AVAILABILITY'?'#f2bb63':/SUSPENSION|ROSTER|TRADE WATCH/.test(tag)?'#b49bff':tag==="GIANT KILLER"?"#c7a0ff":tag==="SQUAD SWEEP"?"#77d8b6":tag==="WINNING UGLY"?"#f2bb63":/BELOW|RESPONSE/.test(tag)?"#f18ba3":"#63c8ff";
     const owner=rows.find(r=>r.name===name);
     const names=related||((typeof teamByName==="function"&&teamByName(name))?[name]:owner?.teams.map(t=>t.name)||[]);
     const clubs=[...new Set(names)].map(n=>typeof teamByName==="function"?teamByName(n):null).filter(Boolean).slice(0,3);
