@@ -24,30 +24,33 @@
     return names.map(n=>'<option value="'+esc(n)+'"'+(n===selected?' selected':'')+'>'+esc(n)+'</option>').join("");
   }
   function compactTeam(name,label){
+    if(!name)return '<div class="trade-team"><div><small>'+esc(label)+'</small><strong>Choose a team</strong></div></div>';
     const r=record(name),t=team(name);
     return '<div class="trade-team" style="--trade-primary:'+(t?.[2]||"#63c8ff")+'"><img src="'+logo(name)+'" alt=""><div><small>'+label+'</small><strong>'+esc(name||"Choose a team")+'</strong><span>'+r.w+'–'+r.l+' current NBA record</span></div></div>';
   }
 
   function renderBuilder(root){
-    const requester=root.dataset.requester&&player(root.dataset.requester)?root.dataset.requester:eligible()[0]||"";
-    const offeredNames=player(requester)?.teams||[],offered=offeredNames.includes(root.dataset.offered)?root.dataset.offered:offeredNames[0]||"";
-    const partner=root.dataset.partner&&root.dataset.partner!==requester&&player(root.dataset.partner)?root.dataset.partner:eligible().find(n=>n!==requester)||"";
-    const requestedNames=player(partner)?.teams||[],requested=requestedNames.includes(root.dataset.requested)?root.dataset.requested:requestedNames[0]||"";
+    const requester=root.dataset.requester&&player(root.dataset.requester)?root.dataset.requester:"";
+    const offeredNames=player(requester)?.teams||[],offered=offeredNames.includes(root.dataset.offered)?root.dataset.offered:"";
+    const partner=root.dataset.partner&&root.dataset.partner!==requester&&player(root.dataset.partner)?root.dataset.partner:"";
+    const requestedNames=player(partner)?.teams||[],requested=requestedNames.includes(root.dataset.requested)?root.dataset.requested:"";
     Object.assign(root.dataset,{requester,offered,partner,requested});
     const blocked=!requester||!partner||!offered||!requested||offered===requested||activeTeam(offered)||activeTeam(requested);
     root.querySelector("#tradeBuilder").innerHTML=
       '<div class="trade-steps">'+
-      '<label><b>1</b><span>Who is asking?</span><select id="tradeRequester">'+ownerOptions(requester)+'</select></label>'+
-      '<label><b>2</b><span>Team being offered</span><select id="tradeOffered">'+teamOptions(requester,offered)+'</select></label>'+
-      '<label><b>3</b><span>Trading with</span><select id="tradePartner">'+ownerOptions(partner,requester)+'</select></label>'+
-      '<label><b>4</b><span>Team they want</span><select id="tradeRequested">'+teamOptions(partner,requested)+'</select></label></div>'+
+      '<label><b>1</b><span>Who is asking?</span><select id="tradeRequester"><option value="">Choose an owner</option>'+ownerOptions(requester)+'</select></label>'+
+      '<label><b>2</b><span>Team being offered</span><select id="tradeOffered"'+(!requester?' disabled':'')+'><option value="">Choose a team</option>'+teamOptions(requester,offered)+'</select></label>'+
+      '<label><b>3</b><span>Trading with</span><select id="tradePartner"><option value="">Choose an owner</option>'+ownerOptions(partner,requester)+'</select></label>'+
+      '<label><b>4</b><span>Team they want</span><select id="tradeRequested"'+(!partner?' disabled':'')+'><option value="">Choose a team</option>'+teamOptions(partner,requested)+'</select></label></div>'+
       '<div class="trade-preview">'+compactTeam(offered,requester+" offers")+'<div class="trade-swap-mark" aria-hidden="true">⇄</div>'+compactTeam(requested,partner+" offers")+'</div>'+
-      '<div class="trade-rule"><strong>Historical wins stay put.</strong><span>If this passes, '+esc(requester)+' keeps every win earned before the swap and only future '+esc(requested)+' results count for them. The same rule applies to '+esc(partner)+'.</span></div>'+
+      '<div class="trade-rule"><strong>Historical wins stay put.</strong><span>Each owner keeps wins earned before the swap. Only future results from the incoming team count for them.</span></div>'+
+      '<button type="button" class="trade-withdraw" data-clear-builder>Clear selections</button>'+
       '<button type="button" class="trade-submit"'+(blocked?' disabled':'')+'>'+((activeTeam(offered)||activeTeam(requested))?'A selected team already has a pending trade':'5 · Put this trade to a vote')+'</button>';
     for(const [id,key] of [["tradeRequester","requester"],["tradeOffered","offered"],["tradePartner","partner"],["tradeRequested","requested"]]){
       root.querySelector("#"+id)?.addEventListener("change",e=>{root.dataset[key]=e.target.value;if(key==="requester"){root.dataset.offered="";if(root.dataset.partner===e.target.value)root.dataset.partner="";}if(key==="partner")root.dataset.requested="";renderBuilder(root);});
     }
     root.querySelector(".trade-submit")?.addEventListener("click",()=>create(root));
+    root.querySelector('[data-clear-builder]')?.addEventListener('click',()=>{clearBuilder(root);renderBuilder(root)});
   }
 
   function create(root){
@@ -59,7 +62,7 @@
     const now=new Date().toISOString();
     proposals().unshift({id,requester,partner,offeredTeam,requestedTeam,status:"voting",createdAt:now,votes:{[requester]:"yes"},electorate:eligible(),needed:majority(),recordsAtProposal:{[offeredTeam]:record(offeredTeam),[requestedTeam]:record(requestedTeam)}});
     state.lastAction=requester+" proposed a trade with "+partner;
-    saveState();render();
+    clearBuilder(root);saveState();render();
   }
 
   function voteRows(p){
@@ -109,7 +112,8 @@
     root.querySelectorAll("[data-trade-withdraw]").forEach(b=>b.addEventListener("click",()=>{const p=proposals().find(x=>x.id===b.dataset.tradeWithdraw);if(p&&p.status==="voting"){p.status="withdrawn";p.resolvedAt=new Date().toISOString();saveState();render();}}));
   }
 
-  function open(){document.body.classList.remove("teams-profile-view");showScreenLocal("tradeScreen");render();void window.refreshCompetitionBoard?.(false);window.scrollTo(0,0);}
+  function clearBuilder(root){if(root)Object.assign(root.dataset,{requester:'',offered:'',partner:'',requested:''})}
+  function open(){clearBuilder(document.getElementById('tradeScreen'));document.body.classList.remove("teams-profile-view");showScreenLocal("tradeScreen");render();void window.refreshCompetitionBoard?.(false);window.scrollTo(0,0);}
   function renameOwner(from,to){
     normalise();
     const ledger=state.tradeLedger;
